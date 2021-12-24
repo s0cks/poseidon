@@ -23,12 +23,13 @@ int main(int argc, char** argv){
   DLOG(INFO) << "sizeof(Int) := " << Class::CLASS_INT->GetAllocationSize();
 
   Int* a = Allocator::Allocate<Int>(Class::CLASS_INT);
-  (*a) = 11111;
+  a->Set(11111);
   LOG(INFO) << "a: " << a->Get();
 
   Local<Int> b = Allocator::AllocateLocal<Int>(Class::CLASS_INT);
-  (*b.Get()) = 10000;
-  LOG(INFO) << "b: " << *b.Get();
+  b->Set(10000);
+
+  LOG(INFO) << "b: " << b->Get();
 
   LOG(INFO) << "Eden Heap:";
   RawObjectPrinter::PrintAll(Allocator::GetEdenHeap());
@@ -48,6 +49,6 @@ int main(int argc, char** argv){
   RawObjectPrinter::PrintAll(Allocator::GetTenuredHeap());
 
   LOG(INFO) << "a: " << a->Get();
-  LOG(INFO) << "b: " << *b.Get();
+  LOG(INFO) << "b: " << b->Get();
   return RUN_ALL_TESTS();
 }

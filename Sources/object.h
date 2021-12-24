@@ -51,6 +51,12 @@ namespace poseidon{
     Class* parent_;
     std::vector<Field*> fields_;
    protected:
+    inline void
+    AddField(Field* field){
+      fields_.push_back(field);
+    }
+
+    Field* CreateField(const std::string& name, Class* type);
     void VisitPointers(RawObjectPointerVisitor* vis) override;
     void VisitPointers(RawObjectPointerPointerVisitor* vis) override;
    public:
@@ -70,10 +76,6 @@ namespace poseidon{
 
     bool HasParent() const{
       return parent_ != nullptr;
-    }
-
-    void AddField(Field* field){
-      fields_.push_back(field);
     }
 
     std::string ToString() const override{
@@ -169,7 +171,6 @@ namespace poseidon{
     }
   };
 
-  template<typename T>
   class Number : public Instance{
    public:
     static Field* kValueField;
@@ -179,24 +180,24 @@ namespace poseidon{
     }
    public:
     ~Number() override = default;
-
-    T Get() const{
-      return *((T*)FieldAddress(kValueField));
-    }
-
-    void Set(const T& val){
-      *((T*) FieldAddress(kValueField)) = val;
-    }
   };
 
-  class Byte : public Number<uint8_t>{
+  class Byte : public Number{
    public:
-    Byte(): Number<uint8_t>(Class::CLASS_BYTE){}
+    Byte(): Number(Class::CLASS_BYTE){}
     explicit Byte(const uint8_t& val):
       Byte(){
       Set(val);
     }
     ~Byte() override = default;
+
+    uint8_t Get() const{
+      return *((uint8_t*)FieldAddress(kValueField));
+    }
+
+    void Set(const uint8_t& val){
+      *((uint8_t*) FieldAddress(kValueField)) = val;
+    }
 
     std::string ToString() const override{
       std::stringstream ss;
@@ -216,14 +217,22 @@ namespace poseidon{
     }
   };
 
-  class Short : public Number<uint16_t>{
+  class Short : public Number{
    public:
-    Short(): Number<uint16_t>(Class::CLASS_SHORT){}
+    Short(): Number(Class::CLASS_SHORT){}
     explicit Short(const uint16_t& val):
       Short(){
       Set(val);
     }
     ~Short() override = default;
+
+    uint16_t Get() const{
+      return *((uint16_t*)FieldAddress(kValueField));
+    }
+
+    void Set(const uint16_t& val){
+      *((uint16_t*) FieldAddress(kValueField)) = val;
+    }
 
     std::string ToString() const override{
       std::stringstream ss;
@@ -243,14 +252,22 @@ namespace poseidon{
     }
   };
 
-  class Int : public Number<uint32_t>{
+  class Int : public Number{
    public:
-    Int(): Number<uint32_t>(Class::CLASS_NUMBER){}
-    Int(const uint32_t& val):
+    Int(): Number(Class::CLASS_NUMBER){}
+    explicit Int(const uint32_t& val):
       Int(){
       Set(val);
     }
     ~Int() override = default;
+
+    uint32_t Get() const{
+      return *((uint32_t*)FieldAddress(kValueField));
+    }
+
+    void Set(const uint32_t& val){
+      *((uint32_t*) FieldAddress(kValueField)) = val;
+    }
 
     std::string ToString() const override{
       std::stringstream ss;
@@ -270,14 +287,22 @@ namespace poseidon{
     }
   };
 
-  class Long : public Number<uint64_t>{
+  class Long : public Number{
    public:
-    Long(): Number<uint64_t>(Class::CLASS_LONG){}
-    Long(const uint64_t& val):
+    Long(): Number(Class::CLASS_LONG){}
+    explicit Long(const uint64_t& val):
       Long(){
       Set(val);
     }
     ~Long() override = default;
+
+    uint64_t Get() const{
+      return *((uint64_t*)FieldAddress(kValueField));
+    }
+
+    void Set(const uint64_t& val){
+      *((uint64_t*) FieldAddress(kValueField)) = val;
+    }
 
     std::string ToString() const override{
       std::stringstream ss;

@@ -12,6 +12,8 @@ namespace poseidon{
   Class* Class::CLASS_BYTE = nullptr;
   Class* Class::CLASS_INT = nullptr;
 
+  Field* Number::kValueField = nullptr;
+
   void Class::Initialize(){
     Class::CLASS_OBJECT = new Class("Object", nullptr);
     Class::CLASS_CLASS = new Class("Class", CLASS_OBJECT);
@@ -19,10 +21,16 @@ namespace poseidon{
 
     // numbers
     Class::CLASS_NUMBER = new Class("Number", CLASS_OBJECT);
-    Class::CLASS_NUMBER->AddField(new Field("value", CLASS_NUMBER, CLASS_NUMBER));
+    Number::kValueField = CLASS_NUMBER->CreateField("value", CLASS_NUMBER);
 
     Class::CLASS_BYTE = new Class("Byte", CLASS_NUMBER);
     Class::CLASS_INT = new Class("Int", CLASS_NUMBER);
+  }
+
+  Field* Class::CreateField(const std::string& name, Class* type){
+    auto field = new Field(name, type, this);
+    AddField(field);
+    return field;
   }
 
   uint64_t Class::GetAllocationSize() const{
