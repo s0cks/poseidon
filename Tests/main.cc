@@ -38,8 +38,7 @@ int main(int argc, char** argv){
   LOG(INFO) << "Locals:";
   RawObjectPrinter::PrintAllLocals();
 
-  Scavenger scavenger;
-  scavenger.Scavenge();
+  Scavenger::Scavenge();
 
   LOG(INFO) << "Eden Heap (From Space):";
   RawObjectPrinter::PrintAll(Allocator::GetEdenHeap()->GetFromSpace());

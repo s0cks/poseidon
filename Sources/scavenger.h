@@ -5,16 +5,21 @@
 
 namespace poseidon{
   class Heap;
-  class Scavenger{
+  class Scavenger{ //TODO: remove static
+   private:
+    static void MarkLiveObjects();
+    static void PromoteLiveObjects();
+    static void ScavengeLiveObjects(Heap* heap);
+    static void UpdateForwarding();
+
+    static void ScavengeFromEdenHeap();
+    static void ScavengeFromTenuredHeap();
+    static void ScavengeFromLargeObjectSpace();
    public:
     Scavenger() = default;
     ~Scavenger() = default;
 
-    void MarkLiveObjects();
-    void PromoteLiveObjects();
-    void ScavengeLiveObjects(Heap* heap);
-    void UpdateLocals();
-    void Scavenge();
+    static void Scavenge();
   };
 }
 
