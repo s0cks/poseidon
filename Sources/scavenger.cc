@@ -1,6 +1,7 @@
 #include <deque>
 #include <glog/logging.h>
 
+#include "utils.h"
 #include "scavenger.h"
 #include "allocator.h"
 
@@ -84,5 +85,26 @@ namespace poseidon{
     Allocator::GetEdenHeap()->GetToSpace().Clear();
 
     //TODO: clean large object space
+  }
+
+  void Scavenger::MinorCollection(){
+    // only collect from the eden heap
+    DLOG(INFO) << "executing minor collection....";
+    auto start_ts = Clock::now();
+
+    MarkLiveObjects();
+    PromoteLiveObjects();
+    ScavengeLiveObjects(Allocator::GetEdenHeap());
+    UpdateForwarding();
+
+    Allocator::GetEdenHeap()->SwapSpaces();
+    Allocator::GetEdenHeap()->GetToSpace().Clear();
+
+    auto duration = (Clock::now() - start_ts);
+    DLOG(INFO) << "finished minor collection. (" << duration << ")";
+  }
+
+  void Scavenger::MajorCollection(){
+    // collect from all heaps
   }
 }

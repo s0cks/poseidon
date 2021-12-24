@@ -20,6 +20,8 @@ namespace poseidon{
     ~Scavenger() = default;
 
     static void Scavenge();
+    static void MajorCollection();
+    static void MinorCollection();
   };
 }
 
