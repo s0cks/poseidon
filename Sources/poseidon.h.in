@@ -1,0 +1,17 @@
+#ifndef POSEIDON_H
+#define POSEIDON_H
+
+#include <string>
+#include <gflags/gflags.h>
+
+namespace poseidon{
+#define POSEIDON_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define POSEIDON_VERSION_MINOR @PROJECT_VERSION_MINOR@
+#define POSEIDON_VERSION_PATCH @PROJECT_VERSION_PATCH@
+
+    std::string GetVersion();
+
+DECLARE_uint64(heap_size);
+}
+
+#endif //POSEIDON_H
