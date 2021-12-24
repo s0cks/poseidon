@@ -13,17 +13,13 @@
 namespace poseidon{
   void Scavenger::MarkLiveObjects(){
     std::deque<uword> work;
-
-    DLOG(INFO) << "marking root objects....";
-    LiveObjectMarker marker(work, Color::kBlack);
+    LiveObjectMarker marker(work);
     Allocator::VisitLocals(&marker);
-
-    DLOG(INFO) << "marking live objects....";
     while(!work.empty()){
       auto ptr = (RawObject*)work.front();
       if(ptr && !ptr->IsRemembered()){
         marker.Visit(ptr);
-        ptr->SetRemembered();
+        ptr->SetRememberedBit();
       }
       work.pop_front();
     }

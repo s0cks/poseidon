@@ -164,10 +164,6 @@ namespace poseidon{
       return to_;
     }
 
-    void* Allocate(const uword& size){
-      return from_.Allocate(size);
-    }
-
     RawObject* AllocateRawObject(const uint64_t& size){
       return from_.AllocateRawObject(size);
     }

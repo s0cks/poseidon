@@ -39,46 +39,39 @@ namespace poseidon{
     typedef uword ObjectTag;
 
     enum{ // 61
-      // .space
-      kSpaceFieldOffset = 0,
-      kBitsForSpaceField = 2,
-
-      // .color
-      kColorFieldOffset = kSpaceFieldOffset+kBitsForSpaceField,
-      kBitsForColorField = 2,
-
-      // .generations
-      kGenerationsFieldOffset = kColorFieldOffset+kBitsForColorField,
-      kBitsForGenerationField = 8,
-
-      // .size
-      kSizeFieldOffset = kGenerationsFieldOffset+kBitsForGenerationField,
+      kSizeFieldOffset = 0,
       kBitsForSizeField = 32,
 
-      // .references
-      kReferencesFieldOffset = kSizeFieldOffset+kBitsForSizeField,
-      kBitsForReferencesField = 16,
+      // EdenBit
+      kEdenFieldOffset = kSizeFieldOffset+kBitsForSizeField,
+      kBitsForEdenField = 1,
 
-      // .remembered
-      kRememberedFieldOffset = kReferencesFieldOffset+kBitsForReferencesField,
+      kTenuredFieldOffset = kEdenFieldOffset+kBitsForEdenField,
+      kBitsForTenuredField = 1,
+
+      kMarkedFieldOffset = kTenuredFieldOffset+kBitsForTenuredField,
+      kBitsForMarkedField = 1,
+
+      kRememberedFieldOffset = kMarkedFieldOffset+kBitsForMarkedField,
       kBitsForRememberedField = 1,
-
-      // .raw_type //TODO: remove
-      kRawTypeFieldOffset = kRememberedFieldOffset+kBitsForRememberedField,
-      kBitsForRawTypeField = 1,
     };
 
-    class SpaceField : public BitField<ObjectTag, Space, kSpaceFieldOffset, kBitsForSpaceField>{};
-    class ColorField : public BitField<ObjectTag, Color, kColorFieldOffset, kBitsForColorField>{};
-    class GenerationsField : public BitField<ObjectTag, uint8_t, kGenerationsFieldOffset, kBitsForGenerationField>{};
+    // The object's size
     class SizeField : public BitField<ObjectTag, uint32_t, kSizeFieldOffset, kBitsForSizeField>{};
-    class ReferencesField : public BitField<ObjectTag, uint16_t, kReferencesFieldOffset, kBitsForReferencesField>{};
-    class RememberedField : public BitField<ObjectTag, bool, kRememberedFieldOffset, kBitsForRememberedField>{};
-    class RawTypeField : public BitField<ObjectTag, bool, kRawTypeFieldOffset, kBitsForRawTypeField>{};
+    // allocated in the eden heap
+    class EdenBit: public BitField<ObjectTag, bool, kEdenFieldOffset, kBitsForEdenField>{};
+    // allocated in the tenured heap
+    class TenuredBit : public BitField<ObjectTag, bool, kTenuredFieldOffset, kBitsForTenuredField>{};
+    // marked as not garbage
+    class MarkedBit : public BitField<ObjectTag, bool, kMarkedFieldOffset, kBitsForMarkedField>{};
+    // remembered by GC
+    class RememberedBit : public BitField<ObjectTag, bool, kRememberedFieldOffset, kBitsForRememberedField>{};
 
     ObjectTag tag_;
     uword ptr_;
     uword forwarding_;
+    uint32_t num_generations_;
+    uint64_t num_references_;
 
     inline ObjectTag&
     tag(){
@@ -133,28 +126,52 @@ namespace poseidon{
       return forwarding_ != 0;
     }
 
-    Space GetSpace() const{
-      return SpaceField::Decode(tag());
+    bool IsEden() const{
+      return EdenBit::Decode(tag());
     }
 
-    void SetSpace(const Space& val){
-      tag_ = SpaceField::Update(val, tag());
+    void SetEdenBit(){
+      tag_ = EdenBit::Update(true, tag());
     }
 
-    Color GetColor() const{
-      return ColorField::Decode(tag());
+    void ClearEdenBit(){
+      tag_ = EdenBit::Update(false, tag());
     }
 
-    void SetColor(const Color& val){
-      tag_ = ColorField::Update(val, tag());
+    bool IsTenured() const{
+      return TenuredBit::Decode(tag());
     }
 
-    uint8_t GetGenerations() const{
-      return GenerationsField::Decode(tag());
+    void SetTenuredBit(){
+      tag_ = TenuredBit::Update(true, tag());
     }
 
-    void SetGenerations(const uint8_t& val){
-      tag_ = GenerationsField::Update(val, tag());
+    void ClearTenuredBit(){
+      tag_ = TenuredBit::Update(false, tag());
+    }
+
+    bool IsMarked() const{
+      return MarkedBit::Decode(tag());
+    }
+
+    void SetMarkedBit(){
+      tag_ = MarkedBit::Update(true, tag());
+    }
+
+    void ClearMarkedBit(){
+      tag_ = MarkedBit::Update(false, tag());
+    }
+
+    bool IsRemembered() const{
+      return RememberedBit::Decode(tag());
+    }
+
+    void SetRememberedBit(){
+      tag_ = RememberedBit::Update(true, tag());
+    }
+
+    void ClearRememberedBit(){
+      tag_ = RememberedBit::Update(false, tag());
     }
 
     uint32_t GetPointerSize() const{
@@ -165,48 +182,20 @@ namespace poseidon{
       tag_ = SizeField::Update(val, tag());
     }
 
-    uint16_t GetReferences() const{
-      return ReferencesField::Decode(tag());
-    }
-
-    void SetReferences(const uint16_t& val){
-      tag_ = ReferencesField::Update(val, tag());
-    }
-
-    bool IsRemembered() const{
-      return RememberedField::Decode(tag());
-    }
-
-    void ClearRemembered(){
-      tag_ = RememberedField::Update(false, tag());
-    }
-
-    void SetRemembered(){
-      tag_ = RememberedField::Update(true, tag());
-    }
-
-    bool IsRawType() const{
-      return RawTypeField::Decode(tag());
-    }
-
-    void ClearRawType(){
-      tag_ = RawTypeField::Update(false, tag());
-    }
-
-    void SetRawType(){
-      tag_ = RawTypeField::Update(true, tag());
-    }
-
     uint64_t GetTotalSize() const{
       return sizeof(RawObject)+GetPointerSize();
     }
 
-    bool IsMarked() const{
-      return GetColor() == Color::kMarked;
+    bool IsReadyForPromotion() const{
+      return GetNumberOfGenerationsSurvived() >= 3;//TODO: externalize constant
     }
 
-    bool IsReadyForPromotion() const{
-      return GetGenerations() >= 3;//TODO: externalize constant
+    uint64_t GetNumberOfReferences() const{
+      return num_references_;
+    }
+
+    uint32_t GetNumberOfGenerationsSurvived() const{
+      return num_generations_;
     }
 
     void VisitPointers(RawObjectPointerVisitor* vis);
@@ -215,11 +204,12 @@ namespace poseidon{
     std::string ToString() const{
       std::stringstream ss;
       ss << "RawObject(";
-      ss << "space=" << GetSpace() << ", ";
-      ss << "color=" << GetColor() << ", ";
-      ss << "generations=" << GetGenerations() << ", ";
+      ss << "eden=" << (IsEden() ? "true" : "false") << ", ";
+      ss << "tenured=" << (IsTenured() ? "true": "false") << ", ";
+      ss << "marked=" << (IsMarked() ? "true": "false") << ", ";
+      ss << "remembered=" << (IsRemembered() ? "true" : "false") << ", ";
       ss << "size=" << GetPointerSize() << ", ";
-      ss << "references=" << GetReferences() << ", ";
+      ss << "references=" << GetNumberOfReferences() << ", ";
       ss << "pointer=" << GetPointer() << ", ";
       ss << "forwarding=" << GetForwardingPointer();
       ss << ")";

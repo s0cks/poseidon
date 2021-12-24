@@ -8,30 +8,21 @@
 namespace poseidon{
  class LiveObjectMarker : public RawObjectPointerVisitor{
   protected:
-   Color color_;
    std::deque<uword>& work_;
 
-   inline void
-   MarkObject(RawObject* obj) const{
-     obj->SetColor(GetColor());
+   static inline void
+   MarkObject(RawObject* obj){
+     obj->SetMarkedBit();
    }
   public:
-   LiveObjectMarker(std::deque<uword>& work, const Color& color):
-    RawObjectPointerVisitor(),
-    color_(color),
-    work_(work){
-   }
    explicit LiveObjectMarker(std::deque<uword>& work):
-     LiveObjectMarker(work, Color::kBlack){
+    RawObjectPointerVisitor(),
+    work_(work){
    }
    ~LiveObjectMarker() override = default;
 
-   Color GetColor() const{
-     return color_;
-   }
-
    bool Visit(RawObject* obj) override{
-     if(obj->GetColor() != Color::kFree)
+     if(obj->IsMarked())
        return true;
      MarkObject(obj); //TODO: add references to work queue
      return true;

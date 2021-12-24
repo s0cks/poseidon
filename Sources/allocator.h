@@ -79,7 +79,9 @@ namespace poseidon{
     }
 
     static void* Allocate(const uint64_t& size){
-      return GetEdenHeap()->Allocate(size);
+      auto raw = GetEdenHeap()->AllocateRawObject(size);
+      raw->SetEdenBit();
+      return raw->GetObjectPointer();
     }
 
     static void* Allocate(Class* cls){
@@ -93,8 +95,10 @@ namespace poseidon{
 
     template<typename T>
     static Local<T> AllocateLocal(Class* cls){
+      auto raw = GetEdenHeap()->AllocateRawObject(cls->GetAllocationSize());
+      raw->SetEdenBit();
       auto slot = NewLocalSlot();
-      (*slot) = GetEdenHeap()->AllocateRawObject(cls->GetAllocationSize());
+      (*slot) = raw;
       return Local<T>(slot);
     }
 

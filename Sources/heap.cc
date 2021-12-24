@@ -39,24 +39,16 @@ namespace poseidon{
     void* ptr = (void*)paddress;
     memset(ptr, 0, total_size);
     auto raw = new (ptr)RawObject();
-    raw->SetColor(Color::kWhite);
-    raw->SetGenerations(0);
-    raw->SetReferences(0);
-    raw->SetSpace(GetHeap()->GetSpace());
     raw->SetPointerSize(size);
     raw->SetPointerAddress(paddress + sizeof(RawObject));
     return raw;
-  }
-
-  void* Semispace::Allocate(const uint64_t& size){
-    return AllocateRawObject(size)->GetPointer();
   }
 
   void Semispace::VisitMarkedRawObjectPointers(RawObjectPointerVisitor* vis){
     SemispaceIterator iter(this);
     while(iter.HasNext()){
       auto obj = iter.Next();
-      if(obj->GetColor() == Color::kMarked && !vis->Visit(obj))
+      if(obj->IsMarked() && !vis->Visit(obj))
         return;
     }
   }
@@ -83,7 +75,7 @@ namespace poseidon{
     HeapIterator iter(this);
     while(iter.HasNext()){
       auto obj = iter.Next();
-      if(obj->GetColor() == Color::kMarked && !vis->Visit(obj))
+      if(obj->IsMarked()== Color::kMarked && !vis->Visit(obj))
         return;
     }
   }
