@@ -6,6 +6,7 @@
 #include "scavenger.h"
 #include "raw_object_printer.h"
 #include "object.h"
+#include "heap_printer.h"
 
 int main(int argc, char** argv){
   using namespace poseidon;
@@ -31,21 +32,19 @@ int main(int argc, char** argv){
 
   LOG(INFO) << "b: " << b->Get();
 
-  LOG(INFO) << "Eden Heap:";
-  RawObjectPrinter::PrintAll(Allocator::GetEdenHeap());
-  LOG(INFO) << "Tenured Heap:";
-  RawObjectPrinter::PrintAll(Allocator::GetTenuredHeap());
+  HeapPrinter::Print(Allocator::GetEdenHeap());
+  HeapPrinter::Print(Allocator::GetTenuredHeap());
+  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
   LOG(INFO) << "Locals:";
   RawObjectPrinter::PrintAllLocals();
 
   Scavenger::MinorCollection();
 
-  LOG(INFO) << "Eden Heap (From Space):";
-  RawObjectPrinter::PrintAll(Allocator::GetEdenHeap()->GetFromSpace());
-  LOG(INFO) << "Eden Heap (To Space):";
-  RawObjectPrinter::PrintAll(Allocator::GetTenuredHeap()->GetToSpace());
-  LOG(INFO) << "Tenured Heap:";
-  RawObjectPrinter::PrintAll(Allocator::GetTenuredHeap());
+  HeapPrinter::Print(Allocator::GetEdenHeap());
+  HeapPrinter::Print(Allocator::GetTenuredHeap());
+  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
+  LOG(INFO) << "Locals:";
+  RawObjectPrinter::PrintAllLocals();
 
   LOG(INFO) << "a: " << a->Get();
   LOG(INFO) << "b: " << b->Get();

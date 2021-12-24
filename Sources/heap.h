@@ -93,7 +93,26 @@ namespace poseidon{
       return (void*)start_;
     }
 
-    void* Allocate(const uint64_t& size);
+    uint64_t GetTotalBytes() const{
+      return GetEndAddress() - GetStartAddress();
+    }
+
+    uint64_t GetAllocatedBytes() const{
+      return GetCurrentAddress() - GetStartAddress();
+    }
+
+    uint64_t GetUnallocatedBytes() const{
+      return GetTotalBytes() - GetAllocatedBytes();
+    }
+
+    double GetAllocatedPercentage() const{
+      return (static_cast<double>(GetAllocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
+    }
+
+    double GetUnallocatedPercentage() const{
+      return (static_cast<double>(GetUnallocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
+    }
+
     RawObject* AllocateRawObject(const uint64_t& size);
     void VisitRawObjectPointers(RawObjectPointerVisitor* vis);
     void VisitObjectPointers(ObjectPointerVisitor* vis);
@@ -178,6 +197,26 @@ namespace poseidon{
 
     bool Contains(const uword& address) const{
       return region_.Contains(address);
+    }
+
+    uint64_t GetTotalBytes() const{
+      return region_.GetSize();
+    }
+
+    uint64_t GetAllocatedBytes() const{
+      return from_.GetAllocatedBytes() + to_.GetAllocatedBytes();
+    }
+
+    uint64_t GetUnallocatedBytes() const{
+      return from_.GetUnallocatedBytes() + to_.GetUnallocatedBytes();
+    }
+
+    double GetAllocatedPercentage() const{
+      return (static_cast<double>(GetAllocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
+    }
+
+    double GetUnallocatedPercentage() const{
+      return (static_cast<double>(GetUnallocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
     }
 
     void SwapSpaces();

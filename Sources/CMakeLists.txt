@@ -22,6 +22,7 @@ add_library(poseidon
     live_object_scavenger.h
     live_object_forwarder.h
     live_object_marker.h
+    heap_printer.h
     sweeper.h
     memory_region.h memory_region.cc memory_region_linux.cc memory_region_win.cc memory_region_osx.cc)
 target_link_libraries(poseidon

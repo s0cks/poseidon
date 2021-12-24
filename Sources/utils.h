@@ -12,6 +12,13 @@
 namespace poseidon{
   static const uword kUWordOne = 1U;
 
+  static inline std::string
+  PrettyPrintPercentage(const double& percentage){
+    char data[6];
+    snprintf(data, 6, "%.2f", percentage);
+    return {data};
+  }
+
   class BitVector{
    public:
     static const uint64_t kBitsPerByte = 8;
