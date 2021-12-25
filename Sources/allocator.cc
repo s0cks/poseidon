@@ -3,6 +3,7 @@
 #include "allocator.h"
 #include "utils.h"
 #include "local.h"
+#include "object.h"
 
 namespace poseidon{
 

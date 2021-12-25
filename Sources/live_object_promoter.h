@@ -12,14 +12,14 @@ namespace poseidon{
 
    static inline void
    ForwardObject(RawObject* from, RawObject* to){
-     from->SetForwardingAddress(to->GetAddress());
+     from->SetForwardingAddress((uword)to);
    }
 
    static inline void
    CopyObject(RawObject* from, RawObject* to){
      //TODO: size checks and faster/better copy?
+     DLOG(INFO) << "copying data from " << from->GetPointer() << " to " << to->GetPointer() << "(" << HumanReadableSize(from->GetPointerSize()) << ")";
      memcpy(to->GetPointer(), from->GetPointer(), from->GetPointerSize());
-     to->SetPointerSize(from->GetPointerSize());
    }
 
    static inline void
@@ -38,7 +38,7 @@ namespace poseidon{
 
    static inline void
    ScavengeObject(RawObject* obj){
-     DLOG(INFO) << "scavenging " << obj->ToString() << ".....";
+     DLOG(INFO) << "scavenging @" << obj << " " << obj->ToString() << ".....";
      auto new_ptr = Allocator::GetEdenHeap()->GetToSpace().AllocateRawObject(obj->GetPointerSize());//TODO: use better allocation function
      new_ptr->SetPointerSize(obj->GetPointerSize());
      new_ptr->SetEdenBit();

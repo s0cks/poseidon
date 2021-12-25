@@ -1,4 +1,5 @@
 #include "local.h"
+#include "object.h"
 #include "raw_object.h"
 
 namespace poseidon{
@@ -8,5 +9,9 @@ namespace poseidon{
 
   Object* LocalBase::GetObjectPointer() const{
     return (*value_) ? (*value_)->GetObjectPointer() : nullptr;
+  }
+
+  void LocalBase::SetValue(Object* val){
+    SetValue(val->raw_object());
   }
 }

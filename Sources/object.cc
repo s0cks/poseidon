@@ -35,8 +35,13 @@ namespace poseidon{
 
   uint64_t Class::GetAllocationSize() const{
     uint64_t offset = sizeof(Instance);
-    if(HasParent())
-      offset += GetParent()->GetAllocationSize();
+
+    Class* cls = parent_;
+    while(cls != nullptr && cls->HasParent()){
+      offset += cls->GetAllocationSize();
+      cls = cls->GetParent();
+    }
+
     for(auto& field : fields_){
       field->SetOffset(offset);
       offset += kWordSize;

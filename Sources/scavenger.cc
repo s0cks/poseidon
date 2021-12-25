@@ -83,7 +83,6 @@ namespace poseidon{
     DLOG(INFO) << "scavenging live objects....";
     LiveObjectPromoter promoter;
     Allocator::GetEdenHeap()->VisitMarkedRawObjectPointers(&promoter);
-
     UpdateForwarding();
     GenerationalSweeper::SweepHeap(Allocator::GetEdenHeap());
 

@@ -9,7 +9,9 @@
 #include <glog/logging.h>
 
 #include "utils.h"
+#include "local.h"
 #include "common.h"
+#include "allocator.h"
 #include "raw_object.h"
 
 namespace poseidon{
@@ -24,8 +26,14 @@ namespace poseidon{
 
   class Object{
     friend class RawObject;
+    friend class LocalBase;
+    friend class LiveObjectForwarder;
    protected:
     uword raw_ptr_;
+
+    Object():
+      raw_ptr_(0){
+    }
 
     RawObject* raw_object() const{
       return (RawObject*)raw_ptr_;
@@ -35,10 +43,13 @@ namespace poseidon{
       return (RawObject**)&raw_ptr_;
     }
 
+    void SetRawPointer(const uword raw){
+      raw_ptr_ = raw;
+    }
+
     virtual void VisitPointers(RawObjectPointerVisitor* vis){}
     virtual void VisitPointers(RawObjectPointerPointerVisitor* vis){}
    public:
-    Object() = default;
     virtual ~Object() = default;
     virtual std::string ToString() const = 0;
   };
@@ -68,6 +79,10 @@ namespace poseidon{
     }
     ~Class() override = default;
 
+    std::string GetName() const{
+      return name_;
+    }
+
     uint64_t GetAllocationSize() const;
 
     Class* GetParent() const{
@@ -82,6 +97,7 @@ namespace poseidon{
       NOT_IMPLEMENTED(ERROR);
       std::stringstream ss;
       ss << "Class(";
+      ss << "name=" << GetName();
       ss << ")";
       return ss.str();
     }
@@ -157,7 +173,7 @@ namespace poseidon{
     }
 
     Instance** FieldAddressAtOffset(uword offset) const{
-      return reinterpret_cast<Instance**>(reinterpret_cast<uword>(this) + offset);
+      return reinterpret_cast<Instance**>(reinterpret_cast<uword>(raw_object()->GetObjectPointer()) + offset);
     }
 
     inline Instance** FieldAddress(Field* field) const{
@@ -168,6 +184,33 @@ namespace poseidon{
 
     Class* GetType() const{
       return type_;
+    }
+
+    std::string ToString() const override{
+      std::stringstream ss;
+      ss << "Instance(";
+      ss << "type=" << GetType()->ToString();
+      ss << ")";
+      return ss.str();
+    }
+
+    template<typename T>
+    static inline T* NewInstance(Class* cls){
+      auto data = Allocator::AllocateRawObject(cls->GetAllocationSize());
+
+      auto fake = new Instance(cls);
+      fake->SetRawPointer((uword)data);
+      memcpy(data->GetPointer(), fake, sizeof(Instance));
+      delete fake;
+
+      return (T*)data->GetPointer();
+    }
+
+    template<typename T>
+    static inline Local<T> NewLocalInstance(Class* cls){
+      auto local = Allocator::AllocateLocal<T>();
+      local.Set(NewInstance<T>(cls));
+      return local;
     }
   };
 
@@ -262,7 +305,8 @@ namespace poseidon{
     ~Int() override = default;
 
     uint32_t Get() const{
-      return *((uint32_t*)FieldAddress(kValueField));
+      DLOG(INFO) << "raw pointer: " << raw_object();
+      return raw_object() ? *((uint32_t*)FieldAddress(kValueField)) : 0;//TODO: fix
     }
 
     void Set(const uint32_t& val){
@@ -284,6 +328,16 @@ namespace poseidon{
 
     friend std::ostream& operator<<(std::ostream& stream, const Int& val){
       return stream << val.ToString();
+    }
+
+    static inline Int*
+    New(){
+      return Instance::NewInstance<Int>(Class::CLASS_INT);
+    }
+
+    static inline Local<Int>
+    NewLocal(){
+      return Instance::NewLocalInstance<Int>(Class::CLASS_INT);
     }
   };
 

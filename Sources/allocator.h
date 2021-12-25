@@ -3,8 +3,6 @@
 
 #include <glog/logging.h>
 #include "heap.h"
-#include "local.h"
-#include "object.h"
 #include "poseidon.h"
 
 namespace poseidon{
@@ -78,36 +76,21 @@ namespace poseidon{
       return GetHeapSize() / 2;
     }
 
+    static RawObject* AllocateRawObject(const uint64_t& size){
+      auto raw = GetEdenHeap()->AllocateRawObject(size);
+      raw->SetEdenBit();
+      return raw;
+    }
+
     static void* Allocate(const uint64_t& size){
       auto raw = GetEdenHeap()->AllocateRawObject(size);
       raw->SetEdenBit();
       return raw->GetObjectPointer();
     }
 
-    static void* Allocate(Class* cls){
-      return Allocate(cls->GetAllocationSize());
-    }
-
     template<typename T>
-    static T* Allocate(Class* cls){
-      return (T*)Allocate(cls);
-    }
-
-    template<typename T>
-    static Local<T> AllocateLocal(Class* cls){
-      auto raw = GetEdenHeap()->AllocateRawObject(cls->GetAllocationSize());
-      raw->SetEdenBit();
-      auto slot = NewLocalSlot();
-      (*slot) = raw;
-      return Local<T>(slot);
-    }
-
-    template<typename T>
-    static Local<T> AllocateLocal(const T& value){
-      auto slot = NewLocalSlot();
-      (*slot) = GetEdenHeap()->AllocateRawObject(sizeof(T));
-      memcpy((*slot)->GetObjectPointer(), &value, sizeof(value));
-      return Local<T>(slot);
+    static Local<T> AllocateLocal(){
+      return Local<T>(NewLocalSlot());
     }
 
     static void VisitLocals(RawObjectPointerPointerVisitor* vis);

@@ -212,7 +212,7 @@ namespace poseidon{
       ss << "remembered=" << (IsRemembered() ? "true" : "false") << ", ";
       ss << "size=" << GetPointerSize() << ", ";
       ss << "references=" << GetNumberOfReferences() << ", ";
-      ss << "pointer=" << GetPointer() << ", ";
+      ss << "ptr=" << GetPointer() << ", ";
       ss << "forwarding=" << GetForwardingPointer();
       ss << ")";
       return ss.str();

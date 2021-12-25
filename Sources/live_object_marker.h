@@ -26,7 +26,7 @@ namespace poseidon{
      if(obj->IsMarked())
        return true;
      obj->SetMarkedBit();
-     DLOG(INFO) << "marked " << obj->ToString(); //TODO: add references to work queue
+     DLOG(INFO) << "marked @" << obj << " " << obj->ToString(); //TODO: add references to work queue
      marked_++;
      return true;
    }

@@ -50,6 +50,12 @@ namespace poseidon{
     bool HasNext() const{
       return next_ != nullptr;
     }
+
+    void SetValue(RawObject* val){
+      (*value_) = val;
+    }
+
+    void SetValue(Object* val);
    public:
     LocalBase(const LocalBase& rhs) = default;
     ~LocalBase() = default;
@@ -91,8 +97,8 @@ namespace poseidon{
       return (T*)GetObjectPointer();
     }
 
-    void operator=(T* rhs){
-      //TODO: implement
+    void Set(T* val){
+      SetValue((Object*)val);
     }
 
     Local& operator=(const T& rhs){

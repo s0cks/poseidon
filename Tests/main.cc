@@ -23,17 +23,17 @@ int main(int argc, char** argv){
   DLOG(INFO) << "sizeof(Byte) := " << Class::CLASS_BYTE->GetAllocationSize();
   DLOG(INFO) << "sizeof(Int) := " << Class::CLASS_INT->GetAllocationSize();
 
-  Int* a = Allocator::Allocate<Int>(Class::CLASS_INT);
+  Int* a = Int::New();
   a->Set(11111);
   LOG(INFO) << "a: " << a->Get();
 
-  Local<Int> b = Allocator::AllocateLocal<Int>(Class::CLASS_INT);
+  Local<Int> b = Int::NewLocal();
   b->Set(10000);
 
   LOG(INFO) << "b: " << b->Get();
 
   for(auto i = 0; i < 500000; i++){
-    auto local = Allocator::Allocate<Int>(Class::CLASS_INT);
+    auto local = Int::New();
     local->Set(i);
   }
 
