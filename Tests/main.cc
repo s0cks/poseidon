@@ -32,19 +32,24 @@ int main(int argc, char** argv){
 
   LOG(INFO) << "b: " << b->Get();
 
-  HeapPrinter::Print(Allocator::GetEdenHeap());
-  HeapPrinter::Print(Allocator::GetTenuredHeap());
-  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
-  LOG(INFO) << "Locals:";
-  RawObjectPrinter::PrintAllLocals();
+  for(auto i = 0; i < 500000; i++){
+    auto local = Allocator::Allocate<Int>(Class::CLASS_INT);
+    local->Set(i);
+  }
+
+//  HeapPrinter::Print(Allocator::GetEdenHeap());
+//  HeapPrinter::Print(Allocator::GetTenuredHeap());
+//  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
+//  LOG(INFO) << "Locals:";
+//  RawObjectPrinter::PrintAllLocals();
 
   Scavenger::MinorCollection();
 
-  HeapPrinter::Print(Allocator::GetEdenHeap());
-  HeapPrinter::Print(Allocator::GetTenuredHeap());
-  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
-  LOG(INFO) << "Locals:";
-  RawObjectPrinter::PrintAllLocals();
+//  HeapPrinter::Print(Allocator::GetEdenHeap());
+//  HeapPrinter::Print(Allocator::GetTenuredHeap());
+//  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
+//  LOG(INFO) << "Locals:";
+//  RawObjectPrinter::PrintAllLocals();
 
   LOG(INFO) << "a: " << a->Get();
   LOG(INFO) << "b: " << b->Get();

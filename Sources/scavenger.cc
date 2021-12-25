@@ -2,102 +2,103 @@
 #include <glog/logging.h>
 
 #include "utils.h"
+#include "sweeper.h"
 #include "scavenger.h"
 #include "allocator.h"
 
 #include "live_object_marker.h"
 #include "live_object_promoter.h"
-#include "live_object_scavenger.h"
 #include "live_object_forwarder.h"
 
 namespace poseidon{
-  void Scavenger::MarkLiveObjects(){
-    std::deque<uword> work;
-    LiveObjectMarker marker(work);
-    Allocator::VisitLocals(&marker);
-    while(!work.empty()){
-      auto ptr = (RawObject*)work.front();
-      if(ptr && !ptr->IsRemembered()){
-        marker.Visit(ptr);
-        ptr->SetRememberedBit();
-      }
-      work.pop_front();
-    }
-  }
-
-  void Scavenger::PromoteLiveObjects(){
-    DLOG(INFO) << "promoting live objects to tenured space....";
-    LiveObjectPromoter promoter(Allocator::GetTenuredHeap());
-    Allocator::GetEdenHeap()->VisitMarkedRawObjectPointers(&promoter);
-  }
-
-  void Scavenger::ScavengeLiveObjects(Heap* heap){
-    DLOG(INFO) << "scavenging live objects from " << heap->GetSpace() << "....";
-    LiveObjectScavenger scavenger(heap);
-    heap->GetFromSpace().VisitMarkedRawObjectPointers(&scavenger);
-  }
-
   void Scavenger::UpdateForwarding(){//TODO: make portable between heaps
     DLOG(INFO) << "updating live object pointers....";
     LiveObjectForwarder forwarder;
     Allocator::VisitLocals(&forwarder);//TODO: visit classes and other runtime values
   }
 
-  void Scavenger::ScavengeFromEdenHeap(){
-    DLOG(INFO) << "scavenging from eden heap....";
+  class CollectionStats{
+   private:
+    Heap::HeapStats& start_;
+    Timestamp& start_ts_;
+    Heap::HeapStats& finished_;
+    Timestamp& finished_ts_;
+   public:
+    CollectionStats(Heap::HeapStats& start, Timestamp& start_ts,
+                    Heap::HeapStats& finished, Timestamp& finished_ts):
+                    start_(start),
+                    start_ts_(start_ts),
+                    finished_(finished),
+                    finished_ts_(finished_ts){
+    }
+    ~CollectionStats() = default;
 
-  }
+    Heap::HeapStats& GetStartStats() const{
+      return start_;
+    }
 
-  void Scavenger::ScavengeFromTenuredHeap(){
-    DLOG(INFO) << "scavenging memory from tenured heap....";
-    ScavengeLiveObjects(Allocator::GetTenuredHeap());
-    Allocator::GetTenuredHeap()->SwapSpaces();//TODO: use sweeper
-  }
+    Timestamp& GetStartTimestamp() const{
+      return start_ts_;
+    }
 
-  void Scavenger::ScavengeFromLargeObjectSpace(){
-    DLOG(INFO) << "scavenging memory from eden heap....";
-    ScavengeLiveObjects(Allocator::GetEdenHeap());
-    UpdateForwarding();
-    Allocator::GetEdenHeap()->SwapSpaces();
-    Allocator::GetEdenHeap()->GetToSpace().Clear();//TODO: use sweeper
-  }
+    Heap::HeapStats& GetFinishedStats() const{
+      return finished_;
+    }
 
-  void Scavenger::Scavenge(){
-    DLOG(INFO) << "scavenging memory from heap....";
-    MarkLiveObjects();//TODO: make portable between heaps.
+    Timestamp& GetFinishedTimestamp() const{
+      return finished_ts_;
+    }
 
-    // scavenge from the tenured space
-    ScavengeLiveObjects(Allocator::GetTenuredHeap());//TODO: move to after scavenging from eden heap
-    Allocator::GetTenuredHeap()->SwapSpaces();
+    Duration GetDuration() const{
+      return (GetFinishedTimestamp() - GetStartTimestamp());
+    }
 
-    // scavenge from the eden space
-    PromoteLiveObjects();
-    ScavengeLiveObjects(Allocator::GetEdenHeap());
-    UpdateForwarding();
+    uint64_t GetFreedBytes() const{
+      auto allocated_before = GetStartStats().GetAllocatedBytes();
+      auto allocated_after = GetFinishedStats().GetAllocatedBytes();
+      return allocated_before - allocated_after;
+    }
 
-    DLOG(INFO) << "sweeping heaps....";//TODO: use sweepers
-    // swap from & to spaces for compaction
-    Allocator::GetEdenHeap()->SwapSpaces();
-    Allocator::GetEdenHeap()->GetToSpace().Clear();
+    uint64_t GetTotalBytes() const{
+      return GetStartStats().GetTotalBytes();
+    }
 
-    //TODO: clean large object space
-  }
+    double GetFreedPercentage() const{
+      return GetPercentageOf(GetFreedBytes(), GetTotalBytes());
+    }
+  };
 
   void Scavenger::MinorCollection(){
+    std::deque<uword> work;
+
     // only collect from the eden heap
     DLOG(INFO) << "executing minor collection....";
     auto start_ts = Clock::now();
+    auto start_stats = Allocator::GetEdenHeap()->GetStats();
 
-    MarkLiveObjects();
-    PromoteLiveObjects();
-    ScavengeLiveObjects(Allocator::GetEdenHeap());
+    DLOG(INFO) << "marking live objects....";
+    LiveObjectMarker marker(work);
+    marker.MarkLiveObjects();
+
+    DLOG(INFO) << "scavenging live objects....";
+    LiveObjectPromoter promoter;
+    Allocator::GetEdenHeap()->VisitMarkedRawObjectPointers(&promoter);
+
     UpdateForwarding();
+    GenerationalSweeper::SweepHeap(Allocator::GetEdenHeap());
 
-    Allocator::GetEdenHeap()->SwapSpaces();
-    Allocator::GetEdenHeap()->GetToSpace().Clear();
-
-    auto duration = (Clock::now() - start_ts);
-    DLOG(INFO) << "finished minor collection. (" << duration << ")";
+    auto finished_ts = Clock::now();
+    auto finished_stats = Allocator::GetEdenHeap()->GetStats();
+    CollectionStats stats(start_stats, start_ts, finished_stats, finished_ts);
+    DLOG(INFO) << "finished minor collection. (" << stats.GetDuration() << ")";
+    DLOG(INFO) << "minor collection stats:";
+    DLOG(INFO) << " - duration: " << stats.GetDuration();
+    DLOG(INFO) << " - freed: " << HumanReadableSize(stats.GetFreedBytes()) << "/" << HumanReadableSize(stats.GetTotalBytes()) << " (" << PrettyPrintPercentage(stats.GetFreedPercentage()) << ")";
+    DLOG(INFO) << " - starting utilization: " << start_stats;
+    DLOG(INFO) << " - current utilization: " << finished_stats;
+    DLOG(INFO) << " - marked objects: " << marker.GetMarked();
+    DLOG(INFO) << " - scavenged objects: " << promoter.GetNumberOfScavengedObjects();
+    DLOG(INFO) << " - promoted objects: " << promoter.GetNumberOfPromotedObjects();
   }
 
   void Scavenger::MajorCollection(){

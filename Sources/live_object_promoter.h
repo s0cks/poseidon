@@ -2,33 +2,75 @@
 #define POSEIDON_LIVE_OBJECT_PROMOTER_H
 
 #include <glog/logging.h>
-#include "live_object_visitor.h"
+#include "raw_object.h"
 
 namespace poseidon{
- class LiveObjectPromoter : public LiveObjectVisitor{
+ class LiveObjectPromoter : public RawObjectPointerVisitor{
   private:
-   Heap* target_;
+   uint64_t promoted_;
+   uint64_t scavenged_;
+
+   static inline void
+   ForwardObject(RawObject* from, RawObject* to){
+     from->SetForwardingAddress(to->GetAddress());
+   }
+
+   static inline void
+   CopyObject(RawObject* from, RawObject* to){
+     //TODO: size checks and faster/better copy?
+     memcpy(to->GetPointer(), from->GetPointer(), from->GetPointerSize());
+     to->SetPointerSize(from->GetPointerSize());
+   }
+
+   static inline void
+   ForwardAndCopyObject(RawObject* from, RawObject* to){
+     ForwardObject(from, to);
+     CopyObject(from, to);
+   }
+
+   static inline void
+   PromoteAndCopyObject(RawObject* obj){
+     DLOG(INFO) << "promoting " << obj->ToString() << ".....";
+     auto new_ptr = Allocator::GetTenuredHeap()->AllocateRawObject(obj->GetPointerSize());//TODO: use a better allocation function
+     new_ptr->SetTenuredBit();
+     ForwardAndCopyObject(obj, new_ptr);
+   }
+
+   static inline void
+   ScavengeObject(RawObject* obj){
+     DLOG(INFO) << "scavenging " << obj->ToString() << ".....";
+     auto new_ptr = Allocator::GetEdenHeap()->GetToSpace().AllocateRawObject(obj->GetPointerSize());//TODO: use better allocation function
+     new_ptr->SetPointerSize(obj->GetPointerSize());
+     new_ptr->SetEdenBit();
+     ForwardAndCopyObject(obj, new_ptr);
+   }
   public:
-   explicit LiveObjectPromoter(Heap* target):
-    LiveObjectVisitor(),
-    target_(target){
+   LiveObjectPromoter():
+    RawObjectPointerVisitor(),
+    promoted_(),
+    scavenged_(){
    }
    ~LiveObjectPromoter() override = default;
 
-   Heap* GetTarget() const{
-     return target_;
+   uint64_t GetNumberOfPromotedObjects() const{
+     return promoted_;
+   }
+
+   uint64_t GetNumberOfScavengedObjects() const{
+     return scavenged_;
    }
 
    bool Visit(RawObject* obj) override{
-     if(obj->IsReadyForPromotion()){
-       auto to_ptr = GetTarget()->AllocateRawObject(obj->GetPointerSize());//TODO: make a better copy
-       DLOG(INFO) << "promoting " << obj->GetPointer() << " to " << to_ptr->GetPointer();
-       Forward(obj, to_ptr);
-       CopyObject(obj, to_ptr);
+     if(obj->IsReadyForPromotion() && !obj->IsTenured()){
+       PromoteAndCopyObject(obj);
+       promoted_++;
+     } else{
+       ScavengeObject(obj);
+       scavenged_++;
      }
      return true;
    }
  };
 }
 
-#endif //POSEIDON_LIVE_OBJECT_PROMOTER_H
+#endif//POSEIDON_LIVE_OBJECT_PROMOTER_H

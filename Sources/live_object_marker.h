@@ -9,23 +9,38 @@ namespace poseidon{
  class LiveObjectMarker : public RawObjectPointerVisitor{
   protected:
    std::deque<uword>& work_;
-
-   static inline void
-   MarkObject(RawObject* obj){
-     obj->SetMarkedBit();
-   }
+   uint64_t marked_;
   public:
    explicit LiveObjectMarker(std::deque<uword>& work):
     RawObjectPointerVisitor(),
-    work_(work){
+    work_(work),
+    marked_(0){
    }
    ~LiveObjectMarker() override = default;
+
+   uint64_t GetMarked() const{
+     return marked_;
+   }
 
    bool Visit(RawObject* obj) override{
      if(obj->IsMarked())
        return true;
-     MarkObject(obj); //TODO: add references to work queue
+     obj->SetMarkedBit();
+     DLOG(INFO) << "marked " << obj->ToString(); //TODO: add references to work queue
+     marked_++;
      return true;
+   }
+
+   void MarkLiveObjects(){
+     Allocator::VisitLocals(this);
+     while(!work_.empty()){
+       auto ptr = (RawObject*) work_.front();
+       if(ptr && !ptr->IsRemembered()){
+         Visit(ptr);
+         ptr->SetRememberedBit();
+       }
+       work_.pop_front();
+     }
    }
  };
 }

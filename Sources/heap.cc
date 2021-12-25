@@ -33,7 +33,7 @@ namespace poseidon{
     uint64_t total_size = sizeof(RawObject) + size;
     if(!Contains(current_ + total_size))
       return nullptr;//TODO: validate check or scavenge?
-    DLOG(INFO) << "allocating object of " << HumanReadableSize(size) << " (total_size=" << HumanReadableSize(total_size) << ") @" << (void*)current_;
+    DVLOG(2) << "allocating object of " << HumanReadableSize(size) << " (total_size=" << HumanReadableSize(total_size) << ") @" << (void*)current_;
     uword paddress = current_;
     current_ += total_size;
     void* ptr = (void*)paddress;
@@ -72,21 +72,13 @@ namespace poseidon{
   }
 
   void Heap::VisitMarkedRawObjectPointers(RawObjectPointerVisitor* vis){
-    HeapIterator iter(this);
-    while(iter.HasNext()){
-      auto obj = iter.Next();
-      if(obj->IsMarked()== Color::kMarked && !vis->Visit(obj))
-        return;
-    }
+    from_.VisitMarkedRawObjectPointers(vis);
+    to_.VisitMarkedRawObjectPointers(vis);
   }
 
   void Heap::VisitRawObjectPointers(RawObjectPointerVisitor* vis){
-    HeapIterator iter(this);
-    while(iter.HasNext()){
-      auto obj = iter.Next();
-      if(!vis->Visit(obj))
-        return;
-    }
+    from_.VisitRawObjectPointers(vis);
+    to_.VisitRawObjectPointers(vis);
   }
 
   void Heap::VisitObjectPointers(ObjectPointerVisitor* vis){

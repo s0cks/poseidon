@@ -12,10 +12,20 @@
 namespace poseidon{
   static const uword kUWordOne = 1U;
 
+  static inline double
+  GetPercentageOf(const double a, const double b){
+    return (a / b) * 100.0;
+  }
+
+  static inline double
+  GetPercentageOf(const uint64_t a, const uint64_t b){
+    return GetPercentageOf(static_cast<double>(a), static_cast<double>(b));
+  }
+
   static inline std::string
-  PrettyPrintPercentage(const double& percentage){
-    char data[6];
-    snprintf(data, 6, "%.2f", percentage);
+  PrettyPrintPercentage(const double percentage){
+    char data[7];
+    snprintf(data, 7, "%.2f%%", percentage);
     return {data};
   }
 

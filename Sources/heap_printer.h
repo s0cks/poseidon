@@ -8,6 +8,15 @@ namespace poseidon{
  class HeapPrinter : public RawObjectPointerVisitor{
   private:
    google::LogSeverity severity_;
+
+   inline void
+   PrintHeader(Heap* heap) const{
+     auto from_space = heap->GetFromSpace();
+     auto to_space = heap->GetToSpace();
+     LOG_AT_LEVEL(GetSeverity()) << heap->GetSpace() << " Heap ("
+        << "from=" << HumanReadableSize(from_space.GetAllocatedBytes()) << "/" << HumanReadableSize(from_space.GetTotalBytes()) << " " << PrettyPrintPercentage(from_space.GetAllocatedPercentage()) << "; "
+        << "to=" << HumanReadableSize(to_space.GetAllocatedBytes()) << "/" << HumanReadableSize(to_space.GetTotalBytes()) << " " << PrettyPrintPercentage(to_space.GetAllocatedPercentage()) << "):";
+   }
   public:
    explicit HeapPrinter(const google::LogSeverity& severity):
     RawObjectPointerVisitor(),
@@ -27,17 +36,12 @@ namespace poseidon{
    template<const google::LogSeverity& Severity=google::INFO>
    static inline void
    Print(Heap* heap){
-     auto from = heap->GetFromSpace();
-     auto to = heap->GetToSpace();
-
      HeapPrinter printer(Severity);
-     LOG_AT_LEVEL(Severity) << heap->GetSpace() << " Heap:";
-     LOG_AT_LEVEL(Severity) << "From Space: "
-      << HumanReadableSize(from.GetAllocatedBytes()) << "/" << HumanReadableSize(from.GetTotalBytes())
-      << " (" << PrettyPrintPercentage(from.GetAllocatedPercentage()) << "%)";
-     LOG_AT_LEVEL(Severity) << "To Space: "
-      << HumanReadableSize(to.GetAllocatedBytes()) << "/" << HumanReadableSize(to.GetTotalBytes())
-      << " (" << PrettyPrintPercentage(to.GetAllocatedPercentage()) << "%)";
+     printer.PrintHeader(heap);
+     if(heap->IsEmpty()){
+       LOG_AT_LEVEL(Severity) << " - N/A";
+       return;
+     }
      return heap->VisitRawObjectPointers(&printer);
    }
  };

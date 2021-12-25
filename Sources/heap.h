@@ -101,16 +101,16 @@ namespace poseidon{
       return GetCurrentAddress() - GetStartAddress();
     }
 
+    double GetAllocatedPercentage() const{
+      return GetPercentageOf(GetAllocatedBytes(), GetTotalBytes());
+    }
+
     uint64_t GetUnallocatedBytes() const{
       return GetTotalBytes() - GetAllocatedBytes();
     }
 
-    double GetAllocatedPercentage() const{
-      return (static_cast<double>(GetAllocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
-    }
-
     double GetUnallocatedPercentage() const{
-      return (static_cast<double>(GetUnallocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
+      return GetPercentageOf(GetUnallocatedBytes(), GetTotalBytes());
     }
 
     RawObject* AllocateRawObject(const uint64_t& size);
@@ -118,8 +118,13 @@ namespace poseidon{
     void VisitObjectPointers(ObjectPointerVisitor* vis);
     void VisitMarkedRawObjectPointers(RawObjectPointerVisitor* vis);
 
-    void Clear() const{
+    bool IsEmpty() const{
+      return GetCurrentAddress() == GetStartAddress();
+    }
+
+    void Clear(){
       memset((void*)start_, 0, size_);
+      current_ = start_;
     }
 
     Semispace& operator=(const Semispace& rhs) = default;
@@ -127,12 +132,67 @@ namespace poseidon{
 
   class Heap{
    public:
+    class HeapStats{
+      friend class Heap;
+     private:
+      Space space_;
+      uint64_t total_bytes_;
+      uint64_t allocated_bytes_;
+
+      HeapStats(const Space& space, const uint64_t& total, const uint64_t& allocated):
+        space_(space),
+        total_bytes_(total),
+        allocated_bytes_(allocated){
+      }
+     public:
+      HeapStats() = default;
+      HeapStats(const HeapStats& rhs) = default;
+      ~HeapStats() = default;
+
+      Space GetSpace() const{
+        return space_;
+      }
+
+      uint64_t GetTotalBytes() const{
+        return total_bytes_;
+      }
+
+      uint64_t GetAllocatedBytes() const{
+        return allocated_bytes_;
+      }
+
+      double GetAllocatedPercentage() const{
+        return GetPercentageOf(GetAllocatedBytes(), GetTotalBytes());
+      }
+
+      uint64_t GetUnallocatedBytes() const{
+        return GetTotalBytes() - GetAllocatedBytes();
+      }
+
+      double GetUnallocatedPercentage() const{
+        return GetPercentageOf(GetUnallocatedBytes(), GetTotalBytes());
+      }
+
+      HeapStats& operator=(const HeapStats& rhs){
+        if(this == &rhs)
+          return *this;
+        space_ = rhs.space_;
+        total_bytes_= rhs.total_bytes_;
+        allocated_bytes_ = rhs.allocated_bytes_;
+        return *this;
+      }
+
+      friend std::ostream& operator<<(std::ostream& stream, const HeapStats& stats){
+        return stream << HumanReadableSize(stats.GetAllocatedBytes()) << "/" << HumanReadableSize(stats.GetTotalBytes()) << " (" << PrettyPrintPercentage(stats.GetAllocatedPercentage()) << ")";
+      }
+    };
+
     class HeapIterator : public RawObjectPointerIterator{
      private:
       Heap* heap_;
       uword ptr_;
      public:
-      HeapIterator(Heap* heap):
+      explicit HeapIterator(Heap* heap):
         RawObjectPointerIterator(),
         heap_(heap),
         ptr_(heap->GetStartAddress()){
@@ -211,12 +271,12 @@ namespace poseidon{
       return from_.GetUnallocatedBytes() + to_.GetUnallocatedBytes();
     }
 
-    double GetAllocatedPercentage() const{
-      return (static_cast<double>(GetAllocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
+    bool IsEmpty() const{
+      return from_.IsEmpty() && to_.IsEmpty();
     }
 
-    double GetUnallocatedPercentage() const{
-      return (static_cast<double>(GetUnallocatedBytes()) / static_cast<double>(GetTotalBytes())) * 100.0;
+    HeapStats GetStats() const{
+      return {GetSpace(), GetTotalBytes(), GetAllocatedBytes()};
     }
 
     void SwapSpaces();

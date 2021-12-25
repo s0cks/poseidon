@@ -86,7 +86,9 @@ namespace poseidon{
     RawObject():
       tag_(0),
       ptr_(0),
-      forwarding_(0){
+      forwarding_(0),
+      num_generations_(0),
+      num_references_(0){
     }
     virtual ~RawObject() = default;
 
