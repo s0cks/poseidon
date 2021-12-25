@@ -23,18 +23,15 @@ int main(int argc, char** argv){
   DLOG(INFO) << "sizeof(Byte) := " << Class::CLASS_BYTE->GetAllocationSize();
   DLOG(INFO) << "sizeof(Int) := " << Class::CLASS_INT->GetAllocationSize();
 
-  Int* a = Int::New();
-  a->Set(11111);
+  Local<Int> a = Int::NewLocal(11111);
   LOG(INFO) << "a: " << a->Get();
 
-  Local<Int> b = Int::NewLocal();
-  b->Set(10000);
+  Local<Int> b = Int::NewLocal(10000);
 
   LOG(INFO) << "b: " << b->Get();
 
   for(auto i = 0; i < 500000; i++){
-    auto local = Int::New();
-    local->Set(i);
+    Int::New(i);
   }
 
 //  HeapPrinter::Print(Allocator::GetEdenHeap());
@@ -43,6 +40,8 @@ int main(int argc, char** argv){
 //  LOG(INFO) << "Locals:";
 //  RawObjectPrinter::PrintAllLocals();
 
+  Scavenger::MinorCollection();
+  Scavenger::MinorCollection();
   Scavenger::MinorCollection();
 
 //  HeapPrinter::Print(Allocator::GetEdenHeap());

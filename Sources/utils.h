@@ -24,8 +24,8 @@ namespace poseidon{
 
   static inline std::string
   PrettyPrintPercentage(const double percentage){
-    char data[7];
-    snprintf(data, 7, "%.2f%%", percentage);
+    char data[8];
+    snprintf(data, 8, "%.2f%%", percentage);
     return {data};
   }
 

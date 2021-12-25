@@ -18,7 +18,7 @@ namespace poseidon{
      auto next = (RawObject*)current->GetForwardingPointer();
      if(current->IsForwarding()){
        DLOG(INFO) << "forwarding @" << (current) << " " << current->ToString();
-       DLOG(INFO) << "to: @" << (next)<< " " << next->ToString();
+       DLOG(INFO) << "to: @" << (next) << " " << next->ToString();
        next->GetObjectPointer()->SetRawPointer(next->GetAddress());
        (*ptr) = (RawObject*)next;
      }

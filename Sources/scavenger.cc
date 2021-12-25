@@ -6,6 +6,7 @@
 #include "scavenger.h"
 #include "allocator.h"
 
+#include "finalizer.h"
 #include "live_object_marker.h"
 #include "live_object_promoter.h"
 #include "live_object_forwarder.h"
@@ -74,6 +75,7 @@ namespace poseidon{
     // only collect from the eden heap
     DLOG(INFO) << "executing minor collection....";
     auto start_ts = Clock::now();
+    auto num_allocated = Allocator::GetNumberOfObjectsAllocated();
     auto start_stats = Allocator::GetEdenHeap()->GetStats();
 
     DLOG(INFO) << "marking live objects....";
@@ -82,8 +84,13 @@ namespace poseidon{
 
     DLOG(INFO) << "scavenging live objects....";
     LiveObjectPromoter promoter;
-    Allocator::GetEdenHeap()->VisitMarkedRawObjectPointers(&promoter);
+    Allocator::GetEdenHeap()->VisitRawObjectPointers(&promoter);
+
+    Finalizer finalizer;
+    Allocator::GetEdenHeap()->GetFromSpace().VisitRawObjectPointers(&finalizer);
+
     UpdateForwarding();
+
     GenerationalSweeper::SweepHeap(Allocator::GetEdenHeap());
 
     auto finished_ts = Clock::now();
@@ -98,6 +105,7 @@ namespace poseidon{
     DLOG(INFO) << " - marked objects: " << marker.GetMarked();
     DLOG(INFO) << " - scavenged objects: " << promoter.GetNumberOfScavengedObjects();
     DLOG(INFO) << " - promoted objects: " << promoter.GetNumberOfPromotedObjects();
+    DLOG(INFO) << " - finalized objects: " << finalizer.GetNumberOfObjectsFinalized() << "/" << num_allocated << " (" << PrettyPrintPercentage(GetPercentageOf(finalizer.GetNumberOfObjectsFinalized(), num_allocated)) << ")";
   }
 
   void Scavenger::MajorCollection(){

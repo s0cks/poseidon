@@ -11,20 +11,34 @@ namespace poseidon{
 
   class LocalGroup;
   class Allocator{
+    friend class Finalizer;//TODO: remove
    private:
     static MemoryRegion region_;
     static Heap* eden_;
     static Heap* tenured_;
     static Heap* large_object_;
     static LocalGroup* locals_;
+    static uint64_t num_allocated_;
+    static uint64_t num_locals_;
 
     static RawObject** NewLocalSlot();
+    static void FinalizeObject(RawObject* raw);
    public:
     Allocator() = delete;
     Allocator(const Allocator& rhs) =delete;
     ~Allocator() = delete;
 
     static void Initialize();
+
+    static inline uint64_t
+    GetNumberOfObjectsAllocated(){
+      return num_allocated_;
+    }
+
+    static inline uint64_t
+    GetNumberOfLocals(){
+      return num_locals_;
+    }
 
     static inline uword
     GetHeapSize(){
@@ -79,17 +93,13 @@ namespace poseidon{
     static RawObject* AllocateRawObject(const uint64_t& size){
       auto raw = GetEdenHeap()->AllocateRawObject(size);
       raw->SetEdenBit();
+      num_allocated_++;
       return raw;
-    }
-
-    static void* Allocate(const uint64_t& size){
-      auto raw = GetEdenHeap()->AllocateRawObject(size);
-      raw->SetEdenBit();
-      return raw->GetObjectPointer();
     }
 
     template<typename T>
     static Local<T> AllocateLocal(){
+      num_locals_++;
       return Local<T>(NewLocalSlot());
     }
 

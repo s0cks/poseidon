@@ -8,6 +8,8 @@
 namespace poseidon{
 
   LocalGroup* Allocator::locals_ = nullptr;
+  uint64_t Allocator::num_locals_ = 0;
+  uint64_t Allocator::num_allocated_ = 0;
   MemoryRegion Allocator::region_ = MemoryRegion(GetHeapSize());
   Heap* Allocator::eden_ = nullptr;
   Heap* Allocator::tenured_ = nullptr;
@@ -22,6 +24,11 @@ namespace poseidon{
     Allocator::tenured_ = new Heap(Space::kTenuredSpace, region_.SubRegion(GetTenuredSpaceOffset(), GetTenuredSpaceSize()));
     Allocator::large_object_ = new Heap(Space::kLargeObjectSpace, region_.SubRegion(GetLargeObjectSpaceOffset(), GetLargeObjectSpaceSize()));
     Allocator::locals_ = new LocalGroup();
+  }
+
+  void Allocator::FinalizeObject(RawObject* raw){
+    num_allocated_--;
+    raw->GetObjectPointer()->Finalize();
   }
 
   RawObject** Allocator::NewLocalSlot(){

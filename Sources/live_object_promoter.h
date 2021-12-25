@@ -61,10 +61,10 @@ namespace poseidon{
    }
 
    bool Visit(RawObject* obj) override{
-     if(obj->IsReadyForPromotion() && !obj->IsTenured()){
+     if(obj->IsMarked() && obj->IsReadyForPromotion() && !obj->IsTenured() && !obj->IsRemembered()){
        PromoteAndCopyObject(obj);
        promoted_++;
-     } else{
+     } else if(obj->IsMarked() && !obj->IsRemembered()){
        ScavengeObject(obj);
        scavenged_++;
      }

@@ -127,7 +127,15 @@ namespace poseidon{
       current_ = start_;
     }
 
-    Semispace& operator=(const Semispace& rhs) = default;
+    Semispace& operator=(const Semispace& rhs){
+      if(this == &rhs)
+        return *this;
+      heap_ = rhs.heap_;
+      start_ = rhs.start_;
+      current_ = rhs.current_;
+      size_ = rhs.size_;
+      return *this;
+    }
   };
 
   class Heap{

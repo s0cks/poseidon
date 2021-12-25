@@ -27,6 +27,7 @@ namespace poseidon{
   class Object{
     friend class RawObject;
     friend class LocalBase;
+    friend class Allocator;
     friend class LiveObjectForwarder;
    protected:
     uword raw_ptr_;
@@ -49,6 +50,7 @@ namespace poseidon{
 
     virtual void VisitPointers(RawObjectPointerVisitor* vis){}
     virtual void VisitPointers(RawObjectPointerPointerVisitor* vis){}
+    virtual void Finalize(){}
    public:
     virtual ~Object() = default;
     virtual std::string ToString() const = 0;
@@ -335,9 +337,23 @@ namespace poseidon{
       return Instance::NewInstance<Int>(Class::CLASS_INT);
     }
 
+    static inline Int*
+    New(const uint32_t& val){
+      auto instance = New();
+      instance->Set(val);
+      return instance;
+    }
+
     static inline Local<Int>
     NewLocal(){
       return Instance::NewLocalInstance<Int>(Class::CLASS_INT);
+    }
+
+    static inline Local<Int>
+    NewLocal(const uint32_t& val){
+      auto local = NewLocal();
+      local->Set(val);
+      return local;
     }
   };
 
