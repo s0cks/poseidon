@@ -35,6 +35,9 @@ namespace poseidon{
   class Object;
   class RawObject{
     friend class Semispace;
+    friend class LiveObjectPromoter;
+   public:
+    static const uint8_t kMagic;
    private:
     typedef uword ObjectTag;
 
@@ -54,6 +57,9 @@ namespace poseidon{
 
       kRememberedFieldOffset = kMarkedFieldOffset+kBitsForMarkedField,
       kBitsForRememberedField = 1,
+
+      kTestOffset = kRememberedFieldOffset+kBitsForRememberedField,
+      kBitsForTest = 8,
     };
 
     // The object's size
@@ -66,6 +72,8 @@ namespace poseidon{
     class MarkedBit : public BitField<ObjectTag, bool, kMarkedFieldOffset, kBitsForMarkedField>{};
     // remembered by GC
     class RememberedBit : public BitField<ObjectTag, bool, kRememberedFieldOffset, kBitsForRememberedField>{};
+    // test
+    class Test : public BitField<ObjectTag, uint8_t, kTestOffset, kBitsForTest>{};
 
     ObjectTag tag_;
     uword ptr_;
@@ -82,6 +90,26 @@ namespace poseidon{
     tag() const{
       return tag_;
     }
+
+    void IncrementGenerationsCounter(){
+      num_generations_++;
+    }
+
+    void SetGenerationsCounter(const uint32_t& val){
+      num_generations_ = val;
+    }
+
+    void ClearGenerationsCounter(){
+      num_generations_ = 0;
+    }
+
+    void IncrementReferencesCounter(){
+      num_references_++;
+    }
+
+    void ClearReferencesCounter(){
+      num_references_ = 0;
+    }
    public:
     RawObject():
       tag_(0),
@@ -96,8 +124,12 @@ namespace poseidon{
       return (uword)this;
     }
 
-    uword GetPointerAddress() const{
+    uword GetPointerStartAddress() const{
       return ptr_;
+    }
+
+    uword GetPointerEndAddress() const{
+      return GetPointerStartAddress() + GetPointerSize();
     }
 
     void* GetPointer() const{
@@ -200,8 +232,20 @@ namespace poseidon{
       return num_generations_;
     }
 
-    void VisitPointers(RawObjectPointerVisitor* vis);
-    void VisitPointers(RawObjectPointerPointerVisitor* vis);
+    uint8_t GetTest() const{
+      return Test::Decode(tag());
+    }
+
+    void SetTest(const uint8_t& val){
+      tag_ = Test::Update(val, tag());
+    }
+
+    bool IsAllocated() const{
+      return GetTest() == kMagic;
+    }
+
+    void VisitPointers(RawObjectPointerVisitor* vis) const;
+    void VisitPointers(RawObjectPointerPointerVisitor* vis) const;
 
     std::string ToString() const{
       std::stringstream ss;
@@ -212,7 +256,9 @@ namespace poseidon{
       ss << "remembered=" << (IsRemembered() ? "true" : "false") << ", ";
       ss << "size=" << GetPointerSize() << ", ";
       ss << "references=" << GetNumberOfReferences() << ", ";
+      ss << "generations=" << GetNumberOfGenerationsSurvived() << ", ";
       ss << "ptr=" << GetPointer() << ", ";
+      ss << "test=" << std::hex << (uint32_t)GetTest() << ", ";
       ss << "forwarding=" << GetForwardingPointer();
       ss << ")";
       return ss.str();

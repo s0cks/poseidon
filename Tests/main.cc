@@ -17,40 +17,33 @@ int main(int argc, char** argv){
 
   Allocator::Initialize();
   Class::Initialize();
+  DLOG(INFO) << "sizeof(RawObject) := " << sizeof(RawObject);
   DLOG(INFO) << "sizeof(uint64_t) := " << sizeof(uint64_t);
   DLOG(INFO) << "sizeof(Instance) := " << sizeof(Instance);
   DLOG(INFO) << "sizeof(Class) := " << Class::CLASS_CLASS->GetAllocationSize();
   DLOG(INFO) << "sizeof(Byte) := " << Class::CLASS_BYTE->GetAllocationSize();
   DLOG(INFO) << "sizeof(Int) := " << Class::CLASS_INT->GetAllocationSize();
+  DLOG(INFO) << "sizeof(Bool) := " << Class::CLASS_BOOL->GetAllocationSize();
+
+  Local<Bool> true_val = Bool::NewLocal(true);
+  Local<Bool> false_val = Bool::NewLocal(false);
 
   Local<Int> a = Int::NewLocal(11111);
   LOG(INFO) << "a: " << a->Get();
-
   Local<Int> b = Int::NewLocal(10000);
-
   LOG(INFO) << "b: " << b->Get();
 
-  for(auto i = 0; i < 500000; i++){
+  static const uint64_t kMaxInts = 645270; // Max: 645275
+  for(auto i = 0; i < kMaxInts; i++){
     Int::New(i);
   }
 
-//  HeapPrinter::Print(Allocator::GetEdenHeap());
-//  HeapPrinter::Print(Allocator::GetTenuredHeap());
-//  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
-//  LOG(INFO) << "Locals:";
-//  RawObjectPrinter::PrintAllLocals();
-
   Scavenger::MinorCollection();
-  Scavenger::MinorCollection();
-  Scavenger::MinorCollection();
-
-//  HeapPrinter::Print(Allocator::GetEdenHeap());
-//  HeapPrinter::Print(Allocator::GetTenuredHeap());
-//  HeapPrinter::Print(Allocator::GetLargeObjectHeap());
-//  LOG(INFO) << "Locals:";
-//  RawObjectPrinter::PrintAllLocals();
+  //Scavenger::MinorCollection();
 
   LOG(INFO) << "a: " << a->Get();
   LOG(INFO) << "b: " << b->Get();
+  LOG(INFO) << "true: " << (true_val->Get() ? "true" : "false");
+  LOG(INFO) << "false: " << (false_val->Get() ? "true" : "false");
   return RUN_ALL_TESTS();
 }

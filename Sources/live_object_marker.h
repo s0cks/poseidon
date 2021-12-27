@@ -25,9 +25,9 @@ namespace poseidon{
    bool Visit(RawObject* obj) override{
      if(obj->IsMarked())
        return true;
-     obj->SetMarkedBit();
-     DLOG(INFO) << "marked @" << obj << " " << obj->ToString(); //TODO: add references to work queue
      marked_++;
+     obj->SetMarkedBit();
+     DLOG(INFO) << "marked @" << obj << " " << obj->ToString();
      return true;
    }
 

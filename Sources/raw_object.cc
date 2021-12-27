@@ -2,11 +2,13 @@
 #include "object.h"
 
 namespace poseidon{
-  void RawObject::VisitPointers(RawObjectPointerVisitor* vis){
+ const uint8_t RawObject::kMagic = 0xCA;
+
+  void RawObject::VisitPointers(RawObjectPointerVisitor* vis) const{
     return GetObjectPointer()->VisitPointers(vis);
   }
 
-  void RawObject::VisitPointers(RawObjectPointerPointerVisitor* vis){
+  void RawObject::VisitPointers(RawObjectPointerPointerVisitor* vis) const{
     return GetObjectPointer()->VisitPointers(vis);
   }
 }

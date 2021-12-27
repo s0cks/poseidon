@@ -102,10 +102,14 @@ namespace poseidon{
     DLOG(INFO) << " - freed: " << HumanReadableSize(stats.GetFreedBytes()) << "/" << HumanReadableSize(stats.GetTotalBytes()) << " (" << PrettyPrintPercentage(stats.GetFreedPercentage()) << ")";
     DLOG(INFO) << " - starting utilization: " << start_stats;
     DLOG(INFO) << " - current utilization: " << finished_stats;
-    DLOG(INFO) << " - marked objects: " << marker.GetMarked();
-    DLOG(INFO) << " - scavenged objects: " << promoter.GetNumberOfScavengedObjects();
-    DLOG(INFO) << " - promoted objects: " << promoter.GetNumberOfPromotedObjects();
-    DLOG(INFO) << " - finalized objects: " << finalizer.GetNumberOfObjectsFinalized() << "/" << num_allocated << " (" << PrettyPrintPercentage(GetPercentageOf(finalizer.GetNumberOfObjectsFinalized(), num_allocated)) << ")";
+    DLOG(INFO) << " - marked objects: " << marker.GetMarked() << "/" << num_allocated
+        << " (" << PrettyPrintPercentage(GetPercentageOf(marker.GetMarked(), num_allocated)) << ")";
+    DLOG(INFO) << " - scavenged objects: " << promoter.GetNumberOfScavengedObjects()
+        << " (" << PrettyPrintPercentage(GetPercentageOf(promoter.GetNumberOfScavengedObjects(), num_allocated)) << ")";
+    DLOG(INFO) << " - promoted objects: " << promoter.GetNumberOfPromotedObjects()
+        << " (" << PrettyPrintPercentage(GetPercentageOf(promoter.GetNumberOfPromotedObjects(), num_allocated)) << ")";
+    DLOG(INFO) << " - finalized objects: " << finalizer.GetNumberOfObjectsFinalized() << "/" << num_allocated
+        << " (" << PrettyPrintPercentage(GetPercentageOf(finalizer.GetNumberOfObjectsFinalized(), num_allocated)) << ")";
   }
 
   void Scavenger::MajorCollection(){

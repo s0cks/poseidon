@@ -42,6 +42,7 @@ namespace poseidon{
      auto new_ptr = Allocator::GetEdenHeap()->GetToSpace().AllocateRawObject(obj->GetPointerSize());//TODO: use better allocation function
      new_ptr->SetPointerSize(obj->GetPointerSize());
      new_ptr->SetEdenBit();
+     new_ptr->SetGenerationsCounter(obj->GetNumberOfGenerationsSurvived() + 1);
      ForwardAndCopyObject(obj, new_ptr);
    }
   public:

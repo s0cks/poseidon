@@ -93,6 +93,7 @@ namespace poseidon{
     static RawObject* AllocateRawObject(const uint64_t& size){
       auto raw = GetEdenHeap()->AllocateRawObject(size);
       raw->SetEdenBit();
+      raw->SetTest(RawObject::kMagic);
       num_allocated_++;
       return raw;
     }
