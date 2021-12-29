@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "local.h"
 #include "common.h"
+#include "class_id.h"
 #include "allocator.h"
 #include "raw_object.h"
 
@@ -29,24 +30,16 @@ namespace poseidon{
     friend class RawObject;
     friend class LocalBase;
     friend class Allocator;
-    friend class LiveObjectForwarder;
+    friend class Scavenger;
    protected:
-    uword raw_ptr_;
+    uword raw_;
 
     Object():
-      raw_ptr_(0){
+      raw_(0){
     }
 
-    RawObject* raw_object() const{
-      return (RawObject*)raw_ptr_;
-    }
-
-    RawObject** raw_object_ptr() const{
-      return (RawObject**)&raw_ptr_;
-    }
-
-    void SetRawPointer(const uword raw){
-      raw_ptr_ = raw;
+    void set_raw(RawObject* raw){
+      raw_ = raw->GetAddress();
     }
 
     virtual void VisitPointers(RawObjectPointerVisitor* vis){}
@@ -55,6 +48,10 @@ namespace poseidon{
    public:
     virtual ~Object() = default;
     virtual std::string ToString() const = 0;
+
+    RawObject* raw() const{
+      return (RawObject*)raw_;
+    }
   };
 
   class Field;
@@ -100,7 +97,8 @@ namespace poseidon{
       NOT_IMPLEMENTED(ERROR);
       std::stringstream ss;
       ss << "Class(";
-      ss << "name=" << GetName();
+      ss << "name=" << GetName() << ", ";
+      ss << "ptr=" << raw();
       ss << ")";
       return ss.str();
     }
@@ -181,7 +179,7 @@ namespace poseidon{
     }
 
     inline uword** FieldAddressAtOffset(uword offset) const{
-      return (uword**)(raw_object()->GetPointerStartAddress() + offset);
+      return (uword**)(raw()->GetPointer() + offset);
     }
 
     inline uword** FieldAddress(Field* field) const{
@@ -197,7 +195,8 @@ namespace poseidon{
     std::string ToString() const override{
       std::stringstream ss;
       ss << "Instance(";
-      ss << "type=" << GetType()->ToString();
+      ss << "type=" << GetType()->ToString() << ", ";
+      ss << "ptr=" << raw();
       ss << ")";
       return ss.str();
     }
@@ -207,7 +206,7 @@ namespace poseidon{
       auto data = Allocator::AllocateRawObject(cls->GetAllocationSize());
 
       auto fake = new Instance(cls);
-      fake->SetRawPointer((uword)data);
+      fake->set_raw(data);
       memcpy(data->GetPointer(), fake, sizeof(Instance));
       delete fake;
 
@@ -242,6 +241,8 @@ namespace poseidon{
   };
 
   class Byte : public Number{
+   public:
+    static const ClassId kClassId = ClassId::kByteCid;
    public:
     Byte(): Number(Class::CLASS_BYTE){}
     explicit Byte(const uint8_t& val):
@@ -302,6 +303,8 @@ namespace poseidon{
 
   class Short : public Number{
    public:
+    static const ClassId kClassId = ClassId::kShortCid;
+   public:
     Short(): Number(Class::CLASS_SHORT){}
     explicit Short(const uint16_t& val):
       Short(){
@@ -361,6 +364,8 @@ namespace poseidon{
 
   class Int : public Number{
    public:
+    static const ClassId kClassId;
+   public:
     Int(): Number(Class::CLASS_NUMBER){}
     explicit Int(const uint32_t& val):
       Int(){
@@ -369,7 +374,7 @@ namespace poseidon{
     ~Int() override = default;
 
     uint32_t Get() const{
-      return raw_object() ? *((uint32_t*)FieldAddress(kValueField)) : 0;//TODO: fix
+      return raw() ? *((uint32_t*)FieldAddress(kValueField)) : 0;//TODO: fix
     }
 
     void Set(const uint32_t& val){
@@ -395,7 +400,9 @@ namespace poseidon{
 
     static inline Int*
     New(){
-      return Instance::NewInstance<Int>(Class::CLASS_INT);
+      auto val = Instance::NewInstance<Int>(Class::CLASS_INT);
+      val->raw()->SetClassId(kClassId);
+      return val;
     }
 
     static inline Int*
@@ -419,6 +426,8 @@ namespace poseidon{
   };
 
   class Long : public Number{
+   public:
+    static const ClassId kClassId = ClassId::kLongCid;
    public:
     Long(): Number(Class::CLASS_LONG){}
     explicit Long(const uint64_t& val):
@@ -511,6 +520,8 @@ namespace poseidon{
   class Array : public Instance{
     friend class Instance;
    public:
+    static const ClassId kClassId;
+
     static Field* kLengthField;
     static Field* kDataField;
    protected:
@@ -555,12 +566,12 @@ namespace poseidon{
 
     template<typename T>
     T* GetAt(const uint64_t& idx) const{
-      return (T*)(*GetObjectAt(idx))->GetPointer();
+      return (T*)(*GetObjectAt(idx))->GetObjectPointer();
     }
 
     template<typename T>
     void SetAt(const uint64_t& idx, const T* val){
-      SetObjectAt(idx, val->raw_object());
+      SetObjectAt(idx, val->raw());
     }
   };
 
@@ -573,7 +584,6 @@ namespace poseidon{
     }
 
     void Set(const bool& val){
-      DLOG(INFO) << "setting bool value @" << (void*)(raw_object()->GetPointer() + kValueField->GetOffset());
       *((bool*) FieldAddress(kValueField)) = val;
     }
    public:
@@ -621,15 +631,16 @@ namespace poseidon{
   Array* Instance::NewArrayInstance(const uint64_t& length){
     auto size = Class::CLASS_ARRAY->GetAllocationSize() + (sizeof(uword) * length);
     auto data = Allocator::AllocateRawObject(size);
+    data->SetClassId(Array::kClassId);
 
     auto fake = new Instance(Class::CLASS_ARRAY);
-    fake->SetRawPointer((uword)data);
+    fake->set_raw(data);
     memcpy(data->GetPointer(), fake, sizeof(Instance));
     delete fake;
 
-    auto val = (Array*)data->GetPointer();
-    val->SetLength(length);
-    return val;
+    auto array = (Array*)data->GetPointer();
+    array->SetLength(length);
+    return array;
   }
 }
 

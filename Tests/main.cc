@@ -2,11 +2,9 @@
 #include <glog/logging.h>
 #include "poseidon.h"
 #include "allocator.h"
-#include "local.h"
 #include "scavenger.h"
-#include "raw_object_printer.h"
 #include "object.h"
-#include "heap_printer.h"
+#include "raw_object_printer.h"
 
 int main(int argc, char** argv){
   using namespace poseidon;
@@ -24,26 +22,30 @@ int main(int argc, char** argv){
   DLOG(INFO) << "sizeof(Byte) := " << Class::CLASS_BYTE->GetAllocationSize();
   DLOG(INFO) << "sizeof(Int) := " << Class::CLASS_INT->GetAllocationSize();
   DLOG(INFO) << "sizeof(Bool) := " << Class::CLASS_BOOL->GetAllocationSize();
+  DLOG(INFO) << "sizeof(Array) := " << Class::CLASS_ARRAY->GetAllocationSize();
 
-  Local<Bool> true_val = Bool::NewLocal(true);
-  Local<Bool> false_val = Bool::NewLocal(false);
-
-  Local<Int> a = Int::NewLocal(11111);
-  LOG(INFO) << "a: " << a->Get();
-  Local<Int> b = Int::NewLocal(10000);
-  LOG(INFO) << "b: " << b->Get();
-
-  static const uint64_t kMaxInts = 645270; // Max: 645275
-  for(auto i = 0; i < kMaxInts; i++){
-    Int::New(i);
+  static const uint64_t kMaxInts = 489794;
+  for(auto val = 0; val < kMaxInts; val++){
+    Int::New(val);
   }
 
-  Scavenger::MinorCollection();
-  //Scavenger::MinorCollection();
+  auto val = Instance::NewLocalArrayInstance(10);
+  val->SetAt(0, Int::New(2222));
+  val->SetAt(1, Int::New(1111));
 
-  LOG(INFO) << "a: " << a->Get();
-  LOG(INFO) << "b: " << b->Get();
-  LOG(INFO) << "true: " << (true_val->Get() ? "true" : "false");
-  LOG(INFO) << "false: " << (false_val->Get() ? "true" : "false");
+  DLOG(INFO) << "array.length := " << val->GetLength();
+  DLOG(INFO) << "array[0] := " << val->GetAt<Int>(0)->Get() << " (" << val->GetAt<Int>(0)->raw()->ToString() << ")";
+  DLOG(INFO) << "array[1] := " << val->GetAt<Int>(1)->Get() << " (" << val->GetAt<Int>(1)->raw()->ToString() << ")";
+
+  Scavenger::MinorCollection();
+
+  DLOG(INFO) << "from-space:";
+  RawObjectPrinter::PrintAll(Allocator::GetNewSpace()->GetFromSpace());
+  DLOG(INFO) << "to-space:";
+  RawObjectPrinter::PrintAll(Allocator::GetNewSpace()->GetToSpace());
+
+  DLOG(INFO) << "array.length := " << val->GetLength();
+  DLOG(INFO) << "array[0] := " << val->GetAt<Int>(0)->Get() << " (" << val->GetAt<Int>(0)->raw()->ToString() << ")";
+  DLOG(INFO) << "array[1] := " << val->GetAt<Int>(1)->Get() << " (" << val->GetAt<Int>(1)->raw()->ToString() << ")";
   return RUN_ALL_TESTS();
 }

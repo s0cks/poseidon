@@ -28,7 +28,6 @@ namespace poseidon{
 
    bool Visit(RawObject* raw) override{
      if(!raw->IsMarked() && !raw->IsForwarding()){
-       DVLOG(2) << "finalizing @" << raw << " " << raw->ToString();
        FinalizeObject(raw);
      }
      return true;

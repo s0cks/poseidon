@@ -12,6 +12,6 @@ namespace poseidon{
   }
 
   void LocalBase::SetValue(Object* val){
-    SetValue(val->raw_object());
+    SetValue(val->raw());
   }
 }

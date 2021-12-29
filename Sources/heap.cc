@@ -40,7 +40,6 @@ namespace poseidon{
     memset(ptr, 0, total_size);
     auto raw = new (ptr)RawObject();
     raw->SetPointerSize(size);
-    raw->SetPointerAddress(paddress + sizeof(RawObject));
     return raw;
   }
 

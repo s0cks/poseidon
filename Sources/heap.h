@@ -127,6 +127,16 @@ namespace poseidon{
       current_ = start_;
     }
 
+    std::string ToString() const{
+      std::stringstream ss;
+      ss << "Semispace(";
+      ss << "start=" << (void*)start_ << ", ";
+      ss << "current=" << (void*)current_ << ", ";
+      ss << "size=" << size_;
+      ss << ")";
+      return ss.str();
+    }
+
     Semispace& operator=(const Semispace& rhs){
       if(this == &rhs)
         return *this;
@@ -135,6 +145,10 @@ namespace poseidon{
       current_ = rhs.current_;
       size_ = rhs.size_;
       return *this;
+    }
+
+    friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
+      return stream << space.ToString();
     }
   };
 
@@ -285,6 +299,11 @@ namespace poseidon{
 
     HeapStats GetStats() const{
       return {GetSpace(), GetTotalBytes(), GetAllocatedBytes()};
+    }
+
+    void Clear(){
+      from_.Clear();
+      to_.Clear();
     }
 
     void SwapSpaces();

@@ -2,17 +2,20 @@
 #define POSEIDON_RAW_OBJECT_H
 
 #include <sstream>
-#include "common.h"
 #include "utils.h"
+#include "common.h"
+#include "class_id.h"
 
 namespace poseidon{
   class RawObject;
+  typedef RawObject* RawObjectPtr;
+
   class RawObjectPointerVisitor{
    protected:
     RawObjectPointerVisitor() = default;
    public:
     virtual ~RawObjectPointerVisitor() = default;
-    virtual bool Visit(RawObject* obj) = 0;
+    virtual bool Visit(RawObjectPtr obj) = 0;
   };
 
   class RawObjectPointerPointerVisitor{//TODO: rename
@@ -20,7 +23,7 @@ namespace poseidon{
     RawObjectPointerPointerVisitor() = default;
    public:
     virtual ~RawObjectPointerPointerVisitor() = default;
-    virtual bool Visit(RawObject** obj) = 0;
+    virtual bool Visit(RawObjectPtr* obj) = 0;
   };
 
   class RawObjectPointerIterator{
@@ -33,53 +36,53 @@ namespace poseidon{
   };
 
   class Object;
+  class Instance;
   class RawObject{
     friend class Semispace;
-    friend class LiveObjectPromoter;
-   public:
-    static const uint8_t kMagic;
    private:
     typedef uword ObjectTag;
 
     enum{ // 61
-      kSizeFieldOffset = 0,
-      kBitsForSizeField = 32,
+      // NewBit
+      kNewBitOffset = 0,
+      kBitsForNewBit = 1,
 
-      // EdenBit
-      kEdenFieldOffset = kSizeFieldOffset+kBitsForSizeField,
-      kBitsForEdenField = 1,
+      // OldBit
+      kOldBitOffset = kNewBitOffset+kBitsForNewBit,
+      kBitsForOldBit = 1,
 
-      kTenuredFieldOffset = kEdenFieldOffset+kBitsForEdenField,
-      kBitsForTenuredField = 1,
+      // MarkedBit
+      kMarkedBitOffset = kOldBitOffset+kBitsForNewBit,
+      kBitsForMarkedBit = 1,
 
-      kMarkedFieldOffset = kTenuredFieldOffset+kBitsForTenuredField,
-      kBitsForMarkedField = 1,
+      // RememberedBit
+      kRememberedBitOffset = kMarkedBitOffset+kBitsForMarkedBit,
+      kBitsForRememberedBit = 1,
 
-      kRememberedFieldOffset = kMarkedFieldOffset+kBitsForMarkedField,
-      kBitsForRememberedField = 1,
+      // Size
+      kSizeTagOffset = kRememberedBitOffset+kBitsForRememberedBit,
+      kBitsForSizeTag = 32,
 
-      kTestOffset = kRememberedFieldOffset+kBitsForRememberedField,
-      kBitsForTest = 8,
+      // ClassId
+      kClassIdTagOffset = kSizeTagOffset+kBitsForSizeTag,
+      kBitsForClassIdTag = 16,
     };
 
-    // The object's size
-    class SizeField : public BitField<ObjectTag, uint32_t, kSizeFieldOffset, kBitsForSizeField>{};
-    // allocated in the eden heap
-    class EdenBit: public BitField<ObjectTag, bool, kEdenFieldOffset, kBitsForEdenField>{};
-    // allocated in the tenured heap
-    class TenuredBit : public BitField<ObjectTag, bool, kTenuredFieldOffset, kBitsForTenuredField>{};
-    // marked as not garbage
-    class MarkedBit : public BitField<ObjectTag, bool, kMarkedFieldOffset, kBitsForMarkedField>{};
-    // remembered by GC
-    class RememberedBit : public BitField<ObjectTag, bool, kRememberedFieldOffset, kBitsForRememberedField>{};
-    // test
-    class Test : public BitField<ObjectTag, uint8_t, kTestOffset, kBitsForTest>{};
+    // The object's size.
+    class SizeTag : public BitField<ObjectTag, uint32_t, kSizeTagOffset, kBitsForSizeTag>{};
+    // allocated in the new heap.
+    class NewBit : public BitField<ObjectTag, bool, kNewBitOffset, kBitsForNewBit>{};
+    // allocated in the old heap.
+    class OldBit : public BitField<ObjectTag, bool, kOldBitOffset, kBitsForOldBit>{};
+    // marked by the scavenger
+    class MarkedBit : public BitField<ObjectTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
+    // remembered by the scavenger
+    class RememberedBit : public BitField<ObjectTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
+    // class_id
+    class ClassIdTag : public BitField<ObjectTag, uint16_t, kClassIdTagOffset, kBitsForClassIdTag>{};
 
-    ObjectTag tag_;
-    uword ptr_;
+    uword tag_;
     uword forwarding_;
-    uint32_t num_generations_;
-    uint64_t num_references_;
 
     inline ObjectTag&
     tag(){
@@ -90,33 +93,10 @@ namespace poseidon{
     tag() const{
       return tag_;
     }
-
-    void IncrementGenerationsCounter(){
-      num_generations_++;
-    }
-
-    void SetGenerationsCounter(const uint32_t& val){
-      num_generations_ = val;
-    }
-
-    void ClearGenerationsCounter(){
-      num_generations_ = 0;
-    }
-
-    void IncrementReferencesCounter(){
-      num_references_++;
-    }
-
-    void ClearReferencesCounter(){
-      num_references_ = 0;
-    }
    public:
     RawObject():
       tag_(0),
-      ptr_(0),
-      forwarding_(0),
-      num_generations_(0),
-      num_references_(0){
+      forwarding_(0){
     }
     virtual ~RawObject() = default;
 
@@ -124,24 +104,12 @@ namespace poseidon{
       return (uword)this;
     }
 
-    uword GetPointerStartAddress() const{
-      return ptr_;
-    }
-
-    uword GetPointerEndAddress() const{
-      return GetPointerStartAddress() + GetPointerSize();
-    }
-
     void* GetPointer() const{
-      return (void*)ptr_;
+      return (void*)(reinterpret_cast<uword>(this) + sizeof(RawObject));
     }
 
     Object* GetObjectPointer() const{
       return (Object*)GetPointer();
-    }
-
-    void SetPointerAddress(const uword& address){
-      ptr_ = address;
     }
 
     void SetForwardingAddress(const uword& address){
@@ -160,28 +128,28 @@ namespace poseidon{
       return forwarding_ != 0;
     }
 
-    bool IsEden() const{
-      return EdenBit::Decode(tag());
+    bool IsNew() const{
+      return NewBit::Decode(tag());
     }
 
-    void SetEdenBit(){
-      tag_ = EdenBit::Update(true, tag());
+    void SetNewBit(){
+      tag_ = NewBit::Update(true, tag());
     }
 
-    void ClearEdenBit(){
-      tag_ = EdenBit::Update(false, tag());
+    void ClearNewBit(){
+      tag_ = NewBit::Update(false, tag());
     }
 
-    bool IsTenured() const{
-      return TenuredBit::Decode(tag());
+    bool IsOld() const{
+      return OldBit::Decode(tag());
     }
 
-    void SetTenuredBit(){
-      tag_ = TenuredBit::Update(true, tag());
+    void SetOldBit(){
+      tag_ = OldBit::Update(true, tag());
     }
 
-    void ClearTenuredBit(){
-      tag_ = TenuredBit::Update(false, tag());
+    void ClearOldBit(){
+      tag_ = OldBit::Update(false, tag());
     }
 
     bool IsMarked() const{
@@ -209,56 +177,38 @@ namespace poseidon{
     }
 
     uint32_t GetPointerSize() const{
-      return SizeField::Decode(tag());
+      return SizeTag::Decode(tag());
     }
 
     void SetPointerSize(const uint32_t& val){
-      tag_ = SizeField::Update(val, tag());
+      tag_ = SizeTag::Update(val, tag());
+    }
+
+    ClassId GetClassId() const{
+      return (ClassId)ClassIdTag::Decode(tag());
+    }
+
+    void SetClassId(const ClassId& cls){
+      tag_ = ClassIdTag::Update(cls, tag());
     }
 
     uint64_t GetTotalSize() const{
       return sizeof(RawObject)+GetPointerSize();
     }
 
-    bool IsReadyForPromotion() const{
-      return GetNumberOfGenerationsSurvived() >= 3;//TODO: externalize constant
-    }
-
-    uint64_t GetNumberOfReferences() const{
-      return num_references_;
-    }
-
-    uint32_t GetNumberOfGenerationsSurvived() const{
-      return num_generations_;
-    }
-
-    uint8_t GetTest() const{
-      return Test::Decode(tag());
-    }
-
-    void SetTest(const uint8_t& val){
-      tag_ = Test::Update(val, tag());
-    }
-
-    bool IsAllocated() const{
-      return GetTest() == kMagic;
-    }
-
-    void VisitPointers(RawObjectPointerVisitor* vis) const;
-    void VisitPointers(RawObjectPointerPointerVisitor* vis) const;
+    uint64_t VisitPointers(RawObjectPointerPointerVisitor* vis) const;
 
     std::string ToString() const{
       std::stringstream ss;
       ss << "RawObject(";
-      ss << "eden=" << (IsEden() ? "true" : "false") << ", ";
-      ss << "tenured=" << (IsTenured() ? "true": "false") << ", ";
-      ss << "marked=" << (IsMarked() ? "true": "false") << ", ";
-      ss << "remembered=" << (IsRemembered() ? "true" : "false") << ", ";
+      ss << "new=" << NewBit::Decode(tag()) << ", ";
+      ss << "old=" << OldBit::Decode(tag()) << ", ";
+      ss << "marked=" << MarkedBit::Decode(tag()) << ", ";
+      ss << "remembered=" << RememberedBit::Decode(tag()) << ", ";
+      ss << "class_id=" << GetClassId() << ", ";
       ss << "size=" << GetPointerSize() << ", ";
-      ss << "references=" << GetNumberOfReferences() << ", ";
-      ss << "generations=" << GetNumberOfGenerationsSurvived() << ", ";
-      ss << "ptr=" << GetPointer() << ", ";
-      ss << "test=" << std::hex << (uint32_t)GetTest() << ", ";
+      ss << "address=" << this << ", ";
+      ss << "pointer=" << GetPointer() << ", ";
       ss << "forwarding=" << GetForwardingPointer();
       ss << ")";
       return ss.str();

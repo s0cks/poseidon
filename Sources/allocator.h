@@ -13,10 +13,10 @@ namespace poseidon{
   class Allocator{
     friend class Finalizer;//TODO: remove
    private:
-    static MemoryRegion region_;
-    static Heap* eden_;
-    static Heap* tenured_;
-    static Heap* large_object_;
+    static MemoryRegion* region_;
+    static Heap* new_;
+    static Heap* old_;
+
     static LocalGroup* locals_;
     static uint64_t num_allocated_;
     static uint64_t num_locals_;
@@ -40,60 +40,17 @@ namespace poseidon{
       return num_locals_;
     }
 
-    static inline uword
-    GetHeapSize(){
-      return FLAGS_heap_size;
+    static Heap* GetNewSpace(){
+      return new_;
     }
 
-    static inline Heap*
-    GetEdenHeap(){
-      return eden_;
-    }
-
-    static inline uword
-    GetEdenSpaceOffset(){
-      return 0;
-    }
-
-    static inline uword
-    GetEdenSpaceSize(){
-      return GetHeapSize() / 4;
-    }
-
-    static inline Heap*
-    GetTenuredHeap(){
-      return tenured_;
-    }
-
-    static inline uword
-    GetTenuredSpaceOffset(){
-      return GetEdenSpaceOffset() + GetEdenSpaceSize();
-    }
-
-    static inline uword
-    GetTenuredSpaceSize(){
-      return GetHeapSize() / 4;
-    }
-
-    static inline Heap*
-    GetLargeObjectHeap(){
-      return large_object_;
-    }
-
-    static inline uword
-    GetLargeObjectSpaceOffset(){
-      return GetTenuredSpaceOffset() + GetTenuredSpaceSize();
-    }
-
-    static inline uword
-    GetLargeObjectSpaceSize(){
-      return GetHeapSize() / 2;
+    static Heap* GetOldSpace(){
+      return old_;
     }
 
     static RawObject* AllocateRawObject(const uint64_t& size){
-      auto raw = GetEdenHeap()->AllocateRawObject(size);
-      raw->SetEdenBit();
-      raw->SetTest(RawObject::kMagic);
+      auto raw = GetNewSpace()->AllocateRawObject(size);
+      raw->SetNewBit();
       num_allocated_++;
       return raw;
     }
@@ -105,8 +62,12 @@ namespace poseidon{
     }
 
     static void VisitLocals(RawObjectPointerPointerVisitor* vis);
-    static void VisitLocals(RawObjectPointerVisitor* vis);
     static void VisitLocals(ObjectPointerVisitor* vis);
+
+    static void Clear(){
+      GetNewSpace()->Clear();
+      GetOldSpace()->Clear();
+    }
 
     Allocator& operator=(const Allocator& rhs) = delete;
   };

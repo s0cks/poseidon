@@ -23,21 +23,18 @@ namespace poseidon{
     return x + 1;
   }
 
-  enum Space{//TODO: move
-    kEdenSpace = 0, //      0000
-    kTenuredSpace, //       0001
-    kLargeObjectSpace, //   0010
+  enum class Space{
+    kNew,
+    kOld,
   };
 
   static inline std::ostream&
   operator<<(std::ostream& stream, const Space& val){
     switch(val){
-      case Space::kEdenSpace:
-        return stream << "Eden";
-      case Space::kTenuredSpace:
-        return stream << "Tenured";
-      case Space::kLargeObjectSpace:
-        return stream << "LargeObject";
+      case Space::kNew:
+        return stream << "New";
+      case Space::kOld:
+        return stream << "Old";
       default:
         return stream << "Unknown";
     }

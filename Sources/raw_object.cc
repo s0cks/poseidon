@@ -2,13 +2,19 @@
 #include "object.h"
 
 namespace poseidon{
- const uint8_t RawObject::kMagic = 0xCA;
-
-  void RawObject::VisitPointers(RawObjectPointerVisitor* vis) const{
-    return GetObjectPointer()->VisitPointers(vis);
-  }
-
-  void RawObject::VisitPointers(RawObjectPointerPointerVisitor* vis) const{
-    return GetObjectPointer()->VisitPointers(vis);
-  }
+ uint64_t RawObject::VisitPointers(RawObjectPointerPointerVisitor* vis) const{
+   uint64_t instance_size = GetPointerSize();
+   auto from = (uword)(GetPointer() + sizeof(Instance) + sizeof(uword));
+   auto to = from + instance_size;
+   auto first = (RawObjectPtr*)from;
+   auto last = (RawObjectPtr*)to;
+   for(auto current = first; current <= last; current++){
+     if(Allocator::GetNewSpace()->Contains((uword)*current)){
+       DLOG(INFO) << "visiting pointer " << current;
+       if(!vis->Visit(current))
+         break;
+     }
+   }
+   return instance_size;
+ }
 }

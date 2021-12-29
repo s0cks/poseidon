@@ -22,6 +22,9 @@ namespace poseidon{
   Field* Array::kLengthField = nullptr;
   Field* Array::kDataField = nullptr;
 
+  const ClassId Int::kClassId = ClassId::kIntCid;
+  const ClassId Array::kClassId = ClassId::kArrayCid;
+
   void Class::Initialize(){
     Class::CLASS_OBJECT = new Class("Object", nullptr);
     Class::CLASS_CLASS = new Class("Class", CLASS_OBJECT);
@@ -51,13 +54,6 @@ namespace poseidon{
 
   uint64_t Class::GetAllocationSize() const{
     uint64_t offset = sizeof(Instance);
-
-    Class* cls = parent_;
-    while(cls != nullptr && cls->HasParent()){
-      offset += cls->GetAllocationSize();
-      cls = cls->GetParent();
-    }
-
     for(auto& field : fields_){
       field->SetOffset(offset);
       offset += kWordSize;
@@ -75,15 +71,12 @@ namespace poseidon{
 
   void Class::VisitPointers(RawObjectPointerVisitor* vis){
     for(auto& field : fields_){
-      if(!vis->Visit(field->raw_object()))
+      if(!vis->Visit(field->raw()))
         return;
     }
   }
 
   void Class::VisitPointers(RawObjectPointerPointerVisitor* vis){
-    for(auto& field : fields_){
-      if(!vis->Visit(field->raw_object_ptr()))
-        return;
-    }
+    NOT_IMPLEMENTED(ERROR);//TODO: implement
   }
 }

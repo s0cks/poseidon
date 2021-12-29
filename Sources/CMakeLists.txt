@@ -17,10 +17,8 @@ add_library(poseidon
     allocator.h allocator.cc
     raw_object.h raw_object.cc
     scavenger.h scavenger.cc
-    live_object_promoter.h
-    live_object_forwarder.h
-    live_object_marker.h
     heap_printer.h
+    class_id.h
     sweeper.h
     finalizer.h
     memory_region.h memory_region.cc memory_region_linux.cc memory_region_win.cc memory_region_osx.cc)

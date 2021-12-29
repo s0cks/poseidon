@@ -155,12 +155,6 @@ namespace poseidon{
   typedef Clock::time_point Timestamp;
   typedef Clock::duration Duration;
 
-  template<typename TimeUnit=std::chrono::milliseconds>
-  static inline uint64_t
-  GetElapsed(const Timestamp& from, const Timestamp& to = Clock::now()){
-    return std::chrono::duration_cast<TimeUnit>(to - from).count();
-  }
-
 /**********************************************************************************************
  *  This code was borrowed this stack overflow answer, it is really cool!
  *  https://stackoverflow.com/a/22075960/2832700
@@ -174,13 +168,15 @@ namespace poseidon{
 		constexpr static const char* plural = Plural; \
 	}
 
+ DURATION_TRAITS(std::chrono::microseconds, "microsecond", "microseconds");
  DURATION_TRAITS(std::chrono::milliseconds, "millisecond", "milliseconds");
  DURATION_TRAITS(std::chrono::seconds, "second", "seconds");
  DURATION_TRAITS(std::chrono::minutes, "minute", "minutes");
  DURATION_TRAITS(std::chrono::hours, "hour", "hours");
  DURATION_TRAITS(day_t, "day", "days");
 
- using divisions = std::tuple<std::chrono::milliseconds,
+ using divisions = std::tuple<std::chrono::microseconds,
+                              std::chrono::milliseconds,
                               std::chrono::seconds,
                               std::chrono::minutes,
                               std::chrono::hours,
@@ -198,6 +194,7 @@ namespace poseidon{
       const auto n = std::chrono::duration_cast<Head>(dur);
       const auto count = n.count();
 
+      using traits = duration_traits<Head>;
       if (count == 0) {
         return started_printing;
       }
@@ -206,7 +203,6 @@ namespace poseidon{
         os << ' ';
       }
 
-      using traits = duration_traits<Head>;
       os << count << ' ' << (count == 1 ? traits::singular : traits::plural);
       dur -= n;
 

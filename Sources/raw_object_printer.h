@@ -38,7 +38,7 @@ namespace poseidon{
 
     template<const google::LogSeverity& Severity=google::INFO>
     static inline void
-    PrintAll(Semispace& space){
+    PrintAll(Semispace space){
       RawObjectPrinter printer(Severity);
       return space.VisitRawObjectPointers(&printer);
     }
@@ -48,13 +48,6 @@ namespace poseidon{
     PrintAllMarked(Heap* heap){
       RawObjectPrinter printer(Severity);
       return heap->VisitMarkedRawObjectPointers(&printer);
-    }
-
-    template<const google::LogSeverity& Severity=google::INFO>
-    static inline void
-    PrintAllLocals(){
-      RawObjectPrinter printer(Severity);
-      return Allocator::VisitLocals(&printer);
     }
   };
 }

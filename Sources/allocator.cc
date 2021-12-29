@@ -6,57 +6,51 @@
 #include "object.h"
 
 namespace poseidon{
+ MemoryRegion* Allocator::region_ = nullptr;
+ Heap* Allocator::new_ = nullptr;
+ Heap* Allocator::old_ = nullptr;
 
-  LocalGroup* Allocator::locals_ = nullptr;
-  uint64_t Allocator::num_locals_ = 0;
-  uint64_t Allocator::num_allocated_ = 0;
-  MemoryRegion Allocator::region_ = MemoryRegion(GetHeapSize());
-  Heap* Allocator::eden_ = nullptr;
-  Heap* Allocator::tenured_ = nullptr;
-  Heap* Allocator::large_object_ = nullptr;
+ LocalGroup* Allocator::locals_ = nullptr;
+ uint64_t Allocator::num_locals_ = 0;
+ uint64_t Allocator::num_allocated_ = 0;
 
-  void Allocator::Initialize(){
-    DLOG(INFO) << "heap size: " << HumanReadableSize(GetHeapSize());
-    DLOG(INFO) << "eden space @" << GetEdenSpaceOffset() << " (" << HumanReadableSize(GetEdenSpaceSize()) << ")";
-    DLOG(INFO) << "tenured space @" << GetTenuredSpaceOffset() << " (" << HumanReadableSize(GetTenuredSpaceSize()) << ")";
-    DLOG(INFO) << "large object space @" << GetLargeObjectSpaceOffset() << " (" << HumanReadableSize(GetLargeObjectSpaceSize()) << ")";
-    Allocator::eden_ = new Heap(Space::kEdenSpace, region_.SubRegion(GetEdenSpaceOffset(), GetEdenSpaceSize()));
-    Allocator::tenured_ = new Heap(Space::kTenuredSpace, region_.SubRegion(GetTenuredSpaceOffset(), GetTenuredSpaceSize()));
-    Allocator::large_object_ = new Heap(Space::kLargeObjectSpace, region_.SubRegion(GetLargeObjectSpaceOffset(), GetLargeObjectSpaceSize()));
-    Allocator::locals_ = new LocalGroup();
-  }
+ static const uint64_t kHeapSize = FLAGS_heap_size;
+ static const uint64_t kNewSpaceOffset = 0;
+ static const uint64_t kNewSpaceSize = kHeapSize / 2;
+ static const uint64_t kOldSpaceOffset = kNewSpaceOffset+kNewSpaceSize;
+ static const uint64_t kOldSpaceSize = kHeapSize / 2;
 
-  void Allocator::FinalizeObject(RawObject* raw){
-    num_allocated_--;
-    raw->GetObjectPointer()->Finalize();
-  }
+ void Allocator::Initialize(){
+   locals_ = new LocalGroup();
+   region_ = new MemoryRegion(FLAGS_heap_size);
+   new_ = new Heap(Space::kNew, region_->SubRegion(kNewSpaceOffset, kNewSpaceSize));
+   old_ = new Heap(Space::kOld, region_->SubRegion(kOldSpaceOffset, kOldSpaceSize));
+ }
 
-  RawObject** Allocator::NewLocalSlot(){
-    auto group = locals_;
-    if(group->GetNumberOfLocals() + 1 >= LocalGroup::kMaxLocalsPerGroup)
-      group = new LocalGroup(locals_);
-    return &group->locals_[group->num_locals_++];
-  }
+ void Allocator::FinalizeObject(RawObject* raw){
+   num_allocated_--;
+   raw->GetObjectPointer()->Finalize();
+ }
 
-  void Allocator::VisitLocals(RawObjectPointerPointerVisitor* vis){
-    LocalGroup::Iterator iter(locals_, true);
-    while(iter.HasNext()){
-      vis->Visit(iter.NextPointer());
-    }
-  }
+ RawObject** Allocator::NewLocalSlot(){
+   auto group = locals_;
+   if(group->GetNumberOfLocals() + 1 >= LocalGroup::kMaxLocalsPerGroup)
+     group = new LocalGroup(locals_);
+   return &group->locals_[group->num_locals_++];
+ }
 
-  void Allocator::VisitLocals(RawObjectPointerVisitor* vis){
-    LocalGroup::Iterator iter(locals_, true);
-    while(iter.HasNext()){
-      vis->Visit(iter.Next());
-    }
-  }
+ void Allocator::VisitLocals(RawObjectPointerPointerVisitor* vis){
+   LocalGroup::Iterator iter(locals_, true);
+   while(iter.HasNext()){
+     vis->Visit(iter.NextPointer());
+   }
+ }
 
-  void Allocator::VisitLocals(ObjectPointerVisitor* vis){
-    LocalGroup::Iterator iter(locals_, true);
-    while(iter.HasNext()){
-      if(!vis->Visit(iter.Next()->GetObjectPointer()))
-        return;
-    }
-  }
+ void Allocator::VisitLocals(ObjectPointerVisitor* vis){
+   LocalGroup::Iterator iter(locals_, true);
+   while(iter.HasNext()){
+     if(!vis->Visit(iter.Next()->GetObjectPointer()))
+       return;
+   }
+ }
 }
