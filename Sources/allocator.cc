@@ -22,7 +22,7 @@ namespace poseidon{
 
  void Allocator::Initialize(){
    locals_ = new LocalGroup();
-   region_ = new MemoryRegion(FLAGS_heap_size);
+   region_ = new MemoryRegion(kHeapSize);
    new_ = new Heap(Space::kNew, region_->SubRegion(kNewSpaceOffset, kNewSpaceSize));
    old_ = new Heap(Space::kOld, region_->SubRegion(kOldSpaceOffset, kOldSpaceSize));
  }

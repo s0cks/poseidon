@@ -2,7 +2,6 @@
 #include <glog/logging.h>
 
 #include "utils.h"
-#include "sweeper.h"
 #include "scavenger.h"
 #include "allocator.h"
 
@@ -70,7 +69,6 @@ namespace poseidon{
        memcpy(new_ptr->GetPointer(), raw->GetPointer(), raw->GetPointerSize());
        new_ptr->SetOldBit();
        new_ptr->GetObjectPointer()->set_raw(new_ptr);
-       new_ptr->SetClassId(raw->GetClassId());
        DLOG(INFO) << "promoted " << raw->ToString() << " to " << new_ptr->ToString();
      } else if(raw->IsNew() && !raw->IsMarked() && !raw->IsRemembered()){
        auto new_ptr = GetHeap()->AllocateRawObject(raw->GetPointerSize());
@@ -81,7 +79,6 @@ namespace poseidon{
        new_ptr->SetNewBit();
        new_ptr->SetRememberedBit();
        new_ptr->GetObjectPointer()->set_raw(new_ptr);
-       new_ptr->SetClassId(raw->GetClassId());
        DLOG(INFO) << "relocated " << raw->ToString() << " to " << new_ptr->ToString();
      }
    }

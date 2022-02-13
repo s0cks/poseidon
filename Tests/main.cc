@@ -39,11 +39,6 @@ int main(int argc, char** argv){
 
   Scavenger::MinorCollection();
 
-  DLOG(INFO) << "from-space:";
-  RawObjectPrinter::PrintAll(Allocator::GetNewSpace()->GetFromSpace());
-  DLOG(INFO) << "to-space:";
-  RawObjectPrinter::PrintAll(Allocator::GetNewSpace()->GetToSpace());
-
   DLOG(INFO) << "array.length := " << val->GetLength();
   DLOG(INFO) << "array[0] := " << val->GetAt<Int>(0)->Get() << " (" << val->GetAt<Int>(0)->raw()->ToString() << ")";
   DLOG(INFO) << "array[1] := " << val->GetAt<Int>(1)->Get() << " (" << val->GetAt<Int>(1)->raw()->ToString() << ")";

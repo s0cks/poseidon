@@ -39,7 +39,7 @@ namespace poseidon{
     uword size_;
     bool owned_ : 1;
 
-    MemoryRegion(bool owned):
+    explicit MemoryRegion(bool owned):
       data_(nullptr),
       size_(0),
       owned_(owned){
@@ -53,7 +53,7 @@ namespace poseidon{
     MemoryRegion():
       MemoryRegion(false){
     }
-    explicit MemoryRegion(const uword& size);
+    explicit MemoryRegion(uint64_t size);
     MemoryRegion(const MemoryRegion& rhs) = default;
     ~MemoryRegion();
 

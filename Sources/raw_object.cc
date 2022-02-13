@@ -4,7 +4,7 @@
 namespace poseidon{
  uint64_t RawObject::VisitPointers(RawObjectPointerPointerVisitor* vis) const{
    uint64_t instance_size = GetPointerSize();
-   auto from = (uword)(GetPointer() + sizeof(Instance) + sizeof(uword));
+   auto from = (uword)(GetObjectPointerAddress() + sizeof(Instance) + sizeof(uword));
    auto to = from + instance_size;
    auto first = (RawObjectPtr*)from;
    auto last = (RawObjectPtr*)to;

@@ -11,7 +11,6 @@
 #include "utils.h"
 #include "local.h"
 #include "common.h"
-#include "class_id.h"
 #include "allocator.h"
 #include "raw_object.h"
 
@@ -179,7 +178,7 @@ namespace poseidon{
     }
 
     inline uword** FieldAddressAtOffset(uword offset) const{
-      return (uword**)(raw()->GetPointer() + offset);
+      return (uword**)(raw()->GetObjectPointerAddress() + offset);
     }
 
     inline uword** FieldAddress(Field* field) const{
@@ -201,6 +200,9 @@ namespace poseidon{
       return ss.str();
     }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
+#pragma ide diagnostic ignored "bugprone-undefined-memory-manipulation"
     template<typename T>
     static inline T* NewInstance(Class* cls){
       auto data = Allocator::AllocateRawObject(cls->GetAllocationSize());
@@ -212,8 +214,9 @@ namespace poseidon{
 
       return (T*)data->GetPointer();
     }
+#pragma clang diagnostic pop
 
-    static inline Array* NewArrayInstance(const uint64_t& length);
+   static inline Array* NewArrayInstance(const uint64_t& length);
 
     template<typename T>
     static inline Local<T> NewLocalInstance(Class* cls){
@@ -241,8 +244,6 @@ namespace poseidon{
   };
 
   class Byte : public Number{
-   public:
-    static const ClassId kClassId = ClassId::kByteCid;
    public:
     Byte(): Number(Class::CLASS_BYTE){}
     explicit Byte(const uint8_t& val):
@@ -303,8 +304,6 @@ namespace poseidon{
 
   class Short : public Number{
    public:
-    static const ClassId kClassId = ClassId::kShortCid;
-   public:
     Short(): Number(Class::CLASS_SHORT){}
     explicit Short(const uint16_t& val):
       Short(){
@@ -364,8 +363,6 @@ namespace poseidon{
 
   class Int : public Number{
    public:
-    static const ClassId kClassId;
-   public:
     Int(): Number(Class::CLASS_NUMBER){}
     explicit Int(const uint32_t& val):
       Int(){
@@ -401,7 +398,6 @@ namespace poseidon{
     static inline Int*
     New(){
       auto val = Instance::NewInstance<Int>(Class::CLASS_INT);
-      val->raw()->SetClassId(kClassId);
       return val;
     }
 
@@ -426,8 +422,6 @@ namespace poseidon{
   };
 
   class Long : public Number{
-   public:
-    static const ClassId kClassId = ClassId::kLongCid;
    public:
     Long(): Number(Class::CLASS_LONG){}
     explicit Long(const uint64_t& val):
@@ -520,7 +514,6 @@ namespace poseidon{
   class Array : public Instance{
     friend class Instance;
    public:
-    static const ClassId kClassId;
 
     static Field* kLengthField;
     static Field* kDataField;
@@ -628,10 +621,14 @@ namespace poseidon{
     }
   };
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdynamic-class-memaccess"
+
+#pragma ide diagnostic ignored "bugprone-undefined-memory-manipulation"
+
   Array* Instance::NewArrayInstance(const uint64_t& length){
     auto size = Class::CLASS_ARRAY->GetAllocationSize() + (sizeof(uword) * length);
     auto data = Allocator::AllocateRawObject(size);
-    data->SetClassId(Array::kClassId);
 
     auto fake = new Instance(Class::CLASS_ARRAY);
     fake->set_raw(data);
@@ -642,6 +639,7 @@ namespace poseidon{
     array->SetLength(length);
     return array;
   }
+#pragma clang diagnostic pop
 }
 
 #endif//POSEIDON_OBJECT_H

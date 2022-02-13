@@ -22,9 +22,6 @@ namespace poseidon{
   Field* Array::kLengthField = nullptr;
   Field* Array::kDataField = nullptr;
 
-  const ClassId Int::kClassId = ClassId::kIntCid;
-  const ClassId Array::kClassId = ClassId::kArrayCid;
-
   void Class::Initialize(){
     Class::CLASS_OBJECT = new Class("Object", nullptr);
     Class::CLASS_CLASS = new Class("Class", CLASS_OBJECT);

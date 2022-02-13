@@ -4,7 +4,6 @@
 #include <sstream>
 #include "utils.h"
 #include "common.h"
-#include "class_id.h"
 
 namespace poseidon{
   class RawObject;
@@ -108,6 +107,10 @@ namespace poseidon{
       return (void*)(reinterpret_cast<uword>(this) + sizeof(RawObject));
     }
 
+    uword GetObjectPointerAddress() const{
+      return reinterpret_cast<uword>(this) + sizeof(RawObject);
+    }
+
     Object* GetObjectPointer() const{
       return (Object*)GetPointer();
     }
@@ -184,14 +187,6 @@ namespace poseidon{
       tag_ = SizeTag::Update(val, tag());
     }
 
-    ClassId GetClassId() const{
-      return (ClassId)ClassIdTag::Decode(tag());
-    }
-
-    void SetClassId(const ClassId& cls){
-      tag_ = ClassIdTag::Update(cls, tag());
-    }
-
     uint64_t GetTotalSize() const{
       return sizeof(RawObject)+GetPointerSize();
     }
@@ -205,7 +200,6 @@ namespace poseidon{
       ss << "old=" << OldBit::Decode(tag()) << ", ";
       ss << "marked=" << MarkedBit::Decode(tag()) << ", ";
       ss << "remembered=" << RememberedBit::Decode(tag()) << ", ";
-      ss << "class_id=" << GetClassId() << ", ";
       ss << "size=" << GetPointerSize() << ", ";
       ss << "address=" << this << ", ";
       ss << "pointer=" << GetPointer() << ", ";

@@ -18,9 +18,7 @@ add_library(poseidon
     raw_object.h raw_object.cc
     scavenger.h scavenger.cc
     heap_printer.h
-    class_id.h
-    sweeper.h
-    finalizer.h
+        finalizer.h
     memory_region.h memory_region.cc memory_region_linux.cc memory_region_win.cc memory_region_osx.cc)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}

@@ -1,6 +1,7 @@
 #ifndef POSEIDON_SCAVENGER_H
 #define POSEIDON_SCAVENGER_H
 
+#include "heap.h"
 #include "raw_object.h"
 
 namespace poseidon{

@@ -6,8 +6,8 @@
 #include <ostream>
 #include <glog/logging.h>
 
-#include "allocator.h"
 #include "utils.h"
+#include "allocator.h"
 
 namespace poseidon{
   class RawObjectPrinter : public RawObjectPointerVisitor{
