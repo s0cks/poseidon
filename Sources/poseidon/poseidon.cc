@@ -1,5 +1,5 @@
 #include <sstream>
-#include "poseidon.h"
+#include "poseidon/poseidon.h"
 
 namespace poseidon{
   static const uint64_t kB = 1;

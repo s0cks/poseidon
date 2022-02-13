@@ -3,7 +3,6 @@
 
 #include <glog/logging.h>
 #include "heap.h"
-#include "poseidon.h"
 
 namespace poseidon{
   template<typename T>

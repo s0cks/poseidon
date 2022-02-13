@@ -1,9 +1,10 @@
 #include <glog/logging.h>
 
-#include "allocator.h"
-#include "utils.h"
-#include "local.h"
-#include "object.h"
+#include "poseidon/allocator.h"
+#include "poseidon/utils.h"
+#include "poseidon/local.h"
+#include "poseidon/object.h"
+#include "poseidon/poseidon.h"
 
 namespace poseidon{
  MemoryRegion* Allocator::region_ = nullptr;

@@ -1,10 +1,9 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
-#include "poseidon.h"
-#include "allocator.h"
-#include "scavenger.h"
-#include "object.h"
-#include "raw_object_printer.h"
+#include "poseidon/poseidon.h"
+#include "poseidon/scavenger.h"
+#include "poseidon/object.h"
+#include "poseidon/raw_object_printer.h"
 
 int main(int argc, char** argv){
   using namespace poseidon;
