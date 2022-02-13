@@ -11,6 +11,9 @@ int main(int argc, char** argv){
   ::google::LogToStderr();
   ::testing::InitGoogleTest(&argc, argv);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
+#ifdef PSDN_MTA
+  LOG(WARNING) << "*** Using Multi-Threaded Algorithm ***";
+#endif//PSDN_MTA
 
   Allocator::Initialize();
   Class::Initialize();

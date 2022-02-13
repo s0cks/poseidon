@@ -6,7 +6,7 @@ configure_file(poseidon/poseidon.h.in ${PROJECT_BINARY_DIR}/poseidon/poseidon.h)
 include_directories(${PROJECT_BINARY_DIR})
 
 add_library(poseidon
-    ${PROJECT_BINARY_DIR}/poseidon.h poseidon/poseidon.cc
+    ${PROJECT_BINARY_DIR}/poseidon/poseidon.h poseidon/poseidon.cc
     poseidon/platform.h
     poseidon/common.h
     poseidon/utils.h

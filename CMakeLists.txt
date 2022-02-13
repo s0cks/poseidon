@@ -11,6 +11,12 @@ else()
     message(STATUS "Compiling without debug mode.")
 endif()
 
+option(PSDN_MTA "Enable faster heap collections using multi-threaded algorithm [Experimental]" OFF)
+if(PSDN_MTA)
+    message(STATUS "Compiling w/ MTA")
+    add_compile_definitions(PSDN_MTA)
+endif()
+
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION_PATCH 0)
