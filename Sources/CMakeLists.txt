@@ -12,14 +12,12 @@ add_library(poseidon
     poseidon/utils.h
     poseidon/object.h poseidon/object.cc
     poseidon/heap.h poseidon/heap.cc
-    poseidon/raw_object_printer.h
-    poseidon/local.h poseidon/local.cc
+        poseidon/local.h poseidon/local.cc
     poseidon/allocator.h poseidon/allocator.cc
     poseidon/raw_object.h poseidon/raw_object.cc
     poseidon/scavenger.h poseidon/scavenger.cc
-    poseidon/heap_printer.h
     poseidon/finalizer.h
-    poseidon/memory_region.h poseidon/memory_region.cc poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc)
+    poseidon/memory_region.h poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc poseidon/zone.h poseidon/semispace.h poseidon/semispace.cc poseidon/flags.h)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     glog::glog

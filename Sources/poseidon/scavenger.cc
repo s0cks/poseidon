@@ -8,78 +8,35 @@
 #include "finalizer.h"
 
 namespace poseidon{
- class CollectionStats{
-  private:
-   Heap::HeapStats& start_;
-   Timestamp& start_ts_;
-   Heap::HeapStats& finished_;
-   Timestamp& finished_ts_;
-  public:
-   CollectionStats(Heap::HeapStats& start, Timestamp& start_ts,
-                   Heap::HeapStats& finished, Timestamp& finished_ts):
-       start_(start),
-       start_ts_(start_ts),
-       finished_(finished),
-       finished_ts_(finished_ts){
-   }
-   ~CollectionStats() = default;
+ uword Scavenger::PromoteObject(RawObject* obj){
+   auto new_ptr = Allocator::GetHeap()->old_zone().AllocateRawObject(obj->GetPointerSize());
+   new_ptr->SetOldBit();
+   new_ptr->GetObjectPointer()->set_raw(new_ptr);
+   memcpy(new_ptr->GetPointer(), obj->GetPointer(), obj->GetPointerSize());
+   DLOG(INFO) << "promoted " << obj->ToString() << " to " << new_ptr->ToString();
+   return new_ptr->GetAddress();
+ }
 
-   Heap::HeapStats& GetStartStats() const{
-     return start_;
-   }
-
-   Timestamp& GetStartTimestamp() const{
-     return start_ts_;
-   }
-
-   Heap::HeapStats& GetFinishedStats() const{
-     return finished_;
-   }
-
-   Timestamp& GetFinishedTimestamp() const{
-     return finished_ts_;
-   }
-
-   Duration GetDuration() const{
-     return (GetFinishedTimestamp() - GetStartTimestamp());
-   }
-
-   uint64_t GetFreedBytes() const{
-     auto allocated_before = GetStartStats().GetAllocatedBytes();
-     auto allocated_after = GetFinishedStats().GetAllocatedBytes();
-     return allocated_before - allocated_after;
-   }
-
-   uint64_t GetTotalBytes() const{
-     return GetStartStats().GetTotalBytes();
-   }
-
-   double GetFreedPercentage() const{
-     return GetPercentageOf(GetFreedBytes(), GetTotalBytes());
-   }
- };
+ uword Scavenger::ScavengeObject(RawObject* obj){
+   auto new_ptr = to_space_.AllocateRawObject(obj->GetPointerSize());
+   new_ptr->SetNewBit();
+   new_ptr->SetRememberedBit();
+   new_ptr->GetObjectPointer()->set_raw(new_ptr);
+   memcpy(new_ptr->GetPointer(), obj->GetPointer(), obj->GetPointerSize());
+   DLOG(INFO) << "relocated " << obj->ToString() << " to " << new_ptr->ToString();
+   return new_ptr->GetAddress();
+ }
 
  uword Scavenger::CopyObject(RawObjectPtr raw){
    if(!raw->IsForwarding()){
      if(raw->IsNew() && !raw->IsMarked() && raw->IsRemembered()){
-       auto new_ptr = Allocator::GetOldSpace()->AllocateRawObject(raw->GetPointerSize());
-       raw->SetForwardingAddress((uword)new_ptr);
-       raw->SetMarkedBit();
-
-       memcpy(new_ptr->GetPointer(), raw->GetPointer(), raw->GetPointerSize());
-       new_ptr->SetOldBit();
-       new_ptr->GetObjectPointer()->set_raw(new_ptr);
-       DLOG(INFO) << "promoted " << raw->ToString() << " to " << new_ptr->ToString();
+       MarkObject(raw);
+       auto new_address = PromoteObject(raw);
+       ForwardObject(raw, new_address);
      } else if(raw->IsNew() && !raw->IsMarked() && !raw->IsRemembered()){
-       auto new_ptr = GetHeap()->AllocateRawObject(raw->GetPointerSize());
-       raw->SetForwardingAddress((uword)new_ptr);
-       raw->SetMarkedBit();
-
-       memcpy(new_ptr->GetPointer(), raw->GetPointer(), raw->GetPointerSize());
-       new_ptr->SetNewBit();
-       new_ptr->SetRememberedBit();
-       new_ptr->GetObjectPointer()->set_raw(new_ptr);
-       DLOG(INFO) << "relocated " << raw->ToString() << " to " << new_ptr->ToString();
+       MarkObject(raw);
+       auto new_address = ScavengeObject(raw);
+       ForwardObject(raw, new_address);
      }
    }
    return raw->GetForwardingAddress();
@@ -94,19 +51,25 @@ namespace poseidon{
  }
 
  bool Scavenger::Visit(RawObjectPtr ptr){
-   DLOG(INFO) << "visiting pointers in " << ptr->ToString();
    ptr->VisitPointers(this);
    return true;
  }
 
+ void Scavenger::SwapSpaces(){
+   zone_.SwapSpaces();
+ }
+
  void Scavenger::ProcessRoots(){
-   DLOG(INFO) << "processing roots....";
+   DLOG(INFO) << "processing " << Allocator::GetNumberOfLocals() << " roots.";
    Allocator::VisitLocals(this);
  }
 
  void Scavenger::ProcessToSpace(){
-   DLOG(INFO) << "processing to-space " << Allocator::GetNewSpace()->GetFromSpace() << " (" << PrettyPrintPercentage(Allocator::GetNewSpace()->GetFromSpace().GetAllocatedPercentage()) << ")....";
-   Allocator::GetNewSpace()->GetFromSpace().VisitRawObjectPointers(this);
+   DLOG(INFO) << "processing to-space " << to_space_;
+   to_space_.VisitRawObjects([&](RawObject* val){
+     val->VisitPointers(this);
+     return true;
+   });
  }
 
  void Scavenger::ProcessCopiedObjects(){
@@ -115,26 +78,22 @@ namespace poseidon{
 
  void Scavenger::MinorCollection(){
    // only collect from the eden heap
-   DLOG(INFO) << "executing minor collection....";
-   auto heap = Allocator::GetNewSpace();
-   auto start_ts = Clock::now();
-   auto num_allocated = Allocator::GetNumberOfObjectsAllocated();
-   auto start_stats = heap->GetStats();
+   DLOG(INFO) << "executing minor collection.";
+   auto heap = Allocator::GetHeap();
+   auto new_zone = heap->new_zone();
 
-   Scavenger scavenger(Allocator::GetNewSpace());//allocate in from_
-   heap->SwapSpaces(); // from_ = to_; to_ = from_
+#ifdef PSDN_DEBUG
+   auto start_ts = Clock::now();
+#endif//PSDN_DEBUG
+
+   Scavenger scavenger(new_zone);
+   new_zone.SwapSpaces();
    scavenger.ProcessRoots(); // scavenge roots into to_
    scavenger.ProcessToSpace(); // scavenge from_ into to_
-   heap->GetToSpace().Clear();
 
+#ifdef PSDN_DEBUG
    auto finished_ts = Clock::now();
-   auto finished_stats = heap->GetStats();
-   CollectionStats stats(start_stats, start_ts, finished_stats, finished_ts);
-   DLOG(INFO) << "minor collection finished. (" << stats.GetDuration() << ")";
-   DLOG(INFO) << "minor collection stats:";
-   DLOG(INFO) << " - duration: " << stats.GetDuration();
-   DLOG(INFO) << " - starting utilization: " << start_stats;
-   DLOG(INFO) << " - current utilization: " << finished_stats;
+#endif//PSDN_DEBUG
  }
 
  void Scavenger::MajorCollection(){

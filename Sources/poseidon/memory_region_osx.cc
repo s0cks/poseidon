@@ -10,25 +10,27 @@
 
 namespace poseidon{
   MemoryRegion::MemoryRegion(uint64_t size):
-    MemoryRegion(true){
+    MemoryRegion(){
     void* addr = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
     if(addr == MAP_FAILED){
       LOG(ERROR) << "failed to mmap memory region of " << size << " bytes: " << strerror(errno);
       return;
     }
 
-    data_ = addr;
+    start_ = (uword)addr;
     size_ = size;
   }
 
-  MemoryRegion::~MemoryRegion(){
-    if(owned_ && data_ != nullptr && size_ > 0){
+  bool MemoryRegion::Free() const{
+    if(size_ > 0){
       int err;
-      if((err = munmap(data_, size_)) != 0){
+      if((err = munmap((void*)start_, size_)) != 0){
         LOG(ERROR) << "failed to munmap memory region of " << size_ << " bytes: " << strerror(err);
+        return false;
       }
       DLOG(INFO) << "freed MemoryRegion (" << HumanReadableSize(size_) << ")";
     }
+    return true;
   }
 
   bool MemoryRegion::Protect(const ProtectionMode& mode) const{

@@ -3,7 +3,9 @@
 
 #include <cstring>
 #include <ostream>
+#include <glog/logging.h>
 
+#include "utils.h"
 #include "common.h"
 
 namespace poseidon{
@@ -35,34 +37,83 @@ namespace poseidon{
       }
     }
    private:
-    void* data_;
+    uword start_;
     uword size_;
-    bool owned_ : 1;
-
-    explicit MemoryRegion(bool owned):
-      data_(nullptr),
-      size_(0),
-      owned_(owned){
-    }
    public:
-    MemoryRegion(void* data, uword size):
-      data_(data),
-      size_(size),
-      owned_(false){
-    }
+    /**
+     * Create an empty {@link MemoryRegion}.
+     */
     MemoryRegion():
-      MemoryRegion(false){
+      start_(0),
+      size_(0){
     }
+
+    /**
+     * Create a new {@link MemoryRegion} of a specific size.
+     *
+     * @param size The size of the new {@link MemoryRegion}
+     */
     explicit MemoryRegion(uint64_t size);
-    MemoryRegion(const MemoryRegion& rhs) = default;
-    ~MemoryRegion();
+
+    /**
+     * Create a new {@link MemoryRegion} using the specified starting address & size.
+     *
+     * @param start The starting address of the {@link MemoryRegion}
+     * @param size The size of the {@link MemoryRegion}
+     */
+    MemoryRegion(uword start, uword size):
+      start_(start),
+      size_(size){
+    }
+
+    /**
+     * Create a {@link MemoryRegion} that is a sub-section of the parent region at a specific offset.
+     *
+     * @param parent The parent {@link MemoryRegion}
+     * @param offset The offset in the parent {@link MemoryRegion}
+     * @param size The size of the {@link MemoryRegion}
+     */
+    MemoryRegion(const MemoryRegion* parent, uint64_t offset, uint64_t size)://TODO: Refactor
+      start_(0),
+      size_(0){
+      if(size >= parent->GetSize()){
+        LOG(WARNING) << "cannot allocate MemoryRegion of " << HumanReadableSize(size) << ", size is larger than parent.";
+        return;
+      }
+      auto start = parent->GetStartAddress() + offset;
+      if(!parent->Contains(start)){
+        DLOG(WARNING) << "cannot allocate MemoryRegion of " << HumanReadableSize(size) << " at offset " << offset << ", parent doesn't contain starting address: " << ((void*)start);
+        return;
+      }
+#ifdef PSDN_DEBUG
+      auto end = start + size;
+      assert(parent->Contains(end));
+#endif//PSDN_DEBUG
+      start_ = start;
+      size_ = size;
+    }
+    /**
+     * Create a {@link MemoryRegion} that is a sub-section of the parent region.
+     *
+     * @param parent The parent {@link MemoryRegion}
+     * @param size The size of the {@link MemoryRegion}
+     */
+    MemoryRegion(const MemoryRegion* parent, uint64_t size):
+      MemoryRegion(parent, 0, size){
+    }
+
+    MemoryRegion(const MemoryRegion& rhs):
+      start_(rhs.GetStartAddress()),
+      size_(rhs.GetSize()){
+    }
+    ~MemoryRegion() = default;
 
     uword GetSize() const{
       return size_;
     }
 
     uword GetStartAddress() const{
-      return (uword)data_;
+      return (uword)start_;
     }
 
     uword GetEndAddress() const{
@@ -70,7 +121,7 @@ namespace poseidon{
     }
 
     void* GetPointer() const{
-      return data_;
+      return (void*)start_;
     }
 
     bool Contains(const uword& addr) const{
@@ -82,16 +133,36 @@ namespace poseidon{
       memcpy(GetPointer(), rhs.GetPointer(), rhs.GetSize());
     }
 
-    bool Protect(const ProtectionMode& mode) const;
-
-    MemoryRegion SubRegion(const uword offset, const uword size) const{
-      if((offset + size) > GetSize())
-        return {};//TODO: better default
-      char* ptr = (char*)data_;
-      return {&ptr[offset], size};//TODO: bounds checking
+    const uint8_t* bytes_begin() const{
+      return (uint8_t*)GetStartAddress();
     }
 
-    MemoryRegion& operator=(const MemoryRegion& rhs) = default;
+    const uint8_t* bytes_end() const{
+      return (uint8_t*)GetEndAddress();
+    }
+
+    /**
+     * Free the memory buffer for the {@link MemoryRegion}.
+     *
+     * @return true if the {@link MemoryRegion} was successfully freed, false otherwise
+     */
+    bool Free() const;
+
+    /**
+     * Set the protection mode for the {@link MemoryRegion}
+     *
+     * @param mode The {@link ProtectionMode} for the {@link MemoryRegion}
+     * @return true if the {@link ProtectionMode} was successfully set, false otherwise.
+     */
+    bool Protect(const ProtectionMode& mode) const;
+
+    MemoryRegion& operator=(const MemoryRegion& rhs){
+      if(this == &rhs)
+        return *this;
+      start_ = rhs.GetStartAddress();
+      size_ = rhs.GetSize();
+      return *this;
+    }
 
     friend std::ostream& operator<<(std::ostream& stream, const MemoryRegion& region){
       return stream << "MemoryRegion(start=" << region.GetStartAddress() << ", size=" << region.GetSize() << ")";

@@ -1,5 +1,3 @@
-#include <glog/logging.h>
-
 #include "poseidon/allocator.h"
 #include "poseidon/utils.h"
 #include "poseidon/local.h"
@@ -7,25 +5,15 @@
 #include "poseidon/poseidon.h"
 
 namespace poseidon{
- MemoryRegion* Allocator::region_ = nullptr;
- Heap* Allocator::new_ = nullptr;
- Heap* Allocator::old_ = nullptr;
+ Heap* Allocator::heap_ = nullptr;
 
  LocalGroup* Allocator::locals_ = nullptr;
  uint64_t Allocator::num_locals_ = 0;
  uint64_t Allocator::num_allocated_ = 0;
 
- static const uint64_t kHeapSize = FLAGS_heap_size;
- static const uint64_t kNewSpaceOffset = 0;
- static const uint64_t kNewSpaceSize = kHeapSize / 2;
- static const uint64_t kOldSpaceOffset = kNewSpaceOffset+kNewSpaceSize;
- static const uint64_t kOldSpaceSize = kHeapSize / 2;
-
  void Allocator::Initialize(){
    locals_ = new LocalGroup();
-   region_ = new MemoryRegion(kHeapSize);
-   new_ = new Heap(Space::kNew, region_->SubRegion(kNewSpaceOffset, kNewSpaceSize));
-   old_ = new Heap(Space::kOld, region_->SubRegion(kOldSpaceOffset, kOldSpaceSize));
+   heap_ = new Heap();
  }
 
  void Allocator::FinalizeObject(RawObject* raw){
@@ -47,10 +35,10 @@ namespace poseidon{
    }
  }
 
- void Allocator::VisitLocals(ObjectPointerVisitor* vis){
+ void Allocator::VisitLocals(const std::function<bool(RawObject*)>& vis){
    LocalGroup::Iterator iter(locals_, true);
    while(iter.HasNext()){
-     if(!vis->Visit(iter.Next()->GetObjectPointer()))
+     if(!vis(iter.Next()))
        return;
    }
  }

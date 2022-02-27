@@ -3,7 +3,6 @@
 #include "poseidon/poseidon.h"
 #include "poseidon/scavenger.h"
 #include "poseidon/object.h"
-#include "poseidon/raw_object_printer.h"
 
 int main(int argc, char** argv){
   using namespace poseidon;

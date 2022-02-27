@@ -12,9 +12,7 @@ namespace poseidon{
   class Allocator{
     friend class Finalizer;//TODO: remove
    private:
-    static MemoryRegion* region_;
-    static Heap* new_;
-    static Heap* old_;
+    static Heap* heap_;
 
     static LocalGroup* locals_;
     static uint64_t num_allocated_;
@@ -39,18 +37,27 @@ namespace poseidon{
       return num_locals_;
     }
 
-    static Heap* GetNewSpace(){
-      return new_;
+    static Heap* GetHeap(){
+      return heap_;
     }
 
-    static Heap* GetOldSpace(){
-      return old_;
+    static inline RawObject*
+    AllocateNewObject(uint64_t size){
+      auto raw = GetHeap()->AllocateNewObject(size);
+#ifdef PSDN_DEBUG
+      assert(raw != nullptr);
+#endif//PSDN_DEBUG
+      num_allocated_ += 1;
+      return raw;
     }
 
-    static RawObject* AllocateRawObject(const uint64_t& size){
-      auto raw = GetNewSpace()->AllocateRawObject(size);
-      raw->SetNewBit();
-      num_allocated_++;
+    static inline RawObject*
+    AllocateOldObject(uint64_t size){
+      auto raw = GetHeap()->AllocateOldObject(size);
+#ifdef PSDN_DEBUG
+      assert(raw != nullptr);
+#endif//PSDN_DEBUG
+      num_allocated_ += 1;
       return raw;
     }
 
@@ -61,11 +68,10 @@ namespace poseidon{
     }
 
     static void VisitLocals(RawObjectPointerPointerVisitor* vis);
-    static void VisitLocals(ObjectPointerVisitor* vis);
+    static void VisitLocals(const std::function<bool(RawObject*)>& vis);
 
     static void Clear(){
-      GetNewSpace()->Clear();
-      GetOldSpace()->Clear();
+
     }
 
     Allocator& operator=(const Allocator& rhs) = delete;

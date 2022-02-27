@@ -1,15 +1,14 @@
 #ifndef POSEIDON_SCAVENGER_H
 #define POSEIDON_SCAVENGER_H
 
-#include "heap.h"
-#include "raw_object.h"
+#include "poseidon/zone.h"
 
 namespace poseidon{
- class Heap;
  class Scavenger : public RawObjectPointerVisitor, public RawObjectPointerPointerVisitor{
   private:
-   Heap* heap_;
-   Semispace& to_space_;
+   Zone zone_;
+   Semispace from_space_;
+   Semispace to_space_;
 
    /**
     * Copy's an object to the to-space
@@ -30,22 +29,43 @@ namespace poseidon{
     */
    uword CopyObject(RawObjectPtr raw);//TODO: create a better copy
 
+   inline void
+   MarkObject(RawObject* obj){
+     DLOG(INFO) << "marking " << obj->ToString();
+     obj->SetMarkedBit();
+   }
+
+   inline void
+   ForwardObject(RawObject* obj, uword forwarding_address){
+     DLOG(INFO) << "forwarding " << obj->ToString() << " to " << ((void*)forwarding_address);
+     obj->SetForwardingAddress(forwarding_address);
+   }
+
+   uword PromoteObject(RawObject* obj);
+   uword ScavengeObject(RawObject* obj);
+
+   void SwapSpaces();
    void ProcessRoots();
    void ProcessToSpace();
    void ProcessCopiedObjects();
   public:
-   explicit Scavenger(Heap* heap):
-    heap_(heap),
-    to_space_(heap->GetToSpace()){
+   explicit Scavenger(const Zone& zone):
+    zone_(zone),
+    from_space_(zone.from()),
+    to_space_(zone.to()){
    }
    ~Scavenger() override = default;
 
-   Heap* GetHeap() const{
-     return heap_;
+   Zone zone() const{
+     return zone_;
    }
 
-   Semispace& GetToSpace() const{
+   Semispace GetToSpace() const{
      return to_space_;
+   }
+
+   Semispace GetFromSpace() const{
+     return from_space_;
    }
 
    bool Visit(RawObjectPtr ptr) override;

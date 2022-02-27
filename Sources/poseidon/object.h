@@ -205,7 +205,7 @@ namespace poseidon{
 #pragma ide diagnostic ignored "bugprone-undefined-memory-manipulation"
     template<typename T>
     static inline T* NewInstance(Class* cls){
-      auto data = Allocator::AllocateRawObject(cls->GetAllocationSize());
+      auto data = Allocator::AllocateNewObject(cls->GetAllocationSize());
 
       auto fake = new Instance(cls);
       fake->set_raw(data);
@@ -628,7 +628,7 @@ namespace poseidon{
 
   Array* Instance::NewArrayInstance(const uint64_t& length){
     auto size = Class::CLASS_ARRAY->GetAllocationSize() + (sizeof(uword) * length);
-    auto data = Allocator::AllocateRawObject(size);
+    auto data = Allocator::AllocateNewObject(size);
 
     auto fake = new Instance(Class::CLASS_ARRAY);
     fake->set_raw(data);

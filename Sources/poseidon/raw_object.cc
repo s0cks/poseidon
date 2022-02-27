@@ -9,11 +9,8 @@ namespace poseidon{
    auto first = (RawObjectPtr*)from;
    auto last = (RawObjectPtr*)to;
    for(auto current = first; current <= last; current++){
-     if(Allocator::GetNewSpace()->Contains((uword)*current)){
-       DLOG(INFO) << "visiting pointer " << current;
-       if(!vis->Visit(current))
-         break;
-     }
+     if(Allocator::GetHeap()->Contains((uword)*current) && !vis->Visit(current))
+       break;
    }
    return instance_size;
  }

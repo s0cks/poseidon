@@ -12,14 +12,10 @@
 namespace poseidon{
   static const uword kUWordOne = 1U;
 
+  template<typename T>
   static inline double
-  GetPercentageOf(const double a, const double b){
-    return (a / b) * 100.0;
-  }
-
-  static inline double
-  GetPercentageOf(const uint64_t a, const uint64_t b){
-    return GetPercentageOf(static_cast<double>(a), static_cast<double>(b));
+  GetPercentageOf(T a, T b){
+    return (static_cast<double>(a) / static_cast<double>(b)) * 100.0;
   }
 
   static inline std::string
@@ -27,6 +23,12 @@ namespace poseidon{
     char data[8];
     snprintf(data, 8, "%.2f%%", percentage);
     return {data};
+  }
+
+  template<typename T>
+  static inline std::string
+  PrettyPrintPercentage(T a, T b){
+    return PrettyPrintPercentage(GetPercentageOf<T>(a, b));
   }
 
   class BitVector{

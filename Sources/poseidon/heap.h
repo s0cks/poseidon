@@ -1,317 +1,117 @@
 #ifndef POSEIDON_HEAP_H
 #define POSEIDON_HEAP_H
 
-#include "common.h"
-#include "raw_object.h"
-#include "memory_region.h"
+#include "poseidon/zone.h"
+#include "poseidon/flags.h"
+#include "poseidon/memory_region.h"
 
 namespace poseidon{
-  class Heap;
-  class ObjectPointerVisitor;
-  class Semispace{
-    friend class Heap;
-   private:
-    class SemispaceIterator : public RawObjectPointerIterator{
-     private:
-      Semispace* semispace_;
-      uword ptr_;
-     public:
-      explicit SemispaceIterator(Semispace* semispace):
-        semispace_(semispace),
-        ptr_(semispace->GetStartAddress()){
-      }
-      ~SemispaceIterator() override = default;
+ class Heap{
+  public:
+   static inline uint64_t
+   GetNewZoneSize(){
+     return FLAGS_new_zone_size;
+   }
 
-      Semispace* GetSemispace() const{
-        return semispace_;
-      }
+   static inline uint64_t
+   GetOldZoneSize() {
+     return FLAGS_old_zone_size;
+   }
 
-      bool HasNext() const override{
-        auto raw = (RawObject*)ptr_;
-        auto next = ptr_ + raw->GetTotalSize();
-        return raw->GetPointerSize() > 0
-            && GetSemispace()->Contains(next);
-      }
+   static inline uint64_t
+   GetTotalHeapSize(){
+     return GetNewZoneSize() + GetOldZoneSize();
+   }
+  private:
+   MemoryRegion region_;
+   Zone new_zone_;
+   Zone old_zone_;
+  public:
+   Heap():
+    region_(GetTotalHeapSize()),
+    new_zone_(region_, 0, GetNewZoneSize()),
+    old_zone_(region_, GetNewZoneSize(), GetOldZoneSize()){
+     if(!region_.Protect(MemoryRegion::kReadWrite))
+       LOG(ERROR) << "cannot protect Heap MemoryRegion.";
+   }
+   Heap(const Heap& rhs) = delete;
+   ~Heap() = default;
 
-      RawObject* Next() override{
-        auto next = (RawObject*)ptr_;
-        ptr_ += next->GetTotalSize();
-        return next;
-      }
-    };
+   MemoryRegion region() const{
+     return region_;
+   }
 
-    Heap* heap_;
-    uword start_;
-    uword current_;
-    uword size_;
+   uword GetStartingAddress() const{
+     return region_.GetStartAddress();
+   }
 
-    Semispace(Heap* heap, uword start, uword current, uword size):
-      heap_(heap),
-      start_(start),
-      current_(current),
-      size_(size){
-    }
-    Semispace(Heap* heap, uword start, uword size):
-      Semispace(heap, start, start, size){
-    }
-   public:
-    Semispace():
-      heap_(nullptr),
-      start_(0),
-      current_(0),
-      size_(0){
-    }
-    Semispace(const Semispace& rhs) = default;
-    ~Semispace() = default;
+   void* GetStartingAddressPointer() const{
+     return (void*)GetStartingAddress();
+   }
 
-    Heap* GetHeap() const{
-      return heap_;
-    }
+   uword GetEndingAddress() const{
+     return region_.GetEndAddress();
+   }
 
-    uword GetSize() const{
-      return size_;
-    }
+   void* GetEndingAddressPointer() const{
+     return (void*)GetEndingAddress();
+   }
 
-    uword GetStartAddress() const{
-      return start_;
-    }
+   Zone new_zone() const{
+     return new_zone_;
+   }
 
-    uword GetCurrentAddress() const{
-      return current_;
-    }
+   Zone old_zone() const{
+     return old_zone_;
+   }
 
-    uword GetEndAddress() const{
-      return GetStartAddress() + GetSize();
-    }
+   RawObject* AllocateNewObject(uint64_t size){
+     auto val = new_zone_.AllocateRawObject(size);
+     val->SetNewBit();
+     return val;
+   }
 
-    bool Contains(const uword& addr) const{
-      return GetStartAddress() <= addr
-          && GetEndAddress() >= addr;
-    }
+   RawObject* AllocateOldObject(uint64_t size){
+     auto val = old_zone_.AllocateRawObject(size);
+     val->SetOldBit();
+     return val;
+   }
 
-    void* GetPointer() const{
-      return (void*)start_;
-    }
+   bool Contains(uword address) const{
+     return region_.Contains(address);
+   }
 
-    uint64_t GetTotalBytes() const{
-      return GetEndAddress() - GetStartAddress();
-    }
+   void clear(){
+     new_zone_.ClearZone();
+     old_zone_.ClearZone();
+   }
 
-    uint64_t GetAllocatedBytes() const{
-      return GetCurrentAddress() - GetStartAddress();
-    }
+   Heap& operator=(const Heap& rhs) = delete;
 
-    double GetAllocatedPercentage() const{
-      return GetPercentageOf(GetAllocatedBytes(), GetTotalBytes());
-    }
+   friend std::ostream& operator<<(std::ostream& stream, const Heap& heap){//TODO: implement
+     return stream;
+   }
+ };
 
-    uint64_t GetUnallocatedBytes() const{
-      return GetTotalBytes() - GetAllocatedBytes();
-    }
+ class HeapPrinter{
+  public:
+   enum Flags : uint64_t{
+     kNone = 0,
+     kDetailed = 1 << 1,
+     kHexDump = 1 << 2,
 
-    double GetUnallocatedPercentage() const{
-      return GetPercentageOf(GetUnallocatedBytes(), GetTotalBytes());
-    }
+#ifdef PSDN_DEBUG
+     kDefault = kDetailed | kHexDump,
+#else
+     kDefault = kNone,
+#endif//PSDN_DEBUG
+   };
 
-    RawObject* AllocateRawObject(const uint64_t& size);
-    void VisitRawObjectPointers(RawObjectPointerVisitor* vis);
-    void VisitObjectPointers(ObjectPointerVisitor* vis);
-    void VisitMarkedRawObjectPointers(RawObjectPointerVisitor* vis);
+   HeapPrinter() = delete;
+   ~HeapPrinter() = delete;
 
-    bool IsEmpty() const{
-      return GetCurrentAddress() == GetStartAddress();
-    }
-
-    void Clear(){
-      memset((void*)start_, 0, size_);
-      current_ = start_;
-    }
-
-    std::string ToString() const{
-      std::stringstream ss;
-      ss << "Semispace(";
-      ss << "start=" << (void*)start_ << ", ";
-      ss << "current=" << (void*)current_ << ", ";
-      ss << "size=" << size_;
-      ss << ")";
-      return ss.str();
-    }
-
-    Semispace& operator=(const Semispace& rhs){
-      if(this == &rhs)
-        return *this;
-      heap_ = rhs.heap_;
-      start_ = rhs.start_;
-      current_ = rhs.current_;
-      size_ = rhs.size_;
-      return *this;
-    }
-
-    friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
-      return stream << space.ToString();
-    }
-  };
-
-  class Heap{
-   public:
-    class HeapStats{
-      friend class Heap;
-     private:
-      Space space_;
-      uint64_t total_bytes_;
-      uint64_t allocated_bytes_;
-
-      HeapStats(const Space& space, const uint64_t& total, const uint64_t& allocated):
-        space_(space),
-        total_bytes_(total),
-        allocated_bytes_(allocated){
-      }
-     public:
-      HeapStats() = default;
-      HeapStats(const HeapStats& rhs) = default;
-      ~HeapStats() = default;
-
-      Space GetSpace() const{
-        return space_;
-      }
-
-      uint64_t GetTotalBytes() const{
-        return total_bytes_;
-      }
-
-      uint64_t GetAllocatedBytes() const{
-        return allocated_bytes_;
-      }
-
-      double GetAllocatedPercentage() const{
-        return GetPercentageOf(GetAllocatedBytes(), GetTotalBytes());
-      }
-
-      uint64_t GetUnallocatedBytes() const{
-        return GetTotalBytes() - GetAllocatedBytes();
-      }
-
-      double GetUnallocatedPercentage() const{
-        return GetPercentageOf(GetUnallocatedBytes(), GetTotalBytes());
-      }
-
-      HeapStats& operator=(const HeapStats& rhs){
-        if(this == &rhs)
-          return *this;
-        space_ = rhs.space_;
-        total_bytes_= rhs.total_bytes_;
-        allocated_bytes_ = rhs.allocated_bytes_;
-        return *this;
-      }
-
-      friend std::ostream& operator<<(std::ostream& stream, const HeapStats& stats){
-        return stream << HumanReadableSize(stats.GetAllocatedBytes()) << "/" << HumanReadableSize(stats.GetTotalBytes()) << " (" << PrettyPrintPercentage(stats.GetAllocatedPercentage()) << ")";
-      }
-    };
-
-    class HeapIterator : public RawObjectPointerIterator{
-     private:
-      Heap* heap_;
-      uword ptr_;
-     public:
-      explicit HeapIterator(Heap* heap):
-        RawObjectPointerIterator(),
-        heap_(heap),
-        ptr_(heap->GetStartAddress()){
-      }
-      ~HeapIterator() override = default;
-
-      Heap* GetHeap() const{
-        return heap_;
-      }
-
-      bool HasNext() const override{
-        auto ptr = (RawObject*)ptr_;
-        auto next = ptr_ + ptr->GetTotalSize();
-        return ptr->GetPointerSize() > 0
-            && GetHeap()->Contains(next);
-      }
-
-      RawObject* Next() override{
-        auto next = (RawObject*)ptr_;
-        ptr_ += next->GetTotalSize();
-        return next;
-      }
-    };
-   private:
-    Space space_;
-    MemoryRegion region_;
-    Semispace from_;
-    Semispace to_;
-   public:
-    Heap() = default;
-    explicit Heap(const Space& space, const MemoryRegion& region);
-    Heap(const Heap& rhs) = default;
-    ~Heap() = default;
-
-    Space GetSpace() const{
-      return space_;
-    }
-
-    MemoryRegion& GetRegion(){
-      return region_;
-    }
-
-    Semispace& GetFromSpace(){
-      return from_;
-    }
-
-    Semispace& GetToSpace(){
-      return to_;
-    }
-
-    RawObject* AllocateRawObject(const uint64_t& size){
-      return from_.AllocateRawObject(size);
-    }
-
-    uword GetStartAddress() const{
-      return region_.GetStartAddress();
-    }
-
-    uword GetEndAddress() const{
-      return region_.GetEndAddress();
-    }
-
-    bool Contains(const uword& address) const{
-      return region_.Contains(address);
-    }
-
-    uint64_t GetTotalBytes() const{
-      return region_.GetSize();
-    }
-
-    uint64_t GetAllocatedBytes() const{
-      return from_.GetAllocatedBytes() + to_.GetAllocatedBytes();
-    }
-
-    uint64_t GetUnallocatedBytes() const{
-      return from_.GetUnallocatedBytes() + to_.GetUnallocatedBytes();
-    }
-
-    bool IsEmpty() const{
-      return from_.IsEmpty() && to_.IsEmpty();
-    }
-
-    HeapStats GetStats() const{
-      return {GetSpace(), GetTotalBytes(), GetAllocatedBytes()};
-    }
-
-    void Clear(){
-      from_.Clear();
-      to_.Clear();
-    }
-
-    void SwapSpaces();
-    void VisitRawObjectPointers(RawObjectPointerVisitor* vis);
-    void VisitObjectPointers(ObjectPointerVisitor* vis);
-    void VisitMarkedRawObjectPointers(RawObjectPointerVisitor* vis);
-    Heap& operator=(const Heap& rhs) = default;
-  };
+   static void Print(Heap* heap, uint64_t flags = kDefault);
+ };
 }
 
 #endif //POSEIDON_HEAP_H
