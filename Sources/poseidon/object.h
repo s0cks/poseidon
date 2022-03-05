@@ -41,8 +41,8 @@ namespace poseidon{
       raw_ = raw->GetAddress();
     }
 
+    virtual void VisitPointers(RawObjectVisitor* vis){}
     virtual void VisitPointers(RawObjectPointerVisitor* vis){}
-    virtual void VisitPointers(RawObjectPointerPointerVisitor* vis){}
     virtual void Finalize(){}
    public:
     virtual ~Object() = default;
@@ -67,8 +67,8 @@ namespace poseidon{
     }
 
     Field* CreateField(const std::string& name, Class* type);
+    void VisitPointers(RawObjectVisitor* vis) override;
     void VisitPointers(RawObjectPointerVisitor* vis) override;
-    void VisitPointers(RawObjectPointerPointerVisitor* vis) override;
    public:
     Class(std::string name, Class* parent):
       Object(),
@@ -205,7 +205,7 @@ namespace poseidon{
 #pragma ide diagnostic ignored "bugprone-undefined-memory-manipulation"
     template<typename T>
     static inline T* NewInstance(Class* cls){
-      auto data = Allocator::AllocateNewObject(cls->GetAllocationSize());
+      auto data = Allocator::Allocate(cls->GetAllocationSize());
 
       auto fake = new Instance(cls);
       fake->set_raw(data);
@@ -518,14 +518,14 @@ namespace poseidon{
     static Field* kLengthField;
     static Field* kDataField;
    protected:
-    void VisitPointers(RawObjectPointerVisitor* vis) override{
+    void VisitPointers(RawObjectVisitor* vis) override{
       for(auto idx = 0; idx < GetLength(); idx++){
         if(!vis->Visit(*GetObjectAt(idx)))
           return;
       }
     }
 
-    void VisitPointers(RawObjectPointerPointerVisitor* vis) override{
+    void VisitPointers(RawObjectPointerVisitor* vis) override{
       for(auto idx = 0; idx < GetLength(); idx++){
         if(!vis->Visit(GetObjectAt(idx)))
           return;
@@ -628,7 +628,7 @@ namespace poseidon{
 
   Array* Instance::NewArrayInstance(const uint64_t& length){
     auto size = Class::CLASS_ARRAY->GetAllocationSize() + (sizeof(uword) * length);
-    auto data = Allocator::AllocateNewObject(size);
+    auto data = Allocator::Allocate(size);
 
     auto fake = new Instance(Class::CLASS_ARRAY);
     fake->set_raw(data);

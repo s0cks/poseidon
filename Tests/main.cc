@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
 #include "poseidon/poseidon.h"
-#include "poseidon/scavenger.h"
+#include "poseidon/collector.h"
 #include "poseidon/object.h"
 
 int main(int argc, char** argv){
@@ -10,6 +10,7 @@ int main(int argc, char** argv){
   ::google::LogToStderr();
   ::testing::InitGoogleTest(&argc, argv);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
+
 #ifdef PSDN_MTA
   LOG(WARNING) << "*** Using Multi-Threaded Algorithm ***";
 #endif//PSDN_MTA
@@ -25,23 +26,20 @@ int main(int argc, char** argv){
   DLOG(INFO) << "sizeof(Bool) := " << Class::CLASS_BOOL->GetAllocationSize();
   DLOG(INFO) << "sizeof(Array) := " << Class::CLASS_ARRAY->GetAllocationSize();
 
-  static const uint64_t kMaxInts = 489794;
-  for(auto val = 0; val < kMaxInts; val++){
-    Int::New(val);
+  auto val = Int::NewLocal(10);
+  DLOG(INFO) << "value (before): " << val->Get() << " (" << val.GetRawObjectPointer()->ToString() << ").";
+
+  for(auto j = 0; j < 10; j++){
+    for(auto i = 0; i < 65536; i++)
+      Int::New(i);
   }
 
-  auto val = Instance::NewLocalArrayInstance(10);
-  val->SetAt(0, Int::New(2222));
-  val->SetAt(1, Int::New(1111));
+  DLOG(INFO) << "value (after): " << val->Get() << " (" << val.GetRawObjectPointer()->ToString() << ").";
 
-  DLOG(INFO) << "array.length := " << val->GetLength();
-  DLOG(INFO) << "array[0] := " << val->GetAt<Int>(0)->Get() << " (" << val->GetAt<Int>(0)->raw()->ToString() << ")";
-  DLOG(INFO) << "array[1] := " << val->GetAt<Int>(1)->Get() << " (" << val->GetAt<Int>(1)->raw()->ToString() << ")";
+  for(auto j = 0; j < 100; j++){
+    auto large = Allocator::Allocate(FLAGS_large_object_size + (1 * 1024 * 1024));
+    assert(large != nullptr);
+  }
 
-  Scavenger::MinorCollection();
-
-  DLOG(INFO) << "array.length := " << val->GetLength();
-  DLOG(INFO) << "array[0] := " << val->GetAt<Int>(0)->Get() << " (" << val->GetAt<Int>(0)->raw()->ToString() << ")";
-  DLOG(INFO) << "array[1] := " << val->GetAt<Int>(1)->Get() << " (" << val->GetAt<Int>(1)->raw()->ToString() << ")";
   return RUN_ALL_TESTS();
 }

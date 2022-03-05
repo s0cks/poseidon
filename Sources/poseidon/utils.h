@@ -7,11 +7,10 @@
 #include <cstdint>
 #include <cstring>
 
-#include "platform.h"
+#include "poseidon/platform.h"
+#include "poseidon/relaxed_atomic.h"
 
 namespace poseidon{
-  static const uword kUWordOne = 1U;
-
   template<typename T>
   static inline double
   GetPercentageOf(T a, T b){
@@ -153,6 +152,11 @@ namespace poseidon{
     return result;
   }
 
+  static inline const char*
+  HumanReadableSize(const RelaxedAtomic<uint64_t>& val){
+    return HumanReadableSize((uint64_t)val);
+  }
+
   typedef std::chrono::system_clock Clock;
   typedef Clock::time_point Timestamp;
   typedef Clock::duration Duration;
@@ -164,18 +168,17 @@ namespace poseidon{
  using day_t = std::chrono::duration<long long, std::ratio<3600 * 24>>;
 
  template<typename> struct duration_traits {};
-#define DURATION_TRAITS(Duration, Singular, Plural) \
-	template<> struct duration_traits<Duration> { \
-		constexpr static const char* singular = Singular; \
-		constexpr static const char* plural = Plural; \
+#define DURATION_TRAITS(Duration, Abbreviation) \
+	template<> struct duration_traits<Duration> {      \
+		constexpr static const char* abbreviation = Abbreviation; \
 	}
 
- DURATION_TRAITS(std::chrono::microseconds, "microsecond", "microseconds");
- DURATION_TRAITS(std::chrono::milliseconds, "millisecond", "milliseconds");
- DURATION_TRAITS(std::chrono::seconds, "second", "seconds");
- DURATION_TRAITS(std::chrono::minutes, "minute", "minutes");
- DURATION_TRAITS(std::chrono::hours, "hour", "hours");
- DURATION_TRAITS(day_t, "day", "days");
+ DURATION_TRAITS(std::chrono::microseconds, "us");
+ DURATION_TRAITS(std::chrono::milliseconds, "ms");
+ DURATION_TRAITS(std::chrono::seconds, "s");
+ DURATION_TRAITS(std::chrono::minutes, "m");
+ DURATION_TRAITS(std::chrono::hours, "h");
+ DURATION_TRAITS(day_t, "d");
 
  using divisions = std::tuple<std::chrono::microseconds,
                               std::chrono::milliseconds,
@@ -205,7 +208,7 @@ namespace poseidon{
         os << ' ';
       }
 
-      os << count << ' ' << (count == 1 ? traits::singular : traits::plural);
+      os << count << traits::abbreviation;
       dur -= n;
 
       return true;

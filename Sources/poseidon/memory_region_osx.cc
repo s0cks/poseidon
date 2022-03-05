@@ -21,16 +21,13 @@ namespace poseidon{
     size_ = size;
   }
 
-  bool MemoryRegion::Free() const{
+  MemoryRegion::~MemoryRegion(){
     if(size_ > 0){
       int err;
-      if((err = munmap((void*)start_, size_)) != 0){
+      if((err = munmap((void*)start_, size_)) != 0)
         LOG(ERROR) << "failed to munmap memory region of " << size_ << " bytes: " << strerror(err);
-        return false;
-      }
       DLOG(INFO) << "freed MemoryRegion (" << HumanReadableSize(size_) << ")";
     }
-    return true;
   }
 
   bool MemoryRegion::Protect(const ProtectionMode& mode) const{

@@ -6,18 +6,12 @@
 #include "raw_object.h"
 
 namespace poseidon{
- class Finalizer : public RawObjectPointerVisitor{
+ class Finalizer : public RawObjectVisitor{
   private:
    uint64_t finalized_;
-
-   inline void
-   FinalizeObject(RawObject* raw){
-     finalized_++;
-     Allocator::FinalizeObject(raw);
-   }
   public:
    Finalizer():
-    RawObjectPointerVisitor(),
+    RawObjectVisitor(),
     finalized_(0){
    }
    ~Finalizer() override = default;
@@ -27,9 +21,6 @@ namespace poseidon{
    }
 
    bool Visit(RawObject* raw) override{
-     if(!raw->IsMarked() && !raw->IsForwarding()){
-       FinalizeObject(raw);
-     }
      return true;
    }
  };

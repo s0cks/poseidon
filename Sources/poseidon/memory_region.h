@@ -106,7 +106,7 @@ namespace poseidon{
       start_(rhs.GetStartAddress()),
       size_(rhs.GetSize()){
     }
-    ~MemoryRegion() = default;
+    ~MemoryRegion();
 
     uword GetSize() const{
       return size_;
@@ -140,13 +140,6 @@ namespace poseidon{
     const uint8_t* bytes_end() const{
       return (uint8_t*)GetEndAddress();
     }
-
-    /**
-     * Free the memory buffer for the {@link MemoryRegion}.
-     *
-     * @return true if the {@link MemoryRegion} was successfully freed, false otherwise
-     */
-    bool Free() const;
 
     /**
      * Set the protection mode for the {@link MemoryRegion}

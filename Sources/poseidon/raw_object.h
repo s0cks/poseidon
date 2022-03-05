@@ -7,22 +7,21 @@
 
 namespace poseidon{
   class RawObject;
-  typedef RawObject* RawObjectPtr;
+
+  class RawObjectVisitor{
+   protected:
+    RawObjectVisitor() = default;
+   public:
+    virtual ~RawObjectVisitor() = default;
+    virtual bool Visit(RawObject* val) = 0;
+  };
 
   class RawObjectPointerVisitor{
    protected:
     RawObjectPointerVisitor() = default;
    public:
     virtual ~RawObjectPointerVisitor() = default;
-    virtual bool Visit(RawObjectPtr obj) = 0;
-  };
-
-  class RawObjectPointerPointerVisitor{//TODO: rename
-   protected:
-    RawObjectPointerPointerVisitor() = default;
-   public:
-    virtual ~RawObjectPointerPointerVisitor() = default;
-    virtual bool Visit(RawObjectPtr* obj) = 0;
+    virtual bool Visit(RawObject** val) = 0;
   };
 
   class RawObjectPointerIterator{
@@ -190,8 +189,6 @@ namespace poseidon{
     uint64_t GetTotalSize() const{
       return sizeof(RawObject)+GetPointerSize();
     }
-
-    uint64_t VisitPointers(RawObjectPointerPointerVisitor* vis) const;
 
     std::string ToString() const{
       std::stringstream ss;

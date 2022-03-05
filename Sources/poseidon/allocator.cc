@@ -28,10 +28,26 @@ namespace poseidon{
    return &group->locals_[group->num_locals_++];
  }
 
- void Allocator::VisitLocals(RawObjectPointerPointerVisitor* vis){
+ void Allocator::VisitLocals(RawObjectPointerVisitor* vis){
    LocalGroup::Iterator iter(locals_, true);
    while(iter.HasNext()){
      vis->Visit(iter.NextPointer());
+   }
+ }
+
+ void Allocator::VisitLocals(RawObjectVisitor* vis){
+   LocalGroup::Iterator iter(locals_, true);
+   while(iter.HasNext()){
+     if(!vis->Visit(iter.Next()))
+       return;
+   }
+ }
+
+ void Allocator::VisitLocals(const std::function<bool(RawObject**)>& vis){
+   LocalGroup::Iterator iter(locals_, true);
+   while(iter.HasNext()){
+     if(!vis(iter.NextPointer()))
+       return;
    }
  }
 

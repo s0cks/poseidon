@@ -66,14 +66,14 @@ namespace poseidon{
     return nullptr;
   }
 
-  void Class::VisitPointers(RawObjectPointerVisitor* vis){
+  void Class::VisitPointers(RawObjectVisitor* vis){
     for(auto& field : fields_){
       if(!vis->Visit(field->raw()))
         return;
     }
   }
 
-  void Class::VisitPointers(RawObjectPointerPointerVisitor* vis){
+  void Class::VisitPointers(RawObjectPointerVisitor* vis){
     NOT_IMPLEMENTED(ERROR);//TODO: implement
   }
 }

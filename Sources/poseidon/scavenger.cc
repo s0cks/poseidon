@@ -1,102 +1,95 @@
 #include <deque>
 #include <glog/logging.h>
 
-#include "utils.h"
-#include "scavenger.h"
-#include "allocator.h"
-
-#include "finalizer.h"
+#include "poseidon/utils.h"
+#include "poseidon/scavenger.h"
+#include "poseidon/allocator.h"
+#include "poseidon/finalizer.h"
 
 namespace poseidon{
  uword Scavenger::PromoteObject(RawObject* obj){
-   auto new_ptr = Allocator::GetHeap()->old_zone().AllocateRawObject(obj->GetPointerSize());
+   DLOG(INFO) << "promoting " << obj->ToString() << " to new zone.";
+   auto new_ptr = Allocator::GetHeap()->old_zone()->AllocateRawObject(obj->GetPointerSize());
+   CopyObject(obj, new_ptr);
    new_ptr->SetOldBit();
    new_ptr->GetObjectPointer()->set_raw(new_ptr);
-   memcpy(new_ptr->GetPointer(), obj->GetPointer(), obj->GetPointerSize());
-   DLOG(INFO) << "promoted " << obj->ToString() << " to " << new_ptr->ToString();
+
+   stats_.num_promoted += 1;
+   stats_.bytes_promoted += obj->GetPointerSize();
    return new_ptr->GetAddress();
  }
 
  uword Scavenger::ScavengeObject(RawObject* obj){
-   auto new_ptr = to_space_.AllocateRawObject(obj->GetPointerSize());
+   DLOG(INFO) << "scavenging " << obj->ToString() << " in old zone.";
+   auto new_ptr = zone()->AllocateRawObject(obj->GetPointerSize());
+   CopyObject(obj, new_ptr);
    new_ptr->SetNewBit();
-   new_ptr->SetRememberedBit();
    new_ptr->GetObjectPointer()->set_raw(new_ptr);
-   memcpy(new_ptr->GetPointer(), obj->GetPointer(), obj->GetPointerSize());
-   DLOG(INFO) << "relocated " << obj->ToString() << " to " << new_ptr->ToString();
+
+   stats_.num_scavenged += 1;
+   stats_.bytes_scavenged += obj->GetPointerSize();
    return new_ptr->GetAddress();
  }
 
- uword Scavenger::CopyObject(RawObjectPtr raw){
+ uword Scavenger::ProcessObject(RawObject* raw){
    if(!raw->IsForwarding()){
-     if(raw->IsNew() && !raw->IsMarked() && raw->IsRemembered()){
-       MarkObject(raw);
+     if(!raw->IsMarked() && raw->IsRemembered()){
        auto new_address = PromoteObject(raw);
        ForwardObject(raw, new_address);
-     } else if(raw->IsNew() && !raw->IsMarked() && !raw->IsRemembered()){
-       MarkObject(raw);
+     } else if(!raw->IsMarked() && !raw->IsRemembered()){
        auto new_address = ScavengeObject(raw);
        ForwardObject(raw, new_address);
      }
    }
+   raw->SetRememberedBit();
    return raw->GetForwardingAddress();
  }
 
- bool Scavenger::Visit(RawObjectPtr* ptr){
-   auto old_val = (*ptr);
-   if(!old_val->IsMarked() && !old_val->IsRemembered()){
-     (*ptr) = (RawObject*)CopyObject(old_val);
-   }
+ bool Scavenger::Visit(RawObject* val){
    return true;
- }
-
- bool Scavenger::Visit(RawObjectPtr ptr){
-   ptr->VisitPointers(this);
-   return true;
- }
-
- void Scavenger::SwapSpaces(){
-   zone_.SwapSpaces();
  }
 
  void Scavenger::ProcessRoots(){
-   DLOG(INFO) << "processing " << Allocator::GetNumberOfLocals() << " roots.";
-   Allocator::VisitLocals(this);
+   DLOG(INFO) << "processing roots....";
+   Allocator::VisitLocals([&](RawObject** val){
+     auto old_val = (*val);
+     DLOG(INFO) << "visiting " << old_val->ToString();
+     if(old_val->IsNew() && !old_val->IsMarked()){
+       DLOG(INFO) << "processing root: " << old_val->ToString();
+       (*val) = (RawObject*)ProcessObject(old_val);
+     }
+     (*val)->SetRememberedBit();
+     return true;
+   });
+   DLOG(INFO) << "processed roots (" << stats_ << ").";
  }
 
- void Scavenger::ProcessToSpace(){
-   DLOG(INFO) << "processing to-space " << to_space_;
-   to_space_.VisitRawObjects([&](RawObject* val){
-     val->VisitPointers(this);
+ void Scavenger::ProcessToSpace() const{
+   DLOG(INFO) << "processing to-space....";
+   GetToSpace().VisitRawObjects([&](RawObject* val){
+     if(val->IsNew() && val->IsMarked() && !val->IsRemembered()){
+       DLOG(INFO) << "processing " << val->ToString();
+     }
      return true;
    });
  }
 
- void Scavenger::ProcessCopiedObjects(){
-   NOT_IMPLEMENTED(ERROR);//TODO: implement
- }
-
- void Scavenger::MinorCollection(){
-   // only collect from the eden heap
-   DLOG(INFO) << "executing minor collection.";
-   auto heap = Allocator::GetHeap();
-   auto new_zone = heap->new_zone();
-
+ void Scavenger::SwapSpaces() const{
+   zone()->SwapSpaces();
 #ifdef PSDN_DEBUG
-   auto start_ts = Clock::now();
-#endif//PSDN_DEBUG
-
-   Scavenger scavenger(new_zone);
-   new_zone.SwapSpaces();
-   scavenger.ProcessRoots(); // scavenge roots into to_
-   scavenger.ProcessToSpace(); // scavenge from_ into to_
-
-#ifdef PSDN_DEBUG
-   auto finished_ts = Clock::now();
+   assert(GetToSpace() == zone()->from());
+   assert(GetFromSpace() == zone()->to());
 #endif//PSDN_DEBUG
  }
 
- void Scavenger::MajorCollection(){
+ void Scavenger::Scavenge(){
+   DLOG(INFO) << "scavenging memory from " << *zone();
 
+   SwapSpaces();
+
+   ProcessRoots();
+   ProcessToSpace();
+
+   zone()->to().Clear();
  }
 }

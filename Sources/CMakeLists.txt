@@ -17,7 +17,7 @@ add_library(poseidon
     poseidon/raw_object.h poseidon/raw_object.cc
     poseidon/scavenger.h poseidon/scavenger.cc
     poseidon/finalizer.h
-    poseidon/memory_region.h poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc poseidon/zone.h poseidon/semispace.h poseidon/semispace.cc poseidon/flags.h)
+    poseidon/memory_region.h poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc poseidon/zone.h poseidon/semispace.h poseidon/semispace.cc poseidon/flags.h poseidon/relaxed_atomic.h poseidon/collector.h poseidon/collector.cc poseidon/marker.h)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     glog::glog

@@ -93,7 +93,11 @@ namespace poseidon{
      current_(start),
      size_(size){
    }
-   Semispace(const Semispace& rhs) = default;
+   Semispace(const Semispace& rhs):
+    start_(rhs.start_),
+    current_(rhs.current_),
+    size_(rhs.size_){
+   }
    ~Semispace() = default;
 
    uword GetStartingAddress() const{
@@ -129,7 +133,7 @@ namespace poseidon{
          && GetEndingAddress() >= addr;
    }
 
-   void VisitRawObjects(RawObjectPointerVisitor* vis) const{
+   void VisitRawObjects(RawObjectVisitor* vis) const{
      SemispaceIterator iter(this);
      while(iter.HasNext()){
        if(!vis->Visit(iter.Next()))
@@ -145,7 +149,7 @@ namespace poseidon{
      }
    }
 
-   void VisitMarkedRawObjects(RawObjectPointerVisitor* vis) const{
+   void VisitMarkedRawObjects(RawObjectVisitor* vis) const{
      SemispaceIterator iter(this);
      while(iter.HasNext()){
        if(!vis->Visit(iter.Next()))
@@ -188,6 +192,15 @@ namespace poseidon{
      current_ = rhs.current_;
      size_ = rhs.size_;
      return *this;
+   }
+
+   friend bool operator==(const Semispace& lhs, const Semispace& rhs){//TODO: refactor
+     return lhs.start_ == rhs.start_
+         && lhs.size_ == rhs.size_;
+   }
+
+   friend bool operator!=(const Semispace& lhs, const Semispace& rhs){//TODO: refactor
+     return !operator==(lhs, rhs);
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){

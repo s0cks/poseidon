@@ -267,7 +267,7 @@ namespace poseidon{
      return GetNumberOfLocals() == 0;
    }
 
-   void VisitLocals(RawObjectPointerVisitor* vis) const{
+   void VisitLocals(RawObjectVisitor* vis) const{
      if(IsEmpty())
        return;
      Iterator iter(this, false);
@@ -278,7 +278,7 @@ namespace poseidon{
      }
    }
 
-   void VisitLocals(RawObjectPointerPointerVisitor* vis) const{
+   void VisitLocals(RawObjectPointerVisitor* vis) const{
      if(IsEmpty())
        return;
      Iterator iter(this, false);

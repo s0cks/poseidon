@@ -97,8 +97,8 @@ namespace poseidon{
     * @param offset The offset for the {@link Zone} in the {@link MemoryRegion}
     * @param size The size of the {@link Zone}
     */
-   Zone(const MemoryRegion& region, uint64_t offset, uint64_t size)://TODO: refactor?
-    Zone(region.GetStartAddress() + offset, size){
+   Zone(MemoryRegion* region, uint64_t offset, uint64_t size)://TODO: refactor?
+    Zone(region->GetStartAddress() + offset, size){
    }
 
    /**
@@ -116,11 +116,11 @@ namespace poseidon{
    Zone(const Zone& rhs) = default; // Copy-Constructor
    ~Zone() = default; // Destructor
 
-   Semispace from() const{
+   Semispace& from(){
      return from_;
    }
 
-   Semispace to() const{
+   Semispace& to(){
      return to_;
    }
 
@@ -175,7 +175,7 @@ namespace poseidon{
          && GetEndingAddress() >= address;
    }
 
-   void VisitRawObjects(RawObjectPointerVisitor* vis) const{//TODO: document
+   void VisitRawObjects(RawObjectVisitor* vis) const{//TODO: document
      ZoneIterator iter(this);
      while(iter.HasNext()){
        if(!vis->Visit(iter.Next()))
@@ -191,7 +191,7 @@ namespace poseidon{
      }
    }
 
-   void VisitMarkedRawObjects(RawObjectPointerVisitor* vis) const{//TODO: document
+   void VisitMarkedRawObjects(RawObjectVisitor* vis) const{//TODO: document
      ZoneIterator iter(this);
      while(iter.HasNext()){
        if(!vis->Visit(iter.Next()))
@@ -224,6 +224,10 @@ namespace poseidon{
      std::swap(from_, to_);
    }
 
+   uint64_t GetNumberOfBytesAllocated() const{
+     return from_.GetNumberOfBytesAllocated() + to_.GetNumberOfBytesAllocated();
+   }
+
    /**
     * Allocates a new object of {@param size} bytes in the from_ {@link Semispace} of this {@link Zone}.
     *
@@ -245,7 +249,8 @@ namespace poseidon{
    friend std::ostream& operator<<(std::ostream& stream, const Zone& zone){
      stream << "Zone(";
      stream << "starting_address=" << zone.GetStartingAddressPointer() << ", ";
-     stream << "total_size=" << HumanReadableSize(zone.size());
+     stream << "total_size=" << HumanReadableSize(zone.size()) << ", ";
+     stream << "allocated=" << HumanReadableSize(zone.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(zone.GetNumberOfBytesAllocated(), zone.size()) << ")";
      stream << ")";
      return stream;
    }

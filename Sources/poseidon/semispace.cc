@@ -4,10 +4,11 @@
 namespace poseidon{
  RawObject* Semispace::AllocateRawObject(const uint64_t& size){
    uint64_t total_size = sizeof(RawObject) + size;
+   if(!Contains(current_ + total_size)){
+     DLOG(WARNING) << "cannot allocate object of size " << HumanReadableSize(size) << " in space.";
+     return nullptr;
+   }
 
-   //TODO: size check
-
-   DLOG(INFO) << "allocating object of " << HumanReadableSize(size) << " (total_size=" << HumanReadableSize(total_size) << ") @" << (void*)current_;
    uword paddress = current_;
    current_ += total_size;
    void* ptr = (void*)paddress;
