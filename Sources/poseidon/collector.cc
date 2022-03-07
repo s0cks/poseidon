@@ -62,6 +62,10 @@ namespace poseidon{
    });
  }
 
+ void Collector::CompactOldZone(){
+
+ }
+
  void Collector::MajorCollection(){
    DLOG(INFO) << "executing major collection....";
    auto heap = Allocator::GetHeap();
@@ -72,6 +76,7 @@ namespace poseidon{
 #endif//PSDN_DEBUG
 
    // 1. Clean Old Zone
+   CompactOldZone();
 
    // 2. Clean HeapPages
    CompactHeapPages();

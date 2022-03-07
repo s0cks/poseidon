@@ -8,12 +8,27 @@ namespace poseidon{
  class Compactor{
    //TODO: convert to table based algorithm
   private:
-   HeapPage* page_;
+   uword start_;
+   uint64_t size_;
+
    uword live_;
    uword free_;
 
-   inline HeapPage* page() const{
-     return page_;
+   inline uword GetStartingAddress() const{
+     return start_;
+   }
+
+   inline uint64_t size() const{
+     return size_;
+   }
+
+   inline uword GetEndingAddress() const{
+     return GetStartingAddress() + size();
+   }
+
+   inline bool Contains(uword address) const{
+     return GetStartingAddress() <= address
+         && GetEndingAddress() >= address;
    }
 
    inline RawObject* live_ptr() const{
@@ -55,7 +70,8 @@ namespace poseidon{
    }
   public:
    explicit Compactor(HeapPage* page):
-    page_(page),
+    start_(page->GetStartingAddress()),
+    size_(page->size()),
     live_(page->GetStartingAddress()),
     free_(page->GetStartingAddress()){
    }

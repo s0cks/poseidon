@@ -5,7 +5,7 @@
 namespace poseidon{
  void Compactor::MarkLiveObjects(){
    Allocator::VisitLocals([&](RawObject* val){
-     if(page()->Contains(val->GetAddress()) && !val->IsMarked())
+     if(Contains(val->GetAddress()) && !val->IsMarked())
        MarkObject(val);
      return true;
    });
@@ -17,7 +17,7 @@ namespace poseidon{
 //    * If the live pointer points to a live object, update that object's forwarding pointer to the current free pointer and increment the free pointer according to the object's size.
 //    * Move the live pointer to the next object
 //    * End when the live pointer reaches the end of heap.
-   while(live_ < page()->GetEndingAddress() && live_ptr()->GetPointerSize() > 0){
+   while(live_ < GetEndingAddress() && live_ptr()->GetPointerSize() > 0){
      auto ptr = live_ptr();
      if(ptr->IsMarked()){
        free_ += ForwardObject(ptr);
@@ -29,9 +29,7 @@ namespace poseidon{
  void Compactor::UpdateLiveObjects(){
 // 1. Update all pointers
 //    * For each live object, update its pointers according to the forwarding pointers of the objects they point to.
-// 2. Move objects
-//    * For each live object, move its data to its forwarding location.
-   Allocator::VisitLocals([&](RawObject** val){
+  Allocator::VisitLocals([&](RawObject** val){
      auto old_val = (*val);
      if(old_val->IsMarked()){
 #ifdef PSDN_DEBUG
@@ -44,11 +42,13 @@ namespace poseidon{
  }
 
  void Compactor::ForwardAndFinalizeObjects(){
+// 2. Move objects
+//    * For each live object, move its data to its forwarding location.
    Finalizer finalizer;
 
-   auto next_address = page()->GetStartingAddress();
-   auto current_address = page()->GetStartingAddress();
-   while(current_address < page()->GetEndingAddress()){
+   auto next_address = GetStartingAddress();
+   auto current_address = GetStartingAddress();
+   while(current_address < GetEndingAddress()){
      auto current = (RawObject*)current_address;
      if(current->GetPointerSize() <= 0)
        break;
@@ -66,7 +66,7 @@ namespace poseidon{
 
      current_address += length;
    }
-   page()->SetCurrent(next_address);
+   //TODO: SetCurrent(next_address);
 
    DLOG(INFO) << "*** number of objects finalized: " << finalizer.GetNumberOfObjectsFinalized() << " (" << HumanReadableSize(finalizer.GetNumberOfBytesFinalized()) << ").";
  }
@@ -74,8 +74,6 @@ namespace poseidon{
  void Compactor::Compact(){
    DLOG(INFO) << "compacting heap....";
 #ifdef PSDN_DEBUG
-   auto total_bytes = page()->size();
-   auto start_bytes = page()->GetNumberOfBytesAllocated();
    auto start_ts = Clock::now();
 #endif//PSDN_DEBUG
 
@@ -86,13 +84,8 @@ namespace poseidon{
 
 #ifdef PSDN_DEBUG
    auto finish_ts = Clock::now();
-   auto finish_bytes = page()->GetNumberOfBytesAllocated();
    auto duration = (finish_ts - start_ts);
-   auto difference = (start_bytes - finish_bytes);
    DLOG(INFO) << "compaction finished in " << duration << ".";
-   DLOG(INFO) << "starting allocation: " << HumanReadableSize(start_bytes) << "/" << HumanReadableSize(total_bytes) << " (" << PrettyPrintPercentage(start_bytes, total_bytes) << ").";
-   DLOG(INFO) << "ending allocation: " << HumanReadableSize(finish_bytes) << "/" << HumanReadableSize(total_bytes) << " (" << PrettyPrintPercentage(finish_bytes, total_bytes) << ").";
-   DLOG(INFO) << "freed " << HumanReadableSize(difference) << " (" << PrettyPrintPercentage(difference, total_bytes) << ").";
 #endif//PSDN_DEBUG
  }
 }

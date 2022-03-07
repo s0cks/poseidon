@@ -115,6 +115,8 @@ namespace poseidon{
    *       scanPtr = scanPtr  + o.size() -- points to the next object in the to-space, if any
    *   EndWhile
    */
+  private:
+   static void CompactOldZone();
    static void CompactHeapPages();
   public:
    Collector() = delete;
