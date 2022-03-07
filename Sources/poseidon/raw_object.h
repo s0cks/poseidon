@@ -79,17 +79,12 @@ namespace poseidon{
     // class_id
     class ClassIdTag : public BitField<ObjectTag, uint16_t, kClassIdTagOffset, kBitsForClassIdTag>{};
 
-    uword tag_;
-    uword forwarding_;
-
-    inline ObjectTag&
-    tag(){
-      return tag_;
-    }
+    RelaxedAtomic<ObjectTag> tag_;
+    RelaxedAtomic<uword> forwarding_;
 
     inline ObjectTag
     tag() const{
-      return tag_;
+      return (ObjectTag)tag_;
     }
    public:
     RawObject():
@@ -118,12 +113,12 @@ namespace poseidon{
       forwarding_ = address;
     }
 
-    void* GetForwardingPointer() const{
-      return ((void*)forwarding_);
+    uword GetForwardingAddress() const{
+      return (uword)forwarding_;
     }
 
-    uword GetForwardingAddress() const{
-      return forwarding_;
+    void* GetForwardingPointer() const{
+      return (void*)GetForwardingAddress();
     }
 
     bool IsForwarding() const{

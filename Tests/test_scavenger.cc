@@ -12,11 +12,6 @@ namespace poseidon{
  };
 
  TEST_F(ScavengerTest, TestScavenge){
-   ::testing::StrictMock<MockZone> zone;
-
-   Scavenger scavenger(&zone);
-   scavenger.Scavenge();
-
-   EXPECT_CALL(zone, SwapSpaces());
+   
  }
 }
