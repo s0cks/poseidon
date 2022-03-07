@@ -7,6 +7,6 @@ add_executable(poseidon-tests
 target_link_libraries(poseidon-tests
     poseidon
     ${CMAKE_THREAD_LIBS_INIT}
-    GTest::GTest
-    glog::glog
-    gmock)
+    GTest::gtest
+    GTest::gmock
+    glog::glog)
