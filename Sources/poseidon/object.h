@@ -37,10 +37,6 @@ namespace poseidon{
       raw_(0){
     }
 
-    void set_raw(RawObject* raw){
-      raw_ = raw->GetAddress();
-    }
-
     virtual void VisitPointers(RawObjectVisitor* vis){}
     virtual void VisitPointers(RawObjectPointerVisitor* vis){}
     virtual void Finalize(){}
@@ -50,6 +46,11 @@ namespace poseidon{
 
     RawObject* raw() const{
       return (RawObject*)raw_;
+    }
+
+    //TODO: visible for testing
+    void set_raw(RawObject* raw){
+      raw_ = raw->GetAddress();
     }
   };
 
@@ -172,11 +173,6 @@ namespace poseidon{
    private:
     Class* type_;
    protected:
-    explicit Instance(Class* type):
-      Object(),
-      type_(type){
-    }
-
     inline uword** FieldAddressAtOffset(uword offset) const{
       return (uword**)(raw()->GetObjectPointerAddress() + offset);
     }
@@ -185,6 +181,11 @@ namespace poseidon{
       return FieldAddressAtOffset(field->GetOffset());
     }
    public:
+    //TODO: visible for testing
+    explicit Instance(Class* type):
+      Object(),
+      type_(type){
+    }
     ~Instance() override = default;
 
     Class* GetType() const{

@@ -55,6 +55,13 @@ namespace poseidon{
 #endif//PSDN_DEBUG
  }
 
+ void Collector::CompactHeapPages(){
+   Allocator::GetHeap()->VisitPages([&](const HeapPage* page){
+     DLOG(INFO) << "visiting page.";
+     return true;
+   });
+ }
+
  void Collector::MajorCollection(){
    DLOG(INFO) << "executing major collection....";
    auto heap = Allocator::GetHeap();
@@ -67,6 +74,7 @@ namespace poseidon{
    // 1. Clean Old Zone
 
    // 2. Clean HeapPages
+   CompactHeapPages();
 
 #ifdef PSDN_DEBUG
    auto duration = (Clock::now() - start_ts);

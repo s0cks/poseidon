@@ -135,7 +135,7 @@ namespace poseidon{
     static int kSuffixLength = sizeof(kSuffix) / sizeof(kSuffix[0]);
 
     uint8_t suffix = 0;
-    double remainder = static_cast<double>(nbytes);
+    auto remainder = static_cast<double>(nbytes);
 
     while(remainder >= 1024 && suffix < kSuffixLength){
       suffix++;

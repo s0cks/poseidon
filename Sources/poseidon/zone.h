@@ -114,7 +114,7 @@ namespace poseidon{
     to_(start + GetSemispaceSize(size), GetSemispaceSize(size)){
    }
    Zone(const Zone& rhs) = default; // Copy-Constructor
-   ~Zone() = default; // Destructor
+   virtual ~Zone() = default; // Destructor
 
    Semispace& from(){
      return from_;
@@ -211,7 +211,7 @@ namespace poseidon{
    /**
     * Clears all the bytes in the {@link Zone}.
     */
-   void ClearZone() const{
+   virtual void ClearZone() const{
      memset(GetStartingAddressPointer(), 0, size());
    }
 
@@ -220,7 +220,7 @@ namespace poseidon{
     *
     * Called during collection time.
     */
-   void SwapSpaces(){
+   virtual void SwapSpaces(){
      std::swap(from_, to_);
    }
 
@@ -234,7 +234,7 @@ namespace poseidon{
     * @param size The size of the new object to allocate
     * @return A pointer to the beginning of the object and i's header
     */
-   RawObject* AllocateRawObject(uint64_t size){//TODO: refactor/cleanup?
+   virtual RawObject* AllocateRawObject(uint64_t size){//TODO: refactor/cleanup?
      return from_.AllocateRawObject(size);
    }
 

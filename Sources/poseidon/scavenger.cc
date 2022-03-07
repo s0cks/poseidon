@@ -2,6 +2,7 @@
 #include <glog/logging.h>
 
 #include "poseidon/utils.h"
+#include "poseidon/object.h"
 #include "poseidon/scavenger.h"
 #include "poseidon/allocator.h"
 #include "poseidon/finalizer.h"

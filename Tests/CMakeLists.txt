@@ -3,9 +3,10 @@ find_package(Threads REQUIRED)
 find_package(Glog REQUIRED)
 
 add_executable(poseidon-tests
-    main.cc)
+    main.cc test_compactor.cc helpers.h test_collector.cc test_scavenger.cc mock_zone.h)
 target_link_libraries(poseidon-tests
     poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     GTest::GTest
-    glog::glog)
+    glog::glog
+    gmock)

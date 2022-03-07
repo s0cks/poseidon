@@ -36,10 +36,5 @@ int main(int argc, char** argv){
 
   DLOG(INFO) << "value (after): " << val->Get() << " (" << val.GetRawObjectPointer()->ToString() << ").";
 
-  for(auto j = 0; j < 100; j++){
-    auto large = Allocator::Allocate(FLAGS_large_object_size + (1 * 1024 * 1024));
-    assert(large != nullptr);
-  }
-
   return RUN_ALL_TESTS();
 }

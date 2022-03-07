@@ -1,0 +1,23 @@
+#ifndef POSEIDON_MOCK_ZONE_H
+#define POSEIDON_MOCK_ZONE_H
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <glog/logging.h>
+
+#include "poseidon/zone.h"
+
+namespace poseidon{
+ class MockZone : public Zone{
+  public:
+   MockZone() = default;
+   ~MockZone() override = default;
+
+   MOCK_METHOD(bool, Contains, (uword), (const));
+   MOCK_METHOD(void, SwapSpaces, (), ());
+   MOCK_METHOD(void, ClearZone, (), (const));
+   MOCK_METHOD(RawObject*, AllocateRawObject, (uint64_t), ());
+ };
+}
+
+#endif //POSEIDON_MOCK_ZONE_H

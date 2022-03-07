@@ -32,6 +32,7 @@ namespace poseidon{
  }
 
  class HeapPage{
+   friend class Compactor;
   private:
    class HeapPageIterator : public RawObjectPointerIterator{
     private:
@@ -76,6 +77,13 @@ namespace poseidon{
 
    MemoryRegion region_;
    uword current_;
+
+   inline void SetCurrent(uword address){
+#ifdef PSDN_DEBUG
+     assert(Contains(address));
+#endif//PSDN_DEBUG
+     current_ = address;
+   }
   public:
    explicit HeapPage(uint64_t size = GetHeapPageSize()):
     next_(nullptr),
@@ -276,6 +284,14 @@ namespace poseidon{
 
    bool Contains(uword address) const{
      return region_->Contains(address);
+   }
+
+   void VisitPages(const std::function<bool(const HeapPage* page)>& vis) const{
+     auto page = GetCurrentPage();
+     while(page != nullptr){
+       if(!vis(page))
+         return;
+     }
    }
 
    RawObject* AllocateObject(uint64_t size);

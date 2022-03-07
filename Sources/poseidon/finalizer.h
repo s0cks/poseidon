@@ -2,26 +2,36 @@
 #define POSEIDON_FINALIZER_H
 
 #include <glog/logging.h>
-#include "object.h"
-#include "raw_object.h"
+
+#include "poseidon/raw_object.h"
 
 namespace poseidon{
- class Finalizer : public RawObjectVisitor{
+ class Finalizer{
   private:
-   uint64_t finalized_;
+   uint64_t num_finalized_;
+   uint64_t bytes_finalized_;
   public:
    Finalizer():
-    RawObjectVisitor(),
-    finalized_(0){
+    num_finalized_(0),
+    bytes_finalized_(0){
    }
-   ~Finalizer() override = default;
+   ~Finalizer() = default;
 
    uint64_t GetNumberOfObjectsFinalized() const{
-     return finalized_;
+     return num_finalized_;
    }
 
-   bool Visit(RawObject* raw) override{
-     return true;
+   uint64_t GetNumberOfBytesFinalized() const{
+     return bytes_finalized_;
+   }
+
+   void Finalize(RawObject* val){
+     VLOG(3) << "finalizing " << val->ToString() << ".";
+     val->ClearMarkedBit();
+     val->SetPointerSize(0);
+
+     num_finalized_ += 1;
+     bytes_finalized_ += val->GetTotalSize();
    }
  };
 }

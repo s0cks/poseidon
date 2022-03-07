@@ -21,7 +21,6 @@ namespace poseidon{
 
    bool Visit(RawObject* raw) override{
      DVLOG(1) << "marking " << raw->ToString() << ".";
-
      num_marked_ += 1;
      raw->SetMarkedBit();
      return true;
