@@ -30,6 +30,20 @@ namespace poseidon{
     return PrettyPrintPercentage(GetPercentageOf<T>(a, b));
   }
 
+ static inline uintptr_t
+ RoundUpPowTwo(intptr_t x){
+   x = x - 1;
+   x = x | (x >> 1);
+   x = x | (x >> 2);
+   x = x | (x >> 4);
+   x = x | (x >> 8);
+   x = x | (x >> 16);
+#if defined(ARCHITECTURE_IS_X64)
+   x = x | (x >> 32);
+#endif
+   return x + 1;
+ }
+
   class BitVector{
    public:
     static const uint64_t kBitsPerByte = 8;
