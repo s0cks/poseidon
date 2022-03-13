@@ -40,31 +40,24 @@ namespace poseidon{
      }
    }
   protected:
-   const TaskPool* pool_;
    Task* parent_;
    RelaxedAtomic<State> state_;
    RelaxedAtomic<int64_t> children_;
 
-   Task(const TaskPool* pool, Task* parent):
-    pool_(pool),
+   explicit Task(Task* parent):
     parent_(nullptr),
     state_(State::kUnqueued),
     children_(1){
      SetParent(parent);
    }
-   explicit Task(Task* parent):
-    Task(parent->pool(), parent){
-   }
-   explicit Task(const TaskPool* pool):
-    Task(pool, nullptr){
+   Task():
+    Task(nullptr){
    }
 
    inline void SetParent(Task* task){
-#ifdef PSDN_DEBUG
-     assert(task != nullptr);
-#endif//PSDN_DEBUG
      parent_ = task;
-     task->children_ += 1;
+     if(task != nullptr)
+       task->children_ += 1;
    }
 
    inline void SetState(const State& state){
@@ -72,10 +65,6 @@ namespace poseidon{
    }
   public:
    virtual ~Task() = default;
-
-   const TaskPool* pool() const{
-     return pool_;
-   }
 
    Task* parent() const{
      return parent_;
@@ -137,6 +126,7 @@ namespace poseidon{
    typedef int32_t QueueSize;
 
    static constexpr const QueueSize kDefaultMaxQueueSize = 1024;
+   static constexpr const size_t kDefaultNumberOfWorkers = 2;
 
    class Worker{
     public:
@@ -160,21 +150,20 @@ namespace poseidon{
      ThreadId thread_;
      WorkerId worker_;
      RelaxedAtomic<State> state_;
-     TaskQueue queue_;
+     TaskQueue* queue_;
 
      inline void SetState(const State& state){
        state_ = state;
      }
 
-     Task* GetNextTask();
      static void HandleThread(uword parameter);
     public:
-     Worker(const TaskPool* pool, WorkerId worker, QueueSize max_queue_size = kDefaultMaxQueueSize):
+     Worker(const TaskPool* pool, WorkerId worker, TaskQueue* queue):
        pool_(pool),
        thread_(),
        worker_(worker),
        state_(State::kStopped),
-       queue_(max_queue_size){
+       queue_(queue){
      }
      Worker(const Worker& rhs) = delete;
      ~Worker() = default;
@@ -217,10 +206,11 @@ namespace poseidon{
 
    class WorkerPool{
     private:
+     TaskQueue queue_;
+
      Worker** workers_;
      size_t num_workers_;
 
-     std::random_device device_;
      std::default_random_engine engine_;
      std::uniform_int_distribution<WorkerId> distribution_;
 
@@ -229,16 +219,16 @@ namespace poseidon{
        return distribution_(engine_);
      }
     public:
-     WorkerPool(const TaskPool* pool, size_t num_workers):
+     WorkerPool(const TaskPool* pool, size_t num_workers, int64_t queue_size = kDefaultMaxQueueSize):
+      queue_(queue_size),
       workers_(nullptr),
       num_workers_(num_workers),
-      device_(),
       engine_(Clock::now().time_since_epoch().count()),
-      distribution_(0, static_cast<WorkerId>(num_workers)){
+      distribution_(0, static_cast<WorkerId>(num_workers) - 1){
        if(num_workers > 0){
          workers_ = new Worker*[num_workers];
          for(auto idx = 0; idx < num_workers; idx++){
-           workers_[idx] = new Worker(pool, static_cast<WorkerId>(idx));
+           workers_[idx] = new Worker(pool, static_cast<WorkerId>(idx), &queue_);
            if(!workers_[idx]->Start())
              LOG(ERROR) << "cannot start worker #" << idx << ".";
          }
@@ -261,8 +251,11 @@ namespace poseidon{
      }
 
      Worker* workers(WorkerId id) const{
-       if(id < 0 || id > size())
+       if(id < 0 || id > size()){
+         DLOG(WARNING) << "cannot get worker #" << id;
          return nullptr;
+       }
+       DLOG(INFO) << "getting worker #" << id;
        return workers_[id];
      }
 
@@ -276,6 +269,10 @@ namespace poseidon{
 
      Worker** end() const{
        return &workers_[num_workers_];
+     }
+
+     void Submit(Task* task){
+       queue_.Push(task);
      }
 
      void StartAll() const{
@@ -295,13 +292,13 @@ namespace poseidon{
   private:
    WorkerPool wpool_;
   public:
-   explicit TaskPool(size_t num_workers):
+   explicit TaskPool(size_t num_workers = kDefaultNumberOfWorkers):
     wpool_(this, num_workers){
    }
    ~TaskPool() = default;
 
-   void Submit(const Task* task){
-
+   void Submit(Task* task){
+     wpool_.Submit(task);
    }
  };
 }

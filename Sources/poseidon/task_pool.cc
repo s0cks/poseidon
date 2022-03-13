@@ -2,13 +2,6 @@
 #include "poseidon/task_pool.h"
 
 namespace poseidon{
- Task* TaskPool::Worker::GetNextTask(){
-   auto next = queue_.Pop();
-   if(next)
-     return next;
-   return nullptr;//TODO: implement
- }
-
  void TaskPool::Worker::HandleThread(uword parameter){
    auto worker = (TaskPool::Worker*)parameter;
 
@@ -17,12 +10,14 @@ namespace poseidon{
    //TODO: register queue
    worker->SetState(State::kIdle);
    do{
-     auto next = worker->GetNextTask();
+     auto next = worker->queue_->Steal();
      if(!next)
        continue;
      //TODO: calculate timings?
-     if(!next->Execute())
+     if(!next->Execute()){
+       DLOG(ERROR) << "failed to execute " << next->name() << ".";
        continue;
+     }
    } while(!worker->IsStopping());
    DLOG(INFO) << "worker #" << worker->worker_id() << " is stopping....";
    worker->SetState(State::kStopped);

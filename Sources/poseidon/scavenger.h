@@ -34,7 +34,6 @@ namespace poseidon{
    Semispace to_space_;
    ScavengerStats stats_;
 
-
    inline void
    ForwardObject(RawObject* obj, uword forwarding_address){
      DLOG(INFO) << "forwarding " << obj->ToString() << " to " << ((RawObject*)forwarding_address)->ToString();
@@ -49,7 +48,6 @@ namespace poseidon{
 #ifdef PSDN_DEBUG
      assert(src->GetTotalSize() == dst->GetTotalSize());
 #endif//PSDN_DEBUG
-
      memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
    }
 
