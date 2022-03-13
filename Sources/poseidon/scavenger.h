@@ -50,7 +50,7 @@ namespace poseidon{
      assert(src->GetTotalSize() == dst->GetTotalSize());
 #endif//PSDN_DEBUG
 
-     memcpy((void*)dst->GetObjectPointer(), (void*)src->GetObjectPointer(), src->GetPointerSize());
+     memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
    }
 
    uword PromoteObject(RawObject* obj);

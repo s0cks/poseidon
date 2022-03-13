@@ -39,7 +39,7 @@ namespace poseidon{
 */
  void Collector::MinorCollection(){
    DLOG(INFO) << "executing a minor collection....";
-   auto heap = Allocator::GetHeap();
+   auto heap = Heap::GetCurrentThreadHeap();
    auto zone = heap->new_zone();
    Scavenger scavenger(zone);
 
@@ -56,7 +56,7 @@ namespace poseidon{
  }
 
  void Collector::CompactHeapPages(){
-   Allocator::GetHeap()->VisitPages([&](const HeapPage* page){
+   Heap::GetCurrentThreadHeap()->VisitPages([&](const HeapPage* page){
      DLOG(INFO) << "visiting page.";
      return true;
    });
@@ -68,7 +68,7 @@ namespace poseidon{
 
  void Collector::MajorCollection(){
    DLOG(INFO) << "executing major collection....";
-   auto heap = Allocator::GetHeap();
+   auto heap = Heap::GetCurrentThreadHeap();
    auto zone = heap->old_zone();
 
 #ifdef PSDN_DEBUG

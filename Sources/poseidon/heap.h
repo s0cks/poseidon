@@ -3,6 +3,7 @@
 
 #include "poseidon/zone.h"
 #include "poseidon/flags.h"
+#include "poseidon/os_thread.h"
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
@@ -208,6 +209,32 @@ namespace poseidon{
  };
 
  class Heap{
+   friend class HeapTest;
+   friend class Collector;
+   friend class Scavenger;
+   friend class Compactor;
+   friend class Allocator;
+  private:
+   static pthread_key_t kThreadKey;
+
+   static inline void
+   SetCurrentThreadHeap(Heap* heap){
+     int err;
+     if((err = pthread_setspecific(kThreadKey, (const void*)heap)) != 0){
+       LOG(ERROR) << "cannot set Heap ThreadLocal: " << strerror(err);
+       return;
+     }
+     DLOG(INFO) << "set thread " << GetCurrentThreadName() << " Heap ThreadLocal to " << (*heap);
+   }
+
+   static inline Heap*
+   GetCurrentThreadHeap(){
+     void* ptr = nullptr;
+     if((ptr = pthread_getspecific(kThreadKey)) != nullptr)
+       return (Heap*)ptr;
+     LOG(WARNING) << "cannot get Heap ThreadLocal for thread " << GetCurrentThreadName() << ".";
+     return nullptr;
+   }
   private:
    MemoryRegion* region_;
    Zone* new_zone_;
@@ -215,6 +242,16 @@ namespace poseidon{
 
    HeapPage* pages_;
    uint32_t num_pages_;
+
+   Heap(MemoryRegion* region, Zone* new_zone, Zone* old_zone):
+     region_(region),
+     new_zone_(new_zone),
+     old_zone_(old_zone),
+     pages_(nullptr),
+     num_pages_(0){
+     if(!region_->Protect(MemoryRegion::kReadWrite))
+       LOG(ERROR) << "cannot protect Heap MemoryRegion.";
+   }
 
    inline HeapPage*
    CreateNewHeapPage(HeapPage* parent){
@@ -241,15 +278,10 @@ namespace poseidon{
 
    RawObject* AllocateNewObject(uint64_t size);
    RawObject* AllocateOldObject(uint64_t size);
+   RawObject* AllocateLargeObject(uint64_t size);
   public:
-   Heap():
-    region_(new MemoryRegion(GetTotalHeapSize())),
-    new_zone_(new Zone(region_, 0, GetNewZoneSize())),
-    old_zone_(new Zone(region_, GetNewZoneSize(), GetOldZoneSize())),
-    pages_(nullptr),
-    num_pages_(0){
-     if(!region_->Protect(MemoryRegion::kReadWrite))
-       LOG(ERROR) << "cannot protect Heap MemoryRegion.";
+   Heap(MemoryRegion* region = new MemoryRegion(GetTotalHeapSize()))://TODO: refactor
+    Heap(region, new Zone(region, 0, GetNewZoneSize()), new Zone(region, GetNewZoneSize(), GetOldZoneSize())){
    }
    Heap(const Heap& rhs) = default;
    ~Heap() = default;
@@ -300,6 +332,22 @@ namespace poseidon{
 
    friend std::ostream& operator<<(std::ostream& stream, const Heap& heap){//TODO: implement
      return stream;
+   }
+
+   /**
+    *               ***Only Call From Main Thread***
+    *
+    * Initializes the Heap for the main thread.
+    */
+   static inline void
+   Initialize(){
+     int err;
+     if((err = pthread_key_create(&kThreadKey, nullptr)) != 0){
+       LOG(ERROR) << "failed to create Heap ThreadLocal: " << strerror(err);
+       return;
+     }
+     DLOG(INFO) << "initialized Heap ThreadLocal.";
+     SetCurrentThreadHeap(new Heap());//TODO: refactor.
    }
  };
 

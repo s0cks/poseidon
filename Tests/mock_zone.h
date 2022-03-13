@@ -8,6 +8,14 @@
 #include "poseidon/zone.h"
 
 namespace poseidon{
+ class MockMemoryRegion : public MemoryRegion{
+  public:
+   MockMemoryRegion() = default;
+   ~MockMemoryRegion() override = default;
+
+   MOCK_METHOD(bool, Protect, (const ProtectionMode&), (const));
+ };
+
  class MockZone : public Zone{
   public:
    MockZone() = default;

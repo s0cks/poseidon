@@ -2,7 +2,6 @@
 #include <glog/logging.h>
 
 #include "poseidon/utils.h"
-#include "poseidon/object.h"
 #include "poseidon/scavenger.h"
 #include "poseidon/allocator.h"
 #include "poseidon/finalizer.h"
@@ -10,10 +9,9 @@
 namespace poseidon{
  uword Scavenger::PromoteObject(RawObject* obj){
    DLOG(INFO) << "promoting " << obj->ToString() << " to new zone.";
-   auto new_ptr = Allocator::GetHeap()->old_zone()->AllocateRawObject(obj->GetPointerSize());
+   auto new_ptr = Heap::GetCurrentThreadHeap()->old_zone()->AllocateRawObject(obj->GetPointerSize());
    CopyObject(obj, new_ptr);
    new_ptr->SetOldBit();
-   new_ptr->GetObjectPointer()->set_raw(new_ptr);
 
    stats_.num_promoted += 1;
    stats_.bytes_promoted += obj->GetPointerSize();
@@ -25,7 +23,6 @@ namespace poseidon{
    auto new_ptr = zone()->AllocateRawObject(obj->GetPointerSize());
    CopyObject(obj, new_ptr);
    new_ptr->SetNewBit();
-   new_ptr->GetObjectPointer()->set_raw(new_ptr);
 
    stats_.num_scavenged += 1;
    stats_.bytes_scavenged += obj->GetPointerSize();

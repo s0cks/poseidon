@@ -2,19 +2,20 @@
 
 #include "heap.h"
 #include "utils.h"
-#include "object.h"
 #include "raw_object.h"
 
 #include "poseidon/collector.h"
 
 namespace poseidon{
+ pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
+
  RawObject* Heap::AllocateNewObject(uint64_t size){
    RawObject* val = nullptr;
    if((val = new_zone()->AllocateRawObject(size)) != nullptr)
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << HumanReadableSize(size) << ".";
-   Collector::MinorCollection();
+   Collector::MinorCollection();//TODO: mock
 
    if((val = new_zone()->AllocateRawObject(size)) != nullptr)
      goto finish_allocation;
@@ -64,10 +65,17 @@ finish_allocation:
    return val;
  }
 
+ RawObject* Heap::AllocateLargeObject(uint64_t size){
+   return AllocateOldObject(size);//TODO: refactor
+ }
+
  RawObject* Heap::AllocateObject(uint64_t size){
+   if(size < kWordSize)
+     size = kWordSize;
+
    if(size >= GetLargeObjectSize()){
      DLOG(INFO) << "allocating large object of " << HumanReadableSize(size);
-     return AllocateOldObject(size);
+     return AllocateLargeObject(size);
    }
    return AllocateNewObject(size);
  }

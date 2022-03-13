@@ -106,7 +106,7 @@ namespace poseidon{
       start_(rhs.GetStartAddress()),
       size_(rhs.GetSize()){
     }
-    ~MemoryRegion();
+    virtual ~MemoryRegion();
 
     uword GetSize() const{
       return size_;
@@ -147,7 +147,7 @@ namespace poseidon{
      * @param mode The {@link ProtectionMode} for the {@link MemoryRegion}
      * @return true if the {@link ProtectionMode} was successfully set, false otherwise.
      */
-    bool Protect(const ProtectionMode& mode) const;
+    virtual bool Protect(const ProtectionMode& mode) const;
 
     MemoryRegion& operator=(const MemoryRegion& rhs){
       if(this == &rhs)

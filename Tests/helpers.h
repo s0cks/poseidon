@@ -5,34 +5,22 @@
 #include <glog/logging.h>
 
 #include "poseidon/heap.h"
-#include "poseidon/object.h"
 
 namespace poseidon{
- template<class T>
- static inline T*
- New(HeapPage* page, Class* cls){
-   auto data = page->Allocate(cls->GetAllocationSize());
-
-   auto fake = new Instance(cls);
-   fake->set_raw(data);
-   memcpy(data->GetPointer(), fake, sizeof(Instance));
-   delete fake;
-
-   return (T*)data->GetPointer();
+ static inline RawObject*
+ FailAllocation(uint64_t size){
+   DLOG(ERROR) << "allocating new object (" << HumanReadableSize(size) << ") failed.";
+   return nullptr;
  }
 
- static inline Int*
- NewInt(HeapPage* page, uint64_t val){
-   auto value = New<Int>(page, Class::CLASS_INT);
-   value->Set(val);
-   return value;
- }
-
- static inline Local<Int>
- NewLocalInt(HeapPage* page, uint64_t val){
-   auto local = Allocator::AllocateLocal<Int>();
-   local.Set(NewInt(page, val));
-   return local;
+ static inline RawObject*
+ AllocateNewObjectUsingSystem(uint64_t size){
+   DLOG(INFO) << "allocating new object (" << HumanReadableSize(size) << ") using malloc.";
+   auto total_size = sizeof(RawObject) + size;
+   auto val = (RawObject*)malloc(total_size);
+   memset((void*)val, 0, total_size);
+   val->SetPointerSize(size);
+   return val;
  }
 }
 

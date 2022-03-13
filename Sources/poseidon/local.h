@@ -3,10 +3,10 @@
 
 #include <utility>
 #include <typeinfo>
+
 #include "raw_object.h"
 
 namespace poseidon{
- class Object;
  class RawObject;
  class LocalBase{
    friend class Allocator;
@@ -16,9 +16,9 @@ namespace poseidon{
    RawObject** value_;
 
    LocalBase():
-       previous_(nullptr),
-       next_(nullptr),
-       value_(nullptr){
+     previous_(nullptr),
+     next_(nullptr),
+     value_(nullptr){
    }
 
    explicit LocalBase(RawObject** value):
@@ -55,13 +55,17 @@ namespace poseidon{
      (*value_) = val;
    }
 
-   void SetValue(Object* val);
+   void SetValue(void* ptr){
+     SetValue((RawObject*)ptr - sizeof(RawObject));
+   }
   public:
    LocalBase(const LocalBase& rhs) = default;
    ~LocalBase() = default;
 
-   RawObject* GetRawObjectPointer() const;
-   Object* GetObjectPointer() const;
+   void* GetPointer() const{
+     return (*value_) ? (*value_)->GetPointer() : nullptr;
+   }
+
    LocalBase& operator=(const LocalBase& rhs) = default;
  };
 
@@ -75,7 +79,7 @@ namespace poseidon{
    friend class Allocator;
   private:
    explicit Local(RawObject** val):
-       LocalBase(val){
+     LocalBase(val){
    }
   public:
    Local(): LocalBase(){}
@@ -95,11 +99,11 @@ namespace poseidon{
    }
 
    T* Get() const{
-     return (T*) GetObjectPointer();
+     return (T*)GetPointer();
    }
 
    void Set(T* val){
-     SetValue((Object*) val);
+     SetValue((T*)val);
    }
 
    Local& operator=(const T& rhs){

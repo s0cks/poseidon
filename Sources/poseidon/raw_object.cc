@@ -1,5 +1,4 @@
 #include "raw_object.h"
-#include "object.h"
 
 namespace poseidon{
 // uint64_t RawObject::VisitPointers(RawObjectPointerVisitor* vis) const{

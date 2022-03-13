@@ -60,7 +60,7 @@ namespace poseidon{
 #ifdef PSDN_DEBUG
      assert(src->GetTotalSize() == dst->GetTotalSize());
 #endif//PSDN_DEBUG
-     memcpy((void*)dst->GetObjectPointer(), (void*)src->GetObjectPointer(), src->GetPointerSize());
+     memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
      return dst->GetTotalSize();
    }
 

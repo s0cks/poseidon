@@ -7,7 +7,6 @@
 
 namespace poseidon{
   class RawObject;
-
   class RawObjectVisitor{
    protected:
     RawObjectVisitor() = default;
@@ -33,8 +32,6 @@ namespace poseidon{
     virtual RawObject* Next() = 0;
   };
 
-  class Object;
-  class Instance;
   class RawObject{
     friend class Semispace;
    private:
@@ -60,10 +57,6 @@ namespace poseidon{
       // Size
       kSizeTagOffset = kRememberedBitOffset+kBitsForRememberedBit,
       kBitsForSizeTag = 32,
-
-      // ClassId
-      kClassIdTagOffset = kSizeTagOffset+kBitsForSizeTag,
-      kBitsForClassIdTag = 16,
     };
 
     // The object's size.
@@ -76,8 +69,6 @@ namespace poseidon{
     class MarkedBit : public BitField<ObjectTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
     // remembered by the scavenger
     class RememberedBit : public BitField<ObjectTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
-    // class_id
-    class ClassIdTag : public BitField<ObjectTag, uint16_t, kClassIdTagOffset, kBitsForClassIdTag>{};
 
     RelaxedAtomic<ObjectTag> tag_;
     RelaxedAtomic<uword> forwarding_;
@@ -103,10 +94,6 @@ namespace poseidon{
 
     uword GetObjectPointerAddress() const{
       return reinterpret_cast<uword>(this) + sizeof(RawObject);
-    }
-
-    Object* GetObjectPointer() const{
-      return (Object*)GetPointer();
     }
 
     void SetForwardingAddress(const uword& address){

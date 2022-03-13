@@ -116,6 +116,21 @@ namespace poseidon{
    }
    return { name };
  }
+
+ bool SetThreadName(const ThreadId& thread, const std::string& name){
+   char truncated_name[kThreadNameMaxLength];
+   snprintf(truncated_name, kThreadNameMaxLength-1, "%s", name.data());
+   int result;
+#ifdef OS_IS_OSX
+   if((result = pthread_setname_np(truncated_name)) != 0){//TODO: fix for mac
+#else
+   if((result = pthread_setname_np(thread, truncated_name)) != 0){
+#endif
+     LOG(WARNING) << "couldn't set thread name: " << strerror(result);
+     return false;
+   }
+   return true;
+ }
 }
 
 #endif//OS_IS_OSX

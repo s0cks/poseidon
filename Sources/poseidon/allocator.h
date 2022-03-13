@@ -12,20 +12,18 @@ namespace poseidon{
  class LocalGroup;
  class Allocator{
   private:
-   static Heap* heap_;
-
    static LocalGroup* locals_;
    static uint64_t num_allocated_;
    static uint64_t num_locals_;
 
    static RawObject** NewLocalSlot();
-   static void FinalizeObject(RawObject* raw);
   public:
    Allocator() = delete;
    Allocator(const Allocator& rhs) = delete;
    ~Allocator() = delete;
 
    static void Initialize();
+   static void InitializeForThread();
 
    static inline uint64_t
    GetNumberOfObjectsAllocated(){
@@ -37,19 +35,30 @@ namespace poseidon{
      return num_locals_;
    }
 
-   static Heap* GetHeap(){
-     return heap_;
-   }
-
    static inline RawObject*
    Allocate(uint64_t size){
-     return GetHeap()->AllocateObject(size);
+     auto heap = Heap::GetCurrentThreadHeap();
+#ifdef PSDN_DEBUG
+     assert(heap != nullptr);
+#endif//PSDN_DEBUG
+     return heap->AllocateObject(size);
    }
 
    template<typename T>
    static Local<T> AllocateLocal(){
      num_locals_++;
      return Local<T>(NewLocalSlot());
+   }
+
+   static inline void*
+   New(size_t size){
+     return Allocate(size)->GetPointer();
+   }
+
+   template<typename T>
+   static inline T*
+   New(){
+     return (T*)New(sizeof(T));
    }
 
    static void VisitLocals(RawObjectVisitor* vis);

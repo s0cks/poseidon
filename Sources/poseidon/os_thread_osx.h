@@ -1,6 +1,10 @@
 #ifndef POSEIDON_OS_THREAD_OSX_H
 #define POSEIDON_OS_THREAD_OSX_H
 
+#ifndef POSEIDON_OS_THREAD_H
+#error "Please #include <poseidon/os_thread.h> directly instead."
+#endif//POSEIDON_OS_THREAD_H
+
 #include <pthread.h>
 #include "poseidon/platform.h"
 

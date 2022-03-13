@@ -1,11 +1,31 @@
 #include "poseidon/allocator.h"
 #include "poseidon/utils.h"
 #include "poseidon/local.h"
-#include "poseidon/object.h"
 #include "poseidon/poseidon.h"
+#include "poseidon/os_thread.h"
 
 namespace poseidon{
- Heap* Allocator::heap_ = nullptr;
+ static pthread_key_t kHeapThreadLocal;
+
+ static inline void
+ SetCurrentThreadHeap(Heap* heap){
+   int err;
+   if((err = pthread_setspecific(kHeapThreadLocal, (void*)heap)) != 0){
+     LOG(ERROR) << "cannot set current thread heap.";
+     return;
+   }
+   DLOG(INFO) << "set heap to " << (*heap) << " for " << GetCurrentThreadName() << ".";
+ }
+
+ static inline Heap*
+ GetCurrentThreadHeap(){
+   void* ptr = nullptr;
+   if((ptr = pthread_getspecific(kHeapThreadLocal)) == nullptr){
+     LOG(WARNING) << "cannot get current thread heap.";
+     return nullptr;
+   }
+   return (Heap*)ptr;
+ }
 
  LocalGroup* Allocator::locals_ = nullptr;
  uint64_t Allocator::num_locals_ = 0;
@@ -13,12 +33,14 @@ namespace poseidon{
 
  void Allocator::Initialize(){
    locals_ = new LocalGroup();
-   heap_ = new Heap();
  }
 
- void Allocator::FinalizeObject(RawObject* raw){
-   num_allocated_--;
-   raw->GetObjectPointer()->Finalize();
+ void Allocator::InitializeForThread(){//TODO: rename
+   int err;
+   if((err = pthread_key_create(&kHeapThreadLocal, NULL)) != 0){
+     LOG(ERROR) << "failed to create heap thread local: " << strerror(err);
+     return;
+   }
  }
 
  RawObject** Allocator::NewLocalSlot(){
