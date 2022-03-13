@@ -4,7 +4,7 @@
 #include "poseidon/raw_object.h"
 
 namespace poseidon{
- class Semispace{
+ class Semispace : public AllocationSection{
   private:
    class SemispaceIterator : public RawObjectPointerIterator{
     private:
@@ -71,44 +71,42 @@ namespace poseidon{
   private:
    uword start_;
    uword current_;
-   uint64_t size_;
+   int64_t size_;
   public:
    /**
     * Create an empty {@link Semispace}.
     */
    Semispace():
-     start_(0),
-     current_(0),
-     size_(0){
+    AllocationSection(),
+    start_(0),
+    current_(0),
+    size_(0){
    }
-
    /**
     * Create a {@link Semispace} with the specified starting address and size.
     *
     * @param start The starting address for the {@link Semispace}
     * @param size The size of the {@link Semispace}
     */
-   Semispace(uword start, uint64_t size):
-     start_(start),
-     current_(start),
-     size_(size){
+   Semispace(uword start, int64_t size):
+    AllocationSection(),
+    start_(start),
+    current_(start),
+    size_(size){
    }
    Semispace(const Semispace& rhs):
+    AllocationSection(),
     start_(rhs.start_),
     current_(rhs.current_),
     size_(rhs.size_){
    }
-   ~Semispace() = default;
+   ~Semispace() override = default;
 
-   uword GetStartingAddress() const{
+   uword GetStartingAddress() const override{
      return start_;
    }
 
-   void* GetStartingAddressPointer() const{
-     return (void*)GetStartingAddress();
-   }
-
-   uint64_t size() const{
+   int64_t size() const override{
      return size_;
    }
 
@@ -120,18 +118,20 @@ namespace poseidon{
      return (void*)GetCurrentAddress();
    }
 
-   uword GetEndingAddress() const{
+   uword GetEndingAddress() const override{
      return GetStartingAddress() + size();
    }
 
-   void* GetEndingAddressPointer() const{
-     return (void*)GetEndingAddress();
+   bool IsEmpty() const{
+     return GetStartingAddress() == GetCurrentAddress();
    }
 
-   bool Contains(const uword& addr) const{
-     return GetStartingAddress() <= addr
-         && GetEndingAddress() >= addr;
+   void Clear(){
+     memset(GetStartingAddressPointer(), 0, size());
+     current_ = start_;
    }
+
+   uword Allocate(int64_t size) override;
 
    void VisitRawObjects(RawObjectVisitor* vis) const{
      SemispaceIterator iter(this);
@@ -166,24 +166,13 @@ namespace poseidon{
      }
    }
 
-   bool IsEmpty() const{
-     return GetStartingAddress() == GetCurrentAddress();
+   int64_t GetNumberOfBytesAllocated() const{
+     return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
    }
 
-   void Clear(){
-     memset(GetStartingAddressPointer(), 0, size());
-     current_ = start_;
-   }
-
-   uint64_t GetNumberOfBytesAllocated() const{
-     return GetCurrentAddress() - GetStartingAddress();
-   }
-
-   uint64_t GetNumberOfBytesRemaining() const{
+   int64_t GetNumberOfBytesRemaining() const{
      return size() - GetNumberOfBytesAllocated();
    }
-
-   RawObject* AllocateRawObject(const uint64_t& size);
 
    Semispace& operator=(const Semispace& rhs){
      if(this == &rhs)

@@ -40,21 +40,31 @@ int main(int argc, char** argv){
   Heap::Initialize();
   Allocator::Initialize();
 
-  TaskPool pool;
+  auto ptr1 = Allocator::Allocate(sizeof(int));
+  auto val1 = (int*)ptr1->GetPointer();
+  (*val1) = 10000;
+  DLOG(INFO) << "value #1: " << (*val1) << " (" << ptr1->ToString() << ").";
 
-  sleep(5);
+  auto ptr2 = Allocator::Allocate(sizeof(int));
+  auto val2 = (int*)ptr2->GetPointer();
+  (*val2) = 10;
+  DLOG(INFO) << "value #2: " << (*val2) << " (" << ptr2->ToString() << ").";
 
-  static constexpr const uint64_t kNumberOfEchoTasks = 128;
-
-  RelaxedAtomic<uint64_t> counter(0);
-
-  for(auto idx = 0; idx < kNumberOfEchoTasks; idx++){
-    DLOG(INFO) << "submitting EchoTask #" << idx;
-    pool.Submit(new EchoTask(counter));
-  }
-
-  sleep(15);
-
-  LOG(INFO) << "count: " << counter;
+//  TaskPool pool;
+//
+//  sleep(5);
+//
+//  static constexpr const uint64_t kNumberOfEchoTasks = 128;
+//
+//  RelaxedAtomic<uint64_t> counter(0);
+//
+//  for(auto idx = 0; idx < kNumberOfEchoTasks; idx++){
+//    DLOG(INFO) << "submitting EchoTask #" << idx;
+//    pool.Submit(new EchoTask(counter));
+//  }
+//
+//  sleep(15);
+//
+//  LOG(INFO) << "count: " << counter;
   return RUN_ALL_TESTS();
 }

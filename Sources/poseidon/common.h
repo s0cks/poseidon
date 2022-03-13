@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+
 #include "platform.h"
 
 #define NOT_IMPLEMENTED(Level) \
@@ -23,44 +24,31 @@ namespace poseidon{
     return x + 1;
   }
 
-  enum class Space{
-    kNew,
-    kOld,
-  };
+  class AllocationSection{
+   protected:
+    AllocationSection() = default;
+   public:
+    virtual ~AllocationSection() = default;
 
-  static inline std::ostream&
-  operator<<(std::ostream& stream, const Space& val){
-    switch(val){
-      case Space::kNew:
-        return stream << "New";
-      case Space::kOld:
-        return stream << "Old";
-      default:
-        return stream << "Unknown";
+    virtual int64_t size() const = 0;
+
+    virtual uword GetStartingAddress() const = 0;
+    void* GetStartingAddressPointer() const{
+      return (void*)GetStartingAddress();
     }
-  }
 
-  enum Color{
-    kBlack = 0, //          0000
-    kGray, //               0001
-    kWhite, //              0010
-    kFree = kWhite,
-    kMarked = kBlack,
-  };
-
-  static inline std::ostream&
-  operator<<(std::ostream& stream, const Color& val){
-    switch(val){
-      case Color::kBlack:
-        return stream << "Black";
-      case Color::kGray:
-        return stream << "Gray";
-      case Color::kWhite:
-        return stream << "White";
-      default:
-        return stream << "Unknown";
+    virtual uword GetEndingAddress() const = 0;
+    void* GetEndingAddressPointer() const{
+      return (void*)GetEndingAddress();
     }
-  }
+
+    virtual bool Contains(uword address) const{
+      return GetStartingAddress() <= address
+          && GetEndingAddress() >= address;
+    }
+
+    virtual uword Allocate(int64_t size) = 0;
+  };
 }
 
 #endif //POSEIDON_COMMON_H

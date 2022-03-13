@@ -235,7 +235,7 @@ namespace poseidon{
     * @return A pointer to the beginning of the object and i's header
     */
    virtual RawObject* AllocateRawObject(uint64_t size){//TODO: refactor/cleanup?
-     return from_.AllocateRawObject(size);
+     return (RawObject*)from_.Allocate(static_cast<int64_t>(size));//TODO: fix casting
    }
 
    Zone& operator=(const Zone& rhs){

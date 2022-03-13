@@ -13,19 +13,20 @@ namespace poseidon{
    CopyObject(obj, new_ptr);
    new_ptr->SetOldBit();
 
-   stats_.num_promoted += 1;
-   stats_.bytes_promoted += obj->GetPointerSize();
+//   stats_.num_promoted += 1;
+//   stats_.bytes_promoted += obj->GetPointerSize();
    return new_ptr->GetAddress();
  }
 
  uword Scavenger::ScavengeObject(RawObject* obj){
    DLOG(INFO) << "scavenging " << obj->ToString() << " in old zone.";
-   auto new_ptr = zone()->AllocateRawObject(obj->GetPointerSize());
+//   auto new_ptr = zone()->AllocateRawObject(obj->GetPointerSize());
+   auto new_ptr = new RawObject();
    CopyObject(obj, new_ptr);
    new_ptr->SetNewBit();
 
-   stats_.num_scavenged += 1;
-   stats_.bytes_scavenged += obj->GetPointerSize();
+//   stats_.num_scavenged += 1;
+//   stats_.bytes_scavenged += obj->GetPointerSize();
    return new_ptr->GetAddress();
  }
 
@@ -43,10 +44,6 @@ namespace poseidon{
    return raw->GetForwardingAddress();
  }
 
- bool Scavenger::Visit(RawObject* val){
-   return true;
- }
-
  void Scavenger::ProcessRoots(){
    DLOG(INFO) << "processing roots....";
    Allocator::VisitLocals([&](RawObject** val){
@@ -59,35 +56,28 @@ namespace poseidon{
      (*val)->SetRememberedBit();
      return true;
    });
-   DLOG(INFO) << "processed roots (" << stats_ << ").";
+   DLOG(INFO) << "processed roots.";
  }
 
  void Scavenger::ProcessToSpace() const{
    DLOG(INFO) << "processing to-space....";
-   GetToSpace().VisitRawObjects([&](RawObject* val){
-     if(val->IsNew() && val->IsMarked() && !val->IsRemembered()){
-       DLOG(INFO) << "processing " << val->ToString();
-     }
-     return true;
-   });
+//   GetToSpace().VisitRawObjects([&](RawObject* val){
+//     if(val->IsNew() && val->IsMarked() && !val->IsRemembered()){
+//       DLOG(INFO) << "processing " << val->ToString();
+//     }
+//     return true;
+//   });
  }
 
  void Scavenger::SwapSpaces() const{
-   zone()->SwapSpaces();
-#ifdef PSDN_DEBUG
-   assert(GetToSpace() == zone()->from());
-   assert(GetFromSpace() == zone()->to());
-#endif//PSDN_DEBUG
+
  }
 
  void Scavenger::Scavenge(){
-   DLOG(INFO) << "scavenging memory from " << *zone();
-
    SwapSpaces();
-
    ProcessRoots();
    ProcessToSpace();
 
-   zone()->to().Clear();
+//   zone()->to().Clear();
  }
 }
