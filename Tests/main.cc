@@ -2,7 +2,6 @@
 #include <glog/logging.h>
 #include "poseidon/poseidon.h"
 #include "poseidon/allocator.h"
-#include "poseidon/collector.h"
 
 int main(int argc, char** argv){
   using namespace poseidon;

@@ -4,8 +4,6 @@
 #include "utils.h"
 #include "raw_object.h"
 
-#include "poseidon/collector.h"
-
 namespace poseidon{
  pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
 
@@ -15,7 +13,7 @@ namespace poseidon{
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << HumanReadableSize(size) << ".";
-   Collector::MinorCollection();//TODO: mock
+   //TODO: free memory from new_zone()
 
    if((val = new_zone()->AllocateRawObject(size)) != nullptr)
      goto finish_allocation;
@@ -36,7 +34,7 @@ finish_allocation:
      goto finish_allocation;
 
    // 2. Try Major Collection
-   Collector::MajorCollection();
+   //TODO: free memory from old_zone
 
    // 3. Try Allocation Again
    if((val = old_zone()->AllocateRawObject(size)) != nullptr)
