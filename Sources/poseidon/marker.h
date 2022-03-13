@@ -9,6 +9,12 @@ namespace poseidon{
  class Marker : public RawObjectVisitor{
   private:
    RelaxedAtomic<uint64_t> num_marked_;
+
+   inline void MarkObject(RawObject* val){
+     DLOG(INFO) << "marking " << val->ToString() << ".";
+     num_marked_ += 1;
+     val->SetMarkedBit();
+   }
   public:
    Marker():
      num_marked_(0){
@@ -20,9 +26,7 @@ namespace poseidon{
    }
 
    bool Visit(RawObject* raw) override{
-     DVLOG(1) << "marking " << raw->ToString() << ".";
-     num_marked_ += 1;
-     raw->SetMarkedBit();
+     MarkObject(raw);
      return true;
    }
  };

@@ -1,6 +1,7 @@
 #ifndef POSEIDON_POSEIDON_SEMISPACE_H
 #define POSEIDON_POSEIDON_SEMISPACE_H
 
+#include <glog/logging.h>
 #include "poseidon/raw_object.h"
 
 namespace poseidon{
@@ -131,7 +132,19 @@ namespace poseidon{
      current_ = start_;
    }
 
-   uword Allocate(int64_t size) override;
+   uword Allocate(int64_t size) override{
+     auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
+     if(!Contains(current_ + total_size)){
+       DLOG(WARNING) << "cannot allocate object of size " << HumanReadableSize(size) << " in space.";
+       return 0;
+     }
+
+     auto next = (void*)current_;
+     current_ += total_size;
+     auto ptr = new (next)RawObject();
+     ptr->SetPointerSize(size);
+     return ptr->GetAddress();
+   }
 
    void VisitRawObjects(RawObjectVisitor* vis) const{
      SemispaceIterator iter(this);
@@ -183,13 +196,16 @@ namespace poseidon{
      return *this;
    }
 
-   friend bool operator==(const Semispace& lhs, const Semispace& rhs){//TODO: refactor
-     return lhs.start_ == rhs.start_
-         && lhs.size_ == rhs.size_;
+   friend bool operator==(const Semispace& lhs, const Semispace& rhs){
+     return lhs.size_ == rhs.size_
+         && lhs.start_ == rhs.start_
+         && lhs.current_ == rhs.current_;
    }
 
-   friend bool operator!=(const Semispace& lhs, const Semispace& rhs){//TODO: refactor
-     return !operator==(lhs, rhs);
+   friend bool operator!=(const Semispace& lhs, const Semispace& rhs){
+     return lhs.size_ != rhs.size_
+         || lhs.start_ != rhs.start_
+         || lhs.current_ != rhs.current_;
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
