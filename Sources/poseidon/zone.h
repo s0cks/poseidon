@@ -101,7 +101,7 @@ namespace poseidon{
     * @param size The size of the {@link Zone}
     */
    Zone(MemoryRegion* region, int64_t offset, int64_t size)://TODO: refactor?
-    Zone(region->GetStartAddress() + offset, size){
+    Zone(region->GetStartingAddress() + offset, size){
    }
 
    /**

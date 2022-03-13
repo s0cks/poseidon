@@ -81,7 +81,7 @@ finish_allocation:
  RawObject* HeapPage::Allocate(uint64_t size){
    uint64_t total_size = sizeof(RawObject) + size;
    if((current_ + total_size) > GetEndingAddress()){
-     DLOG(WARNING) << "cannot allocate object of size " << HumanReadableSize(size) << " in " << HumanReadableSize(region_.GetSize()) << " heap page.";
+     DLOG(WARNING) << "cannot allocate object of size " << HumanReadableSize(size) << " in " << HumanReadableSize(region_.size()) << " heap page.";
      return nullptr;
    }
 
@@ -150,19 +150,19 @@ finish_allocation:
    return {result, max_length};
  }
 
- static inline std::string
- GetHexForRegion(const MemoryRegion& region){
-   static const char* kHexAlphabet = "0123456789ABCDEF";
-   char data[region.GetSize() * 2];
-
-   int index = 0;
-   for(auto it = region.bytes_begin(); it != region.bytes_end(); it++){
-     data[index] = kHexAlphabet[(*it) >> 4];
-     data[index + 1] = kHexAlphabet[(*it) & 0x0F];
-     index += 2;
-   }
-   return {data, region.GetSize() * 2};
- }
+// static inline std::string
+// GetHexForRegion(const MemoryRegion& region){
+//   static const char* kHexAlphabet = "0123456789ABCDEF";
+//   char data[region.GetSize() * 2];
+//
+//   int index = 0;
+//   for(auto it = region.bytes_begin(); it != region.bytes_end(); it++){
+//     data[index] = kHexAlphabet[(*it) >> 4];
+//     data[index + 1] = kHexAlphabet[(*it) & 0x0F];
+//     index += 2;
+//   }
+//   return {data, region.GetSize() * 2};
+// }
 
  void HeapPrinter::Print(Heap* heap, uint64_t flags){
    LOG(INFO) << CreateHeader("Heap Dump");

@@ -9,7 +9,7 @@
 #define MAP_FAILED reinterpret_cast<void*>(-1)
 
 namespace poseidon{
-  MemoryRegion::MemoryRegion(uint64_t size):
+  MemoryRegion::MemoryRegion(int64_t size):
     MemoryRegion(){
     void* addr = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
     if(addr == MAP_FAILED){
@@ -51,8 +51,8 @@ namespace poseidon{
     }
 
     int err;
-    if((err = mprotect(GetPointer(), GetSize(), protection)) != 0){
-      LOG(ERROR) << "failed to " << mode << " protect memory region of " << GetSize() << " bytes @" << GetPointer() << ": " << strerror(err);
+    if((err = mprotect(GetStartingAddressPointer(), size(), protection)) != 0){
+      LOG(ERROR) << "failed to " << mode << " protect memory region of " << size() << " bytes @" << GetStartingAddressPointer() << ": " << strerror(err);
       return false;
     }
     return true;

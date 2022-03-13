@@ -38,7 +38,12 @@ namespace poseidon{
     }
    private:
     uword start_;
-    uword size_;
+    int64_t size_;
+
+    inline void
+    CopyFrom(const MemoryRegion& rhs) const{//TODO: size check / refactor
+      memcpy(GetStartingAddressPointer(), rhs.GetStartingAddressPointer(), rhs.size());
+    }
    public:
     /**
      * Create an empty {@link MemoryRegion}.
@@ -53,7 +58,7 @@ namespace poseidon{
      *
      * @param size The size of the new {@link MemoryRegion}
      */
-    explicit MemoryRegion(uint64_t size);
+    explicit MemoryRegion(int64_t size);
 
     /**
      * Create a new {@link MemoryRegion} using the specified starting address & size.
@@ -61,7 +66,7 @@ namespace poseidon{
      * @param start The starting address of the {@link MemoryRegion}
      * @param size The size of the {@link MemoryRegion}
      */
-    MemoryRegion(uword start, uword size):
+    MemoryRegion(uword start, int64_t size):
       start_(start),
       size_(size){
     }
@@ -73,18 +78,20 @@ namespace poseidon{
      * @param offset The offset in the parent {@link MemoryRegion}
      * @param size The size of the {@link MemoryRegion}
      */
-    MemoryRegion(const MemoryRegion* parent, uint64_t offset, uint64_t size)://TODO: Refactor
+    MemoryRegion(const MemoryRegion* parent, int64_t offset, int64_t size)://TODO: Refactor
       start_(0),
       size_(0){
-      if(size >= parent->GetSize()){
+      if(size >= parent->size()){
         LOG(WARNING) << "cannot allocate MemoryRegion of " << HumanReadableSize(size) << ", size is larger than parent.";
         return;
       }
-      auto start = parent->GetStartAddress() + offset;
+
+      auto start = parent->GetStartingAddress() + offset;
       if(!parent->Contains(start)){
         DLOG(WARNING) << "cannot allocate MemoryRegion of " << HumanReadableSize(size) << " at offset " << offset << ", parent doesn't contain starting address: " << ((void*)start);
         return;
       }
+
 #ifdef PSDN_DEBUG
       auto end = start + size;
       assert(parent->Contains(end));
@@ -98,47 +105,39 @@ namespace poseidon{
      * @param parent The parent {@link MemoryRegion}
      * @param size The size of the {@link MemoryRegion}
      */
-    MemoryRegion(const MemoryRegion* parent, uint64_t size):
+    MemoryRegion(const MemoryRegion* parent, int64_t size):
       MemoryRegion(parent, 0, size){
     }
 
     MemoryRegion(const MemoryRegion& rhs):
-      start_(rhs.GetStartAddress()),
-      size_(rhs.GetSize()){
+      start_(rhs.GetStartingAddress()),
+      size_(rhs.size()){
     }
     virtual ~MemoryRegion();
 
-    uword GetSize() const{
+    int64_t size() const{
       return size_;
     }
 
-    uword GetStartAddress() const{
-      return (uword)start_;
+    uword GetStartingAddress() const{
+      return start_;
     }
 
-    uword GetEndAddress() const{
-      return GetStartAddress() + GetSize();
+    void* GetStartingAddressPointer() const{
+      return (void*)GetStartingAddress();
     }
 
-    void* GetPointer() const{
-      return (void*)start_;
+    uword GetEndingAddress() const{
+      return GetStartingAddress() + size();
     }
 
-    bool Contains(const uword& addr) const{
-      return addr >= GetStartAddress()
-          && addr <= GetEndAddress();
+    void* GetEndingAddressPointer() const{
+      return (void*)GetEndingAddress();
     }
 
-    void CopyFrom(const MemoryRegion& rhs) const{
-      memcpy(GetPointer(), rhs.GetPointer(), rhs.GetSize());
-    }
-
-    const uint8_t* bytes_begin() const{
-      return (uint8_t*)GetStartAddress();
-    }
-
-    const uint8_t* bytes_end() const{
-      return (uint8_t*)GetEndAddress();
+    bool Contains(uword address) const{
+      return GetStartingAddress() <= address
+          && GetEndingAddress() >= address;
     }
 
     /**
@@ -152,13 +151,13 @@ namespace poseidon{
     MemoryRegion& operator=(const MemoryRegion& rhs){
       if(this == &rhs)
         return *this;
-      start_ = rhs.GetStartAddress();
-      size_ = rhs.GetSize();
+      start_ = rhs.GetStartingAddress();
+      size_ = rhs.size();
       return *this;
     }
 
     friend std::ostream& operator<<(std::ostream& stream, const MemoryRegion& region){
-      return stream << "MemoryRegion(start=" << region.GetStartAddress() << ", size=" << region.GetSize() << ")";
+      return stream << "MemoryRegion(start=" << region.GetStartingAddress() << ", size=" << region.size() << ")";
     }
   };
 }

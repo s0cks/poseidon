@@ -93,7 +93,7 @@ namespace poseidon{
     current_(0){
      if(!region_.Protect(MemoryRegion::kReadWrite))
        LOG(FATAL) << "cannot protect HeapPage MemoryRegion.";
-     current_ = region_.GetStartAddress();
+     current_ = region_.GetStartingAddress();
    }
    ~HeapPage() = default;
 
@@ -122,11 +122,11 @@ namespace poseidon{
    }
 
    uint64_t size() const{
-     return region_.GetSize();
+     return region_.size();
    }
 
    uword GetStartingAddress() const{
-     return region_.GetStartAddress();
+     return region_.GetStartingAddress();
    }
 
    void* GetStartingAddressPointer() const{
@@ -290,11 +290,11 @@ namespace poseidon{
    }
 
    int64_t size() const override{
-     return static_cast<int64_t>(region_->GetSize());
+     return static_cast<int64_t>(region_->size());
    }
 
    uword GetStartingAddress() const override{
-     return region_->GetStartAddress();
+     return region_->GetStartingAddress();
    }
 
    Zone* new_zone() const{
