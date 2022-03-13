@@ -49,7 +49,7 @@ namespace poseidon{
  };
 
  TEST_F(HeapTest, TestAllocateNewObjectSuccessful){
-   EXPECT_CALL(new_zone_, AllocateRawObject(_))
+   EXPECT_CALL(new_zone_, Allocate(_))
     .WillRepeatedly(AllocateNewObjectUsingSystem);
 
    auto val = heap()->AllocateObject(sizeof(word));
@@ -64,7 +64,7 @@ namespace poseidon{
  }
 
  TEST_F(HeapTest, TestAllocateNewObjectSuccessfulWithRetry){
-   EXPECT_CALL(new_zone_, AllocateRawObject(_))
+   EXPECT_CALL(new_zone_, Allocate(_))
      .WillOnce(FailAllocation)
      .WillRepeatedly(AllocateNewObjectUsingSystem);
 

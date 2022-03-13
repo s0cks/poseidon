@@ -127,8 +127,8 @@ namespace poseidon{
      return GetStartingAddress() == GetCurrentAddress();
    }
 
-   void Clear(){
-     memset(GetStartingAddressPointer(), 0, size());
+   void Clear() override{
+     AllocationSection::Clear();
      current_ = start_;
    }
 

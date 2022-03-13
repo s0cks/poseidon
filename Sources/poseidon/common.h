@@ -31,14 +31,18 @@ namespace poseidon{
     virtual ~AllocationSection() = default;
 
     virtual int64_t size() const = 0;
-
+    virtual uword Allocate(int64_t size) = 0;
     virtual uword GetStartingAddress() const = 0;
-    void* GetStartingAddressPointer() const{
+
+    virtual void* GetStartingAddressPointer() const{
       return (void*)GetStartingAddress();
     }
 
-    virtual uword GetEndingAddress() const = 0;
-    void* GetEndingAddressPointer() const{
+    virtual uword GetEndingAddress() const{
+      return GetStartingAddress() + size();
+    }
+
+    virtual void* GetEndingAddressPointer() const{
       return (void*)GetEndingAddress();
     }
 
@@ -47,7 +51,9 @@ namespace poseidon{
           && GetEndingAddress() >= address;
     }
 
-    virtual uword Allocate(int64_t size) = 0;
+    virtual void Clear(){
+      memset(GetStartingAddressPointer(), 0, size());
+    }
   };
 }
 

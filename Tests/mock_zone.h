@@ -24,7 +24,7 @@ namespace poseidon{
    MOCK_METHOD(bool, Contains, (uword), (const));
    MOCK_METHOD(void, SwapSpaces, (), ());
    MOCK_METHOD(void, ClearZone, (), (const));
-   MOCK_METHOD(RawObject*, AllocateRawObject, (uint64_t), ());
+   MOCK_METHOD(uword, Allocate, (int64_t), ());
  };
 }
 

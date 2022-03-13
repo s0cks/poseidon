@@ -7,20 +7,20 @@
 #include "poseidon/heap.h"
 
 namespace poseidon{
- static inline RawObject*
+ static inline uword
  FailAllocation(uint64_t size){
    DLOG(ERROR) << "allocating new object (" << HumanReadableSize(size) << ") failed.";
-   return nullptr;
+   return 0;
  }
 
- static inline RawObject*
- AllocateNewObjectUsingSystem(uint64_t size){
+ static inline uword
+ AllocateNewObjectUsingSystem(int64_t size){
    DLOG(INFO) << "allocating new object (" << HumanReadableSize(size) << ") using malloc.";
    auto total_size = sizeof(RawObject) + size;
    auto val = (RawObject*)malloc(total_size);
    memset((void*)val, 0, total_size);
    val->SetPointerSize(size);
-   return val;
+   return val->GetAddress();
  }
 }
 

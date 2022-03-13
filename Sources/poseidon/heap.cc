@@ -9,13 +9,13 @@ namespace poseidon{
 
  RawObject* Heap::AllocateNewObject(uint64_t size){
    RawObject* val = nullptr;
-   if((val = new_zone()->AllocateRawObject(size)) != nullptr)
+   if((val = (RawObject*)new_zone()->Allocate(size)) != nullptr)
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << HumanReadableSize(size) << ".";
    //TODO: free memory from new_zone()
 
-   if((val = new_zone()->AllocateRawObject(size)) != nullptr)
+   if((val = (RawObject*)new_zone()->Allocate(size)) != nullptr)
      goto finish_allocation;
 
    LOG(FATAL) << "cannot allocate new object of " << HumanReadableSize(size) << "!";
@@ -30,14 +30,14 @@ finish_allocation:
    RawObject* val = nullptr;
 
    // 1. Try Allocation
-   if((val = old_zone()->AllocateRawObject(size)) != nullptr)
+   if((val = (RawObject*)old_zone()->Allocate(size)) != nullptr)
      goto finish_allocation;
 
    // 2. Try Major Collection
    //TODO: free memory from old_zone
 
    // 3. Try Allocation Again
-   if((val = old_zone()->AllocateRawObject(size)) != nullptr)
+   if((val = (RawObject*)old_zone()->Allocate(size)) != nullptr)
      goto finish_allocation;
 
    // 4. Try Pages w/ Grow

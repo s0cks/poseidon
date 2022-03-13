@@ -5,7 +5,7 @@
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
- class Zone{
+ class Zone : public AllocationSection{
   private:
    class ZoneIterator : public RawObjectPointerIterator{
     private:
@@ -71,12 +71,14 @@ namespace poseidon{
    };
   private:
    uword start_;
-   uint64_t size_;
+   uword current_;
+   int64_t size_;
+
    Semispace from_;
    Semispace to_;
 
-   static inline uint64_t
-   GetSemispaceSize(uint64_t zone_size){
+   static inline int64_t
+   GetSemispaceSize(int64_t zone_size){
      return zone_size / 2;
    }
   public:
@@ -85,6 +87,7 @@ namespace poseidon{
     */
    Zone():
     start_(0),
+    current_(0),
     size_(0),
     from_(),
     to_(){
@@ -97,7 +100,7 @@ namespace poseidon{
     * @param offset The offset for the {@link Zone} in the {@link MemoryRegion}
     * @param size The size of the {@link Zone}
     */
-   Zone(MemoryRegion* region, uint64_t offset, uint64_t size)://TODO: refactor?
+   Zone(MemoryRegion* region, int64_t offset, int64_t size)://TODO: refactor?
     Zone(region->GetStartAddress() + offset, size){
    }
 
@@ -107,72 +110,35 @@ namespace poseidon{
     * @param start The starting address for the {@link Zone}
     * @param size The size of the {@link Zone}
     */
-   Zone(uword start, uint64_t size)://TODO: cleanup?
+   Zone(uword start, int64_t size)://TODO: cleanup?
     start_(start),
+    current_(start),
     size_(size),
     from_(start, GetSemispaceSize(size)),
     to_(start + GetSemispaceSize(size), GetSemispaceSize(size)){
    }
    Zone(const Zone& rhs) = default; // Copy-Constructor
-   virtual ~Zone() = default; // Destructor
-
-   Semispace& from(){
-     return from_;
-   }
-
-   Semispace& to(){
-     return to_;
-   }
+   ~Zone() override = default; // Destructor
 
    /**
     * Returns the address of the beginning of this {@link Zone}.
     *
     * @return The address of the beginning of this {@link Zone}.
     */
-   uword GetStartingAddress() const{
+   uword GetStartingAddress() const override{
      return start_;
    }
 
-   /**
-    * Returns a pointer to the beginning of this {@link Zone}.
-    *
-    * @return A pointer to the beginning of this {@link Zone}
-    */
-   void* GetStartingAddressPointer() const{
-     return (void*)GetStartingAddress();
-   }
-
-   uint64_t size() const{
+   int64_t size() const override{
      return size_;
    }
 
-   /**
-    * Returns the address at the end of this {@link Zone}.
-    *
-    * @return The address of the end of this {@link Zone}.
-    */
-   uword GetEndingAddress() const{
-     return GetStartingAddress() + size();
+   uword GetCurrentAddress() const{
+     return current_;
    }
 
-   /**
-    * Returns a pointer to the end of this {@link Zone}.
-    *
-    * @return A pointer to the end of this {@link Zone}.
-    */
-   void* GetEndingAddressPointer() const{
-     return (void*)GetEndingAddress();
-   }
-
-   /**
-    * Check whether or not the address is inside of this this {@link Zone} or not.
-    *
-    * @param address The address to check
-    * @return True if the address is contained in this {@link Zone}
-    */
-   bool Contains(uword address) const{
-     return GetStartingAddress() <= address
-         && GetEndingAddress() >= address;
+   void* GetCurrentAddressPointer() const{
+     return (void*)GetCurrentAddress();
    }
 
    void VisitRawObjects(RawObjectVisitor* vis) const{//TODO: document
@@ -209,13 +175,6 @@ namespace poseidon{
    }
 
    /**
-    * Clears all the bytes in the {@link Zone}.
-    */
-   virtual void ClearZone() const{
-     memset(GetStartingAddressPointer(), 0, size());
-   }
-
-   /**
     * Swaps the from_ & to_ {@link Semispace}s in this {@link Zone}.
     *
     * Called during collection time.
@@ -224,8 +183,8 @@ namespace poseidon{
      std::swap(from_, to_);
    }
 
-   uint64_t GetNumberOfBytesAllocated() const{
-     return from_.GetNumberOfBytesAllocated() + to_.GetNumberOfBytesAllocated();
+   int64_t GetNumberOfBytesAllocated() const{
+     return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
    }
 
    /**
@@ -234,8 +193,8 @@ namespace poseidon{
     * @param size The size of the new object to allocate
     * @return A pointer to the beginning of the object and i's header
     */
-   virtual RawObject* AllocateRawObject(uint64_t size){//TODO: refactor/cleanup?
-     return (RawObject*)from_.Allocate(static_cast<int64_t>(size));//TODO: fix casting
+   uword Allocate(int64_t size) override{
+     return from_.Allocate(size);
    }
 
    Zone& operator=(const Zone& rhs){
@@ -243,6 +202,8 @@ namespace poseidon{
        return *this;
      start_ = rhs.GetStartingAddress();
      size_ = rhs.size();
+     from_ = rhs.from_;
+     to_ = rhs.to_;
      return *this;
    }
 

@@ -9,7 +9,7 @@
 namespace poseidon{
  uword Scavenger::PromoteObject(RawObject* obj){
    DLOG(INFO) << "promoting " << obj->ToString() << " to new zone.";
-   auto new_ptr = Heap::GetCurrentThreadHeap()->old_zone()->AllocateRawObject(obj->GetPointerSize());
+   auto new_ptr = (RawObject*)Heap::GetCurrentThreadHeap()->old_zone()->Allocate(obj->GetPointerSize());
    CopyObject(obj, new_ptr);
    new_ptr->SetOldBit();
 
