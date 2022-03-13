@@ -35,13 +35,13 @@ namespace poseidon{
      return num_locals_;
    }
 
-   static inline RawObject*
-   Allocate(uint64_t size){
+   static inline uword
+   Allocate(int64_t size){
      auto heap = Heap::GetCurrentThreadHeap();
 #ifdef PSDN_DEBUG
      assert(heap != nullptr);
 #endif//PSDN_DEBUG
-     return heap->AllocateObject(size);
+     return heap->Allocate(size);
    }
 
    template<typename T>
@@ -52,7 +52,7 @@ namespace poseidon{
 
    static inline void*
    New(size_t size){
-     return Allocate(size)->GetPointer();
+     return ((RawObject*)Allocate(size))->GetPointer();//TODO: fix
    }
 
    template<typename T>

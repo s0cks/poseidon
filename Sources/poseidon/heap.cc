@@ -7,7 +7,7 @@
 namespace poseidon{
  pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
 
- RawObject* Heap::AllocateNewObject(uint64_t size){
+ uword Heap::AllocateNewObject(int64_t size){
    RawObject* val = nullptr;
    if((val = (RawObject*)new_zone()->Allocate(size)) != nullptr)
      goto finish_allocation;
@@ -19,14 +19,14 @@ namespace poseidon{
      goto finish_allocation;
 
    LOG(FATAL) << "cannot allocate new object of " << HumanReadableSize(size) << "!";
-   return nullptr;
+   return 0;
 
 finish_allocation:
    val->SetNewBit();
-   return val;
+   return val->GetAddress();
  }
 
- RawObject* Heap::AllocateOldObject(uint64_t size){
+ uword Heap::AllocateOldObject(int64_t size){
    RawObject* val = nullptr;
 
    // 1. Try Allocation
@@ -56,18 +56,18 @@ finish_allocation:
 
    // 5. Crash
    LOG(FATAL) << "cannot allocate " << HumanReadableSize(size) << " in heap.";
-   return nullptr;
+   return 0;
 
 finish_allocation:
    val->SetNewBit();
-   return val;
+   return val->GetAddress();
  }
 
- RawObject* Heap::AllocateLargeObject(uint64_t size){
+ uword Heap::AllocateLargeObject(int64_t size){
    return AllocateOldObject(size);//TODO: refactor
  }
 
- RawObject* Heap::AllocateObject(uint64_t size){
+ uword Heap::Allocate(int64_t size){
    if(size < kWordSize)
      size = kWordSize;
 

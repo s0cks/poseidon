@@ -7,27 +7,27 @@
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
- static inline uint64_t
+ static inline int64_t
  GetNewZoneSize(){
    return FLAGS_new_zone_size;
  }
 
- static inline uint64_t
+ static inline int64_t
  GetOldZoneSize() {
    return FLAGS_old_zone_size;
  }
 
- static inline uint64_t
+ static inline int64_t
  GetTotalHeapSize(){
    return GetNewZoneSize() + GetOldZoneSize();
  }
 
- static inline uint64_t
+ static inline int64_t
  GetHeapPageSize(){
    return FLAGS_heap_page_size;
  }
 
- static inline uint64_t
+ static inline int64_t
  GetLargeObjectSize(){
    return FLAGS_large_object_size;
  }
@@ -49,8 +49,8 @@ namespace poseidon{
      }
     public:
      explicit HeapPageIterator(const HeapPage* page):
-         page_(page),
-         current_(page->GetStartingAddress()){
+       page_(page),
+       current_(page->GetStartingAddress()){
      }
      ~HeapPageIterator() override = default;
 
@@ -208,9 +208,8 @@ namespace poseidon{
    }
  };
 
- class Heap{
+ class Heap : public AllocationSection{
    friend class HeapTest;
-   friend class Collector;
    friend class Scavenger;
    friend class Compactor;
    friend class Allocator;
@@ -241,7 +240,7 @@ namespace poseidon{
    Zone* old_zone_;
 
    HeapPage* pages_;
-   uint32_t num_pages_;
+   int32_t num_pages_;
 
    Heap(MemoryRegion* region, Zone* new_zone, Zone* old_zone):
      region_(region),
@@ -276,34 +275,26 @@ namespace poseidon{
      return pages_;
    }
 
-   RawObject* AllocateNewObject(uint64_t size);
-   RawObject* AllocateOldObject(uint64_t size);
-   RawObject* AllocateLargeObject(uint64_t size);
+   uword AllocateNewObject(int64_t size);
+   uword AllocateOldObject(int64_t size);
+   uword AllocateLargeObject(int64_t size);
   public:
-   Heap(MemoryRegion* region = new MemoryRegion(GetTotalHeapSize()))://TODO: refactor
+   explicit Heap(MemoryRegion* region = new MemoryRegion(GetTotalHeapSize()))://TODO: refactor
     Heap(region, new Zone(region, 0, GetNewZoneSize()), new Zone(region, GetNewZoneSize(), GetOldZoneSize())){
    }
    Heap(const Heap& rhs) = default;
-   ~Heap() = default;
+   ~Heap() override = default;
 
    const MemoryRegion* region() const{
      return region_;
    }
 
-   uword GetStartingAddress() const{
+   int64_t size() const override{
+     return static_cast<int64_t>(region_->GetSize());
+   }
+
+   uword GetStartingAddress() const override{
      return region_->GetStartAddress();
-   }
-
-   void* GetStartingAddressPointer() const{
-     return (void*)GetStartingAddress();
-   }
-
-   uword GetEndingAddress() const{
-     return region_->GetEndAddress();
-   }
-
-   void* GetEndingAddressPointer() const{
-     return (void*)GetEndingAddress();
    }
 
    Zone* new_zone() const{
@@ -314,10 +305,6 @@ namespace poseidon{
      return old_zone_;
    }
 
-   bool Contains(uword address) const{
-     return region_->Contains(address);
-   }
-
    void VisitPages(const std::function<bool(const HeapPage* page)>& vis) const{
      auto page = GetCurrentPage();
      while(page != nullptr){
@@ -326,7 +313,7 @@ namespace poseidon{
      }
    }
 
-   RawObject* AllocateObject(uint64_t size);
+   uword Allocate(int64_t size) override;
 
    Heap& operator=(const Heap& rhs) = delete;
 

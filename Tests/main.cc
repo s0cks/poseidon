@@ -40,12 +40,12 @@ int main(int argc, char** argv){
   Heap::Initialize();
   Allocator::Initialize();
 
-  auto ptr1 = Allocator::Allocate(sizeof(int));
+  auto ptr1 = (RawObject*)Allocator::Allocate(sizeof(int));
   auto val1 = (int*)ptr1->GetPointer();
   (*val1) = 10000;
   DLOG(INFO) << "value #1: " << (*val1) << " (" << ptr1->ToString() << ").";
 
-  auto ptr2 = Allocator::Allocate(sizeof(int));
+  auto ptr2 = (RawObject*)Allocator::Allocate(sizeof(int));
   auto val2 = (int*)ptr2->GetPointer();
   (*val2) = 10;
   DLOG(INFO) << "value #2: " << (*val2) << " (" << ptr2->ToString() << ").";
