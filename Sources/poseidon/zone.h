@@ -210,8 +210,8 @@ namespace poseidon{
    friend std::ostream& operator<<(std::ostream& stream, const Zone& zone){
      stream << "Zone(";
      stream << "starting_address=" << zone.GetStartingAddressPointer() << ", ";
-     stream << "total_size=" << HumanReadableSize(zone.size()) << ", ";
-     stream << "allocated=" << HumanReadableSize(zone.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(zone.GetNumberOfBytesAllocated(), zone.size()) << ")";
+     stream << "total_size=" << Bytes(zone.size()) << ", ";
+     stream << "allocated=" << Bytes(zone.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(zone.GetNumberOfBytesAllocated(), zone.size()) << ")";
      stream << ")";
      return stream;
    }

@@ -68,7 +68,7 @@ namespace poseidon{
    }
    //TODO: SetCurrent(next_address);
 
-   DLOG(INFO) << "*** number of objects finalized: " << finalizer.GetNumberOfObjectsFinalized() << " (" << HumanReadableSize(finalizer.GetNumberOfBytesFinalized()) << ").";
+   DLOG(INFO) << "*** number of objects finalized: " << finalizer.GetNumberOfObjectsFinalized() << " (" << Bytes(finalizer.GetNumberOfBytesFinalized()) << ").";
  }
 
  void Compactor::Compact(){

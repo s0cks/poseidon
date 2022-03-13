@@ -3,6 +3,7 @@
 
 #include <sys/mman.h>
 #include <glog/logging.h>
+
 #include "utils.h"
 
 #undef MAP_FAILED
@@ -25,8 +26,8 @@ namespace poseidon{
     if(size_ > 0){
       int err;
       if((err = munmap((void*)start_, size_)) != 0)
-        LOG(ERROR) << "failed to munmap memory region of " << size_ << " bytes: " << strerror(err);
-      DLOG(INFO) << "freed MemoryRegion (" << HumanReadableSize(size_) << ")";
+        LOG(ERROR) << "failed to munmap memory region of " << Bytes(size_) << " bytes: " << strerror(err);
+      DLOG(INFO) << "freed MemoryRegion (" << Bytes(size_) << ")";
     }
   }
 

@@ -201,8 +201,8 @@ namespace poseidon{
    friend std::ostream& operator<<(std::ostream& stream, const HeapPage& val){
      stream << "HeapPage(";
      stream << "starting_address=" << val.GetStartingAddressPointer() << ", ";
-     stream << "total_size=" << HumanReadableSize(val.size()) << ", ";
-     stream << "allocated=" << HumanReadableSize(val.GetNumberOfBytesAllocated());
+     stream << "total_size=" << Bytes(val.size()) << ", ";
+     stream << "allocated=" << Bytes(val.GetNumberOfBytesAllocated());
      stream << ")";
      return stream;
    }

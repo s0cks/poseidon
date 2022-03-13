@@ -137,39 +137,44 @@ namespace poseidon{
     }
   };
 
-  static inline const char*
-  HumanReadableSize(uint64_t nbytes){
-    static const char* kSuffix[] = {
-        "b",
-        "kb",
-        "mb",
-        "gb",
-        "tb",
-    };
-    static int kSuffixLength = sizeof(kSuffix) / sizeof(kSuffix[0]);
+  struct Bytes{
+    int64_t value;
 
-    uint8_t suffix = 0;
-    auto remainder = static_cast<double>(nbytes);
-
-    while(remainder >= 1024 && suffix < kSuffixLength){
-      suffix++;
-      remainder /= 1024;
+    explicit Bytes(int64_t V):
+      value(V){
     }
+    Bytes(const Bytes& rhs) = default;
+    ~Bytes() = default;
 
-    static char result[128];
-    if(remainder - floor(remainder) == 0.0){
-      sprintf(result, "%d%s", (int)remainder, kSuffix[suffix]);
-    } else{
-      sprintf(result, "%.2lf%s", remainder, kSuffix[suffix]);
+    Bytes& operator=(const Bytes& rhs) = default;
+
+    friend std::ostream& operator<<(std::ostream& stream, const Bytes& val){
+      static const char* kSuffix[] = {
+          "b",
+          "kb",
+          "mb",
+          "gb",
+          "tb",
+      };
+      static int kSuffixLength = sizeof(kSuffix) / sizeof(kSuffix[0]);
+
+      uint8_t suffix = 0;
+      auto remainder = static_cast<double>(val.value);
+      while(remainder >= 1024 && suffix < kSuffixLength){
+        suffix++;
+        remainder /= 1024;
+      }
+
+      static char result[128];
+      if(remainder - floor(remainder) == 0.0){
+        sprintf(result, "%d%s", (int)remainder, kSuffix[suffix]);
+      } else{
+        sprintf(result, "%.2lf%s", remainder, kSuffix[suffix]);
+      }
+      stream << result;
+      return stream;
     }
-
-    return result;
-  }
-
-  static inline const char*
-  HumanReadableSize(const RelaxedAtomic<uint64_t>& val){
-    return HumanReadableSize((uint64_t)val);
-  }
+  };
 
   typedef std::chrono::system_clock Clock;
   typedef Clock::time_point Timestamp;

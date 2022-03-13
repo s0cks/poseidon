@@ -8,14 +8,14 @@
 
 namespace poseidon{
  static inline uword
- FailAllocation(uint64_t size){
-   DLOG(ERROR) << "allocating new object (" << HumanReadableSize(size) << ") failed.";
+ FailAllocation(int64_t size){
+   DLOG(ERROR) << "allocating new object (" << Bytes(size) << ") failed.";
    return 0;
  }
 
  static inline uword
  AllocateNewObjectUsingSystem(int64_t size){
-   DLOG(INFO) << "allocating new object (" << HumanReadableSize(size) << ") using malloc.";
+   DLOG(INFO) << "allocating new object (" << Bytes(size) << ") using malloc.";
    auto total_size = sizeof(RawObject) + size;
    auto val = (RawObject*)malloc(total_size);
    memset((void*)val, 0, total_size);

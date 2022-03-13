@@ -135,7 +135,7 @@ namespace poseidon{
    uword Allocate(int64_t size) override{
      auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
      if(!Contains(current_ + total_size)){
-       DLOG(WARNING) << "cannot allocate object of size " << HumanReadableSize(size) << " in space.";
+       DLOG(WARNING) << "cannot allocate object of size " << Bytes(size) << " in space.";
        return 0;
      }
 
@@ -211,8 +211,8 @@ namespace poseidon{
    friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
      stream << "Semispace(";
      stream << "start=" << ((void*)space.GetStartingAddress()) << ", ";
-     stream << "allocated=" << HumanReadableSize(space.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(space.GetNumberOfBytesAllocated(), space.size()) << "), ";
-     stream << "total_size=" << HumanReadableSize(space.size());
+     stream << "allocated=" << Bytes(space.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(space.GetNumberOfBytesAllocated(), space.size()) << "), ";
+     stream << "total_size=" << Bytes(space.size());
      stream << ")";
      return stream;
    }

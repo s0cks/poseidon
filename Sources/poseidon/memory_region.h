@@ -82,13 +82,13 @@ namespace poseidon{
       start_(0),
       size_(0){
       if(size >= parent->size()){
-        LOG(WARNING) << "cannot allocate MemoryRegion of " << HumanReadableSize(size) << ", size is larger than parent.";
+        LOG(WARNING) << "cannot allocate MemoryRegion of " << Bytes(size) << ", size is larger than parent.";
         return;
       }
 
       auto start = parent->GetStartingAddress() + offset;
       if(!parent->Contains(start)){
-        DLOG(WARNING) << "cannot allocate MemoryRegion of " << HumanReadableSize(size) << " at offset " << offset << ", parent doesn't contain starting address: " << ((void*)start);
+        DLOG(WARNING) << "cannot allocate MemoryRegion of " << Bytes(size) << " at offset " << offset << ", parent doesn't contain starting address: " << ((void*)start);
         return;
       }
 

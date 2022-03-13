@@ -12,13 +12,13 @@ namespace poseidon{
    if((val = (RawObject*)new_zone()->Allocate(size)) != nullptr)
      goto finish_allocation;
 
-   DLOG(WARNING) << "couldn't allocate new object of " << HumanReadableSize(size) << ".";
+   DLOG(WARNING) << "couldn't allocate new object of " << Bytes(size) << ".";
    //TODO: free memory from new_zone()
 
    if((val = (RawObject*)new_zone()->Allocate(size)) != nullptr)
      goto finish_allocation;
 
-   LOG(FATAL) << "cannot allocate new object of " << HumanReadableSize(size) << "!";
+   LOG(FATAL) << "cannot allocate new object of " << Bytes(size) << "!";
    return 0;
 
 finish_allocation:
@@ -55,7 +55,7 @@ finish_allocation:
    }
 
    // 5. Crash
-   LOG(FATAL) << "cannot allocate " << HumanReadableSize(size) << " in heap.";
+   LOG(FATAL) << "cannot allocate " << Bytes(size) << " in heap.";
    return 0;
 
 finish_allocation:
@@ -72,7 +72,7 @@ finish_allocation:
      size = kWordSize;
 
    if(size >= GetLargeObjectSize()){
-     DLOG(INFO) << "allocating large object of " << HumanReadableSize(size);
+     DLOG(INFO) << "allocating large object of " << Bytes(size);
      return AllocateLargeObject(size);
    }
    return AllocateNewObject(size);
@@ -81,7 +81,7 @@ finish_allocation:
  RawObject* HeapPage::Allocate(uint64_t size){
    uint64_t total_size = sizeof(RawObject) + size;
    if((current_ + total_size) > GetEndingAddress()){
-     DLOG(WARNING) << "cannot allocate object of size " << HumanReadableSize(size) << " in " << HumanReadableSize(region_.size()) << " heap page.";
+     DLOG(WARNING) << "cannot allocate object of size " << Bytes(size) << " in " << Bytes(region_.size()) << " heap page.";
      return nullptr;
    }
 
