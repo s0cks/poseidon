@@ -2,8 +2,10 @@
 #define POSEIDON_UTILS_H
 
 #include <cmath>
+#include <string>
 #include <chrono>
 #include <cstdio>
+#include <ostream>
 #include <cstdint>
 #include <cstring>
 

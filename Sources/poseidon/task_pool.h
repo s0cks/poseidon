@@ -112,21 +112,20 @@ namespace poseidon{
  };
 
  class TaskPool{
-  private:
+  public:
    typedef WorkStealingQueue<Task*> TaskQueue;
+   typedef int16_t WorkerId;
+   typedef int32_t QueueSize;
 
+   static constexpr const QueueSize kDefaultMaxQueueSize = 1024;
+   static constexpr const size_t kDefaultNumberOfWorkers = 2;
+  private:
 #define FOR_EACH_TASK_POOL_WORKER_STATE(V) \
    V(Starting)                             \
    V(Idle)                                 \
    V(Executing)                            \
    V(Stopping)                             \
    V(Stopped)
-
-   typedef int16_t WorkerId;
-   typedef int32_t QueueSize;
-
-   static constexpr const QueueSize kDefaultMaxQueueSize = 1024;
-   static constexpr const size_t kDefaultNumberOfWorkers = 2;
 
    class Worker{
     public:

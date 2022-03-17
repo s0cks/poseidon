@@ -51,15 +51,14 @@ namespace poseidon{
    std::vector<Item*> garbage_;
   public:
    explicit WorkStealingQueue(int64_t capacity = 1024):
-       top_(),
-       bottom_(),
-       items_(),
-       garbage_(){
-
-     top_.store(0, std::memory_order_relaxed),
-         bottom_.store(0, std::memory_order_relaxed);
-     items_.store(new Item(capacity), std::memory_order_relaxed);
-     garbage_.reserve(32);
+     top_(),
+     bottom_(),
+     items_(),
+     garbage_(){
+    top_.store(0, std::memory_order_relaxed);
+    bottom_.store(0, std::memory_order_relaxed);
+    items_.store(new Item(capacity), std::memory_order_relaxed);
+    garbage_.reserve(32);
    }
    ~WorkStealingQueue(){
      for(auto& a : garbage_)
@@ -127,12 +126,12 @@ namespace poseidon{
      std::atomic_thread_fence(std::memory_order_seq_cst);
      int64_t bottom = bottom_.load(std::memory_order_acquire);
 
-     T value = nullptr;
+     T value = (T)0;
      if(top < bottom){
        Item* items = items_.load(std::memory_order_consume);
        value = items->Pop(top);
        if(!top_.compare_exchange_strong(top, top + 1, std::memory_order_seq_cst, std::memory_order_relaxed)){
-         return nullptr;
+         return (T)0;
        }
      }
      return value;

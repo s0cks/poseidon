@@ -5,7 +5,9 @@
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
+ class NewPage;
  class Zone : public AllocationSection{
+   friend class Scavenger;
   private:
    class ZoneIterator : public RawObjectPointerIterator{
     private:
@@ -73,36 +75,11 @@ namespace poseidon{
    uword start_;
    uword current_;
    int64_t size_;
-
-   Semispace from_;
-   Semispace to_;
-
-   static inline int64_t
-   GetSemispaceSize(int64_t zone_size){
-     return zone_size / 2;
-   }
   public:
    /**
     * Create an empty {@link Zone}.
     */
-   Zone():
-    start_(0),
-    current_(0),
-    size_(0),
-    from_(),
-    to_(){
-   }
-
-   /**
-    * Create a {@link Zone} within the {@link MemoryRegion} at the specified offset and size.
-    *
-    * @param region The {@link MemoryRegion} to create the {@link Zone} in
-    * @param offset The offset for the {@link Zone} in the {@link MemoryRegion}
-    * @param size The size of the {@link Zone}
-    */
-   Zone(MemoryRegion* region, int64_t offset, int64_t size)://TODO: refactor?
-    Zone(region->GetStartingAddress() + offset, size){
-   }
+   Zone() = default;
 
    /**
     * Create a {@link Zone} with the specified starting address and size.
@@ -113,10 +90,20 @@ namespace poseidon{
    Zone(uword start, int64_t size)://TODO: cleanup?
     start_(start),
     current_(start),
-    size_(size),
-    from_(start, GetSemispaceSize(size)),
-    to_(start + GetSemispaceSize(size), GetSemispaceSize(size)){
+    size_(size){
    }
+
+   /**
+    * Create a {@link Zone} within the {@link MemoryRegion} at the specified offset and size.
+    *
+    * @param region The {@link MemoryRegion} to create the {@link Zone} in
+    * @param offset The offset for the {@link Zone} in the {@link MemoryRegion}
+    * @param size The size of the {@link Zone}
+    */
+   Zone(MemoryRegion* region, int64_t offset, int64_t size)://TODO: refactor?
+       Zone(region->GetStartingAddress() + offset, size){
+   }
+
    Zone(const Zone& rhs) = default; // Copy-Constructor
    ~Zone() override = default; // Destructor
 
@@ -174,15 +161,6 @@ namespace poseidon{
      }
    }
 
-   /**
-    * Swaps the from_ & to_ {@link Semispace}s in this {@link Zone}.
-    *
-    * Called during collection time.
-    */
-   virtual void SwapSpaces(){
-     std::swap(from_, to_);
-   }
-
    int64_t GetNumberOfBytesAllocated() const{
      return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
    }
@@ -194,7 +172,17 @@ namespace poseidon{
     * @return A pointer to the beginning of the object and i's header
     */
    uword Allocate(int64_t size) override{
-     return from_.Allocate(size);
+     auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
+     if(!Contains(current_ + total_size)){
+       DLOG(WARNING) << "cannot allocate object of size " << Bytes(size) << " in space.";
+       return 0;
+     }
+
+     auto next = (void*)current_;
+     current_ += total_size;
+     auto ptr = new (next)RawObject();
+     ptr->SetPointerSize(size);
+     return ptr->GetAddress();
    }
 
    Zone& operator=(const Zone& rhs){
@@ -202,8 +190,6 @@ namespace poseidon{
        return *this;
      start_ = rhs.GetStartingAddress();
      size_ = rhs.size();
-     from_ = rhs.from_;
-     to_ = rhs.to_;
      return *this;
    }
 
@@ -214,6 +200,207 @@ namespace poseidon{
      stream << "allocated=" << Bytes(zone.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(zone.GetNumberOfBytesAllocated(), zone.size()) << ")";
      stream << ")";
      return stream;
+   }
+ };
+
+ class NewZone : public Zone{
+  public:
+   static inline int64_t
+   CalculateSemispaceSize(int64_t zone_size){
+     return zone_size / 2;
+   }
+  private:
+   Semispace from_;
+   Semispace to_;
+  public:
+   NewZone() = default;
+   NewZone(uword start, int64_t size):
+    Zone(start, size),
+    from_(start, CalculateSemispaceSize(size)),
+    to_(start + CalculateSemispaceSize(size), CalculateSemispaceSize(size)){
+   }
+   NewZone(MemoryRegion* region, int64_t offset, int64_t size):
+     NewZone(region->GetStartingAddress() + offset, size){
+   }
+   ~NewZone() override = default;
+
+   Semispace& from(){
+     return from_;
+   }
+
+   Semispace& to(){
+     return to_;
+   }
+
+  /**
+   * Swaps the from_ & to_ {@link Semispace}s in this {@link Zone}.
+   *
+   * Called during collection time.
+   */
+   virtual void SwapSpaces(){
+     std::swap(from_, to_);
+   }
+
+   void VisitPages(const std::function<bool(NewPage*)>& vis) const;
+
+   NewZone& operator=(const NewZone& rhs){
+     if(this == &rhs)
+       return *this;
+     Zone::operator=(rhs);
+     from_ = rhs.from_;
+     to_ = rhs.to_;
+     return *this;
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){
+     return stream << (Zone&)val;
+   }
+ };
+
+ class OldZone : public Zone{
+  public:
+   class OldPage{
+     friend class OldZone;
+    public:
+     class OldPageIterator : public RawObjectPointerIterator{
+      private:
+       const OldPage* page_;
+       uword current_;
+
+       inline RawObject* current_ptr() const{
+         return (RawObject*)current_;
+       }
+
+       inline RawObject* next_ptr() const{
+         return (RawObject*)(current_ + current_ptr()->GetTotalSize());
+       }
+      public:
+       explicit OldPageIterator(const OldPage* page):
+        RawObjectPointerIterator(),
+        page_(page),
+        current_(page->GetStartingAddress()){
+       }
+       ~OldPageIterator() override = default;
+
+       const OldPage* page() const{
+         return page_;
+       }
+
+       bool HasNext() const override{
+         auto next = current_ptr();
+#ifdef PSDN_DEBUG
+         assert(page()->Contains(next->GetAddress()));
+#endif//PSDN_DEBUG
+         return next->GetPointerSize() > 0;
+       }
+
+       RawObject* Next() override{
+         auto next = current_ptr();
+         current_ += next->GetTotalSize();
+         return next;
+       }
+     };
+    protected:
+     int64_t index_;
+     uword start_;
+     int64_t size_;
+     OldPage* next_;
+     OldPage* previous_;
+
+     OldPage() = default;
+     OldPage(int64_t index, uword start, int64_t size):
+      index_(index),
+      start_(start),
+      size_(size),
+      next_(nullptr),
+      previous_(nullptr){
+     }
+    public:
+     OldPage(const OldPage& rhs) = default;
+     ~OldPage() = default;
+
+     int64_t index() const{
+       return index_;
+     }
+
+     int64_t size() const{
+       return size_;
+     }
+
+     uword GetStartingAddress() const{
+       return start_;
+     }
+
+     void* GetStartingAddressPointer() const{
+       return (void*)GetStartingAddress();
+     }
+
+     uword GetEndingAddress() const{
+       return GetStartingAddress() + size();
+     }
+
+     void* GetEndingAddressPointer() const{
+       return (void*)GetEndingAddress();
+     }
+
+     bool HasNext() const{
+       return next_ != nullptr;
+     }
+
+     OldPage* GetNext() const{
+       return next_;
+     }
+
+     void SetNext(OldPage* page){
+       next_ = page;
+     }
+
+     bool HasPrevious() const{
+       return previous_ != nullptr;
+     }
+
+     OldPage* GetPrevious() const{
+       return previous_;
+     }
+
+     void SetPrevious(OldPage* page){
+       previous_ = page;
+     }
+
+     bool Contains(uword address) const{
+       return GetStartingAddress() <= address
+           && GetEndingAddress() >= address;
+     }
+
+     void VisitPointers(const std::function<bool(RawObject*)>& vis) const{
+       OldPageIterator iter(this);
+       while(iter.HasNext()){
+         if(!vis(iter.Next()))
+           return;
+       }
+     }
+
+     OldPage& operator=(const OldPage& rhs) = default;
+
+     friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
+       return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.size()) << ")";
+     }
+   };
+  private:
+   OldPage* pages_;
+  public:
+   OldZone() = default;
+   ~OldZone() override = default;
+
+   OldZone& operator=(const OldZone& rhs){
+     if(this == &rhs)
+       return *this;
+     Zone::operator=(rhs);
+     return *this;
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const OldZone& val){
+     return stream << (Zone&)val;
    }
  };
 }

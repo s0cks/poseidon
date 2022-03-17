@@ -12,7 +12,7 @@ namespace poseidon{
  class HeapTest : public Test{
   protected:
    MockMemoryRegion region_;
-   MockZone new_zone_;
+   MockNewZone new_zone_;
    MockZone old_zone_;
    Heap* heap_;
 
@@ -20,7 +20,7 @@ namespace poseidon{
      return region_;
    }
 
-   inline MockZone& new_zone(){
+   inline MockNewZone& new_zone(){
      return new_zone_;
    }
 

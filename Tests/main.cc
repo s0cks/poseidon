@@ -1,30 +1,10 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
 
+#include "poseidon/local.h"
 #include "poseidon/poseidon.h"
-#include "poseidon/task_pool.h"
+#include "poseidon/scavenger.h"
 #include "poseidon/allocator.h"
-
-namespace poseidon{
- class EchoTask : public Task{
-  private:
-   RelaxedAtomic<uint64_t>& counter_;
-  public:
-   EchoTask(RelaxedAtomic<uint64_t>& counter):
-    Task(),
-    counter_(counter){
-   }
-   ~EchoTask() override = default;
-
-   const char * name() const override{
-     return "EchoTask";
-   }
-
-   void Run() override{
-     LOG(INFO) << "echo #" << (counter_ += 1) << " from " << GetCurrentThreadName() << ".";
-   }
- };
-}
 
 int main(int argc, char** argv){
   using namespace poseidon;
@@ -37,18 +17,31 @@ int main(int argc, char** argv){
   LOG(WARNING) << "*** Using Multi-Threaded Algorithm ***";
 #endif//PSDN_MTA
 
+  DLOG(INFO) << "sizeof(NewPage) := " << sizeof(NewPage);
+  DLOG(INFO) << "sizeof(Reference) := " << sizeof(Reference);
+  DLOG(INFO) << "sizeof(word) := " << sizeof(word);
+
   Heap::Initialize();
   Allocator::Initialize();
 
-  auto ptr1 = (RawObject*)Allocator::Allocate(sizeof(int));
-  auto val1 = (int*)ptr1->GetPointer();
-  (*val1) = 10000;
-  DLOG(INFO) << "value #1: " << (*val1) << " (" << ptr1->ToString() << ").";
-
-  auto ptr2 = (RawObject*)Allocator::Allocate(sizeof(int));
-  auto val2 = (int*)ptr2->GetPointer();
-  (*val2) = 10;
-  DLOG(INFO) << "value #2: " << (*val2) << " (" << ptr2->ToString() << ").";
+//  auto raw_ptr = (RawObject*)Allocator::Allocate(sizeof(uword));
+//  (*((uword*)raw_ptr->GetPointer())) = 100;
+//  DLOG(INFO) << "value: " << (*((uword*)raw_ptr->GetPointer())) << " (" << raw_ptr->ToString() << ").";
+//
+//  auto handle = Allocator::AllocateLocal<uword>();
+//  handle = raw_ptr->GetAddress(); // returns RawObject* (start of object + header).
+//  (*handle.Get()) = 1000;
+//
+//  DLOG(INFO) << "handle: " << (*handle.Get()) << " (" << handle.raw()->ToString() << ").";
+//
+//  static const int64_t kDefaultNumberOfGarbageObjects = 1024;
+//  for(auto idx = 0; idx < kDefaultNumberOfGarbageObjects; idx++){
+//    auto val = Allocator::New<int64_t>(idx);
+//    DLOG(INFO) << "#" << idx << " := " << (*val);
+//  }
+//
+//  auto heap = Heap::GetCurrentThreadHeap();
+//  Scavenger::Scavenge(heap->new_zone());
 
 //  TaskPool pool;
 //

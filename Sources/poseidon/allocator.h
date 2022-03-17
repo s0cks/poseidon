@@ -9,14 +9,108 @@ namespace poseidon{
  template<typename T>
  class Local;
 
+ struct Reference{
+   uword src;
+   uword dst;
+
+   friend std::ostream& operator<<(std::ostream& stream, const Reference& val){
+     return stream << "Reference(from=" << val.src << ", to=" << ((void*)val.dst) << ")";
+   }
+ };
+
  class LocalGroup;
  class Allocator{
+   friend class Scavenger;
   private:
-   static LocalGroup* locals_;
-   static uint64_t num_allocated_;
-   static uint64_t num_locals_;
+   class RootPage{
+    public:
+     static constexpr const int64_t kDefaultNumberOfRootsPerPage = 1024;
+    private:
+     RootPage* next_;
+     RootPage* previous_;
 
-   static RawObject** NewLocalSlot();
+     MemoryRegion region_;
+     uword current_;
+
+     inline uword starting_address() const{
+       return region_.GetStartingAddress();
+     }
+
+     inline uword current_address() const{
+       return current_;
+     }
+
+     inline uword ending_address() const{
+       return region_.GetEndingAddress();
+     }
+
+     inline Reference* reference(int64_t idx) const{
+       auto offset = idx * (kWordSize * 2);
+       return (Reference*)(starting_address() + offset);
+     }
+
+     inline int64_t size() const{
+       return static_cast<int64_t>(current_address() - starting_address());
+     }
+
+     inline Reference* begin() const{
+       return (Reference*)starting_address();
+     }
+
+     inline Reference* end() const{
+       return (Reference*)ending_address();
+     }
+    public:
+     explicit RootPage(int64_t num_roots = kDefaultNumberOfRootsPerPage):
+      next_(nullptr),
+      previous_(nullptr),
+      region_(num_roots * kWordSize),
+      current_(region_.GetStartingAddress()){
+       if(!region_.Protect(MemoryRegion::kReadWrite))
+         LOG(FATAL) << "cannot protect RootPage MemoryRegion.";
+     }
+     ~RootPage() = default;
+
+     RootPage* GetNext() const{
+       return next_;
+     }
+
+     bool HasNext() const{
+       return next_ != nullptr;
+     }
+
+     void SetNext(RootPage* page){
+       next_ = page;
+     }
+
+     RootPage* GetPrevious() const{
+       return previous_;
+     }
+
+     bool HasPrevious() const{
+       return previous_ != nullptr;
+     }
+
+     void SetPrevious(RootPage* page){
+       previous_ = page;
+     }
+
+     uword* CreateReference(){
+       void* ptr = (void*)current_;
+       current_ += (sizeof(kWordSize) * 2);
+       auto reference = new (ptr)Reference();
+       return &reference->dst;
+     }
+
+     void VisitPointers(const std::function<bool(uword, uword)>& vis) const{
+       for(auto & it : *this){
+         if(it.dst != 0 && !vis(it.src, it.dst))
+           return;
+       }
+     }
+   };
+  private:
+   static RootPage* roots_;
   public:
    Allocator() = delete;
    Allocator(const Allocator& rhs) = delete;
@@ -24,16 +118,6 @@ namespace poseidon{
 
    static void Initialize();
    static void InitializeForThread();
-
-   static inline uint64_t
-   GetNumberOfObjectsAllocated(){
-     return num_allocated_;
-   }
-
-   static inline uint64_t
-   GetNumberOfLocals(){
-     return num_locals_;
-   }
 
    static inline uword
    Allocate(int64_t size){
@@ -45,26 +129,36 @@ namespace poseidon{
    }
 
    template<typename T>
-   static Local<T> AllocateLocal(){
-     num_locals_++;
-     return Local<T>(NewLocalSlot());
+   static Local<T> AllocateLocal(){//TODO: create new page if current page is full.
+     return Local<T>((uword*)roots_->CreateReference());
    }
 
    static inline void*
    New(size_t size){
-     return ((RawObject*)Allocate(size))->GetPointer();//TODO: fix
+     auto ptr = (RawObject*)Allocate(static_cast<int64_t>(size));
+     return ptr != nullptr ? ptr->GetPointer() : nullptr;
    }
 
    template<typename T>
    static inline T*
    New(){
-     return (T*)New(sizeof(T));
+     auto ptr = (RawObject*)Allocate(static_cast<int64_t>(sizeof(T)));
+     return ptr != nullptr ? (T*)ptr->GetPointer() : nullptr;
    }
 
+   template<typename T>
+   static inline T*
+   New(const T& value){
+     auto ptr = (RawObject*)Allocate(static_cast<int64_t>(sizeof(T)));
+     if(ptr != nullptr)
+       *((T*)ptr->GetPointer()) = value;
+     return ptr != nullptr ? (T*)ptr->GetPointer() : nullptr;
+   }
+
+   static void VisitRoots(const std::function<bool(uword, uword)>& vis);
+
    static void VisitLocals(RawObjectVisitor* vis);
-   static void VisitLocals(const std::function<bool(RawObject**)>& vis);
    static void VisitLocals(const std::function<bool(RawObject*)>& vis);
-   static void VisitLocals(RawObjectPointerVisitor* vis);
 
    Allocator& operator=(const Allocator& rhs) = delete;
  };

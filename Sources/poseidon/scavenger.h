@@ -4,8 +4,30 @@
 #include "poseidon/zone.h"
 
 namespace poseidon{
+ class Heap;
+ class LocalGroup;
  class Scavenger{
-  private:
+  protected:
+   NewZone* zone_;
+   Semispace from_;
+
+   explicit Scavenger(NewZone* zone)://TODO: remove dependency from {@link NewZone}
+     zone_(zone),
+     from_(zone->from()){
+   }
+
+   inline NewZone* zone() const{
+     return zone_;
+   }
+
+   inline Semispace& to() const{
+     return zone()->to();
+   }
+
+   inline void SwapSpaces(){
+     zone()->SwapSpaces();
+   }
+
    inline void
    ForwardObject(RawObject* obj, uword forwarding_address){
      DLOG(INFO) << "forwarding " << obj->ToString() << " to " << ((RawObject*)forwarding_address)->ToString();
@@ -14,6 +36,8 @@ namespace poseidon{
      assert(obj->GetForwardingAddress() == forwarding_address);
 #endif//PSDN_DEBUG
    }
+
+   static LocalGroup* locals();
 
    inline void
    CopyObject(RawObject* src, RawObject* dst){//TODO: create a better copy
@@ -27,13 +51,16 @@ namespace poseidon{
    uword ScavengeObject(RawObject* obj);
    uword ProcessObject(RawObject* raw);
 
-   void SwapSpaces() const;
-   void ProcessRoots();
-   void ProcessToSpace() const;
+   virtual void ProcessRoots() = 0;
+   virtual void ProcessToSpace() = 0;
+
+   static void SerialScavenge(Heap* heap);
+   static void ParallelScavenge(Heap* heap);
   public:
-   Scavenger() = default;
-   ~Scavenger() = default;
-   void Scavenge();
+   virtual ~Scavenger() = default;
+   virtual void ScavengeMemory() = 0;
+
+   static void Scavenge(Heap* heap);
  };
 }
 

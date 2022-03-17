@@ -9,6 +9,9 @@ namespace poseidon{
   private:
    std::atomic<T> val_;
   public:
+   RelaxedAtomic():
+    val_(){
+   }
    explicit RelaxedAtomic(const T& init):
      val_(init){
    }

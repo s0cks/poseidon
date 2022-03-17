@@ -26,6 +26,17 @@ namespace poseidon{
    MOCK_METHOD(void, ClearZone, (), (const));
    MOCK_METHOD(uword, Allocate, (int64_t), ());
  };
+
+ class MockNewZone : public NewZone{
+  public:
+   MockNewZone() = default;
+   ~MockNewZone() override = default;
+
+   MOCK_METHOD(bool, Contains, (uword), (const));
+   MOCK_METHOD(void, SwapSpaces, (), ());
+   MOCK_METHOD(void, ClearZone, (), (const));
+   MOCK_METHOD(uword, Allocate, (int64_t), ());
+ };
 }
 
 #endif //POSEIDON_MOCK_ZONE_H

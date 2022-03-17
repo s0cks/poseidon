@@ -23,6 +23,16 @@ namespace poseidon{
      }
 
      inline uword
+     next_address() const{
+       return current_ + current_ptr()->GetTotalSize();
+     }
+
+     inline RawObject*
+     next_ptr() const{
+       return (RawObject*)next_address();
+     }
+
+     inline uword
      GetStartingAddress() const{
        return semispace()->GetStartingAddress();
      }
@@ -30,11 +40,6 @@ namespace poseidon{
      inline uword
      GetEndingAddress() const{
        return semispace()->GetEndingAddress();
-     }
-
-     inline RawObject*
-     GetNextPointer() const{
-       return (RawObject*)(current_address() + current_ptr()->GetTotalSize());
      }
 
 #ifdef PSDN_DEBUG
@@ -59,8 +64,9 @@ namespace poseidon{
 #ifdef PSDN_DEBUG
        assert(valid());
 #endif//PSDN_DEBUG
-       return (current_address() + current_ptr()->GetTotalSize()) < GetEndingAddress()
-           && GetNextPointer()->GetTotalSize() > 0;//TODO: make validity check
+       if(next_address() > GetEndingAddress())
+         return false;
+       return next_ptr()->GetPointerSize() > 0;
      }
 
      RawObject* Next() override{

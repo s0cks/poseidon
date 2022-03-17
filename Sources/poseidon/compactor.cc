@@ -29,16 +29,16 @@ namespace poseidon{
  void Compactor::UpdateLiveObjects(){
 // 1. Update all pointers
 //    * For each live object, update its pointers according to the forwarding pointers of the objects they point to.
-  Allocator::VisitLocals([&](RawObject** val){
-     auto old_val = (*val);
-     if(old_val->IsMarked()){
-#ifdef PSDN_DEBUG
-       assert(old_val->IsForwarding());
-#endif//PSDN_DEBUG
-       (*val) = (RawObject*)old_val->GetForwardingAddress();
-     }
-     return true;
-   });
+//  Allocator::VisitLocals([&](RawObject** val){
+//     auto old_val = (*val);
+//     if(old_val->IsMarked()){
+//#ifdef PSDN_DEBUG
+//       assert(old_val->IsForwarding());
+//#endif//PSDN_DEBUG
+//       (*val) = (RawObject*)old_val->GetForwardingAddress();
+//     }
+//     return true;
+//   });
  }
 
  void Compactor::ForwardAndFinalizeObjects(){

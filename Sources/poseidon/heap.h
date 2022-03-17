@@ -3,10 +3,13 @@
 
 #include "poseidon/zone.h"
 #include "poseidon/flags.h"
+#include "poseidon/utils.h"
 #include "poseidon/os_thread.h"
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
+ static constexpr const uint64_t kNewZonePageSize = 256 * 1024;
+
  static inline int64_t
  GetNewZoneSize(){
    return FLAGS_new_zone_size;
@@ -31,6 +34,110 @@ namespace poseidon{
  GetLargeObjectSize(){
    return FLAGS_large_object_size;
  }
+
+ class NewPage{
+  public:
+   class NewPageIterator : public RawObjectPointerIterator{
+    private:
+     const NewPage* page_;
+     uword current_;
+
+     inline RawObject* current_ptr() const{
+       return (RawObject*)current_;
+     }
+
+     inline RawObject* next_ptr() const{
+       return (RawObject*)(current_ + current_ptr()->GetTotalSize());
+     }
+    public:
+     explicit NewPageIterator(const NewPage* page):
+      RawObjectPointerIterator(),
+      page_(page),
+      current_(page->GetStartingAddress()){
+     }
+     ~NewPageIterator() override = default;
+
+     const NewPage* page() const{
+       return page_;
+     }
+
+     bool HasNext() const override{
+       auto next = current_ptr();
+#ifdef PSDN_DEBUG
+       assert(page()->Contains(next->GetAddress()));
+#endif//PSDN_DEBUG
+       return next->GetPointerSize() > 0;
+     }
+
+     RawObject* Next() override{
+       auto next = current_ptr();
+       current_ += next->GetTotalSize();
+       return next;
+     }
+   };
+
+   static inline int64_t
+   GetIndexFromPageDimensions(uword zone_start, uword start, int64_t page_size = kNewZonePageSize){
+     auto index = (start - zone_start) / page_size;
+
+     return index;
+   }
+  private:
+   int64_t index_;
+   uword start_;
+   int64_t size_;
+  public:
+   NewPage(int64_t index, uword start, int64_t size):
+    index_(index),
+    start_(start),
+    size_(size){
+   }
+   NewPage(const NewPage& rhs) = default;
+   ~NewPage() = default;
+
+   int64_t index() const{
+     return index_;
+   }
+
+   int64_t GetSize() const{
+     return size_;
+   }
+
+   uword GetStartingAddress() const{
+     return start_;
+   }
+
+   void* GetStartingAddressPointer() const{
+     return (void*)GetStartingAddress();
+   }
+
+   uword GetEndingAddress() const{
+     return GetStartingAddress() + GetSize();
+   }
+
+   void* GetEndingAddressPointer() const{
+     return (void*)GetEndingAddress();
+   }
+
+   bool Contains(uword address) const{
+     return GetStartingAddress() <= address
+         && GetEndingAddress() >= address;
+   }
+
+   void VisitPointers(const std::function<bool(RawObject*)>& vis) const{
+     NewPageIterator iter(this);
+     while(iter.HasNext()){
+       if(!vis(iter.Next()))
+         return;
+     }
+   }
+
+   NewPage& operator=(const NewPage& rhs) = default;
+
+   friend std::ostream& operator<<(std::ostream& stream, const NewPage& val){
+     return stream << "NewPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.GetSize()) << ")";
+   }
+ };
 
  class HeapPage{
    friend class Compactor;
@@ -225,24 +332,15 @@ namespace poseidon{
      }
      DLOG(INFO) << "set thread " << GetCurrentThreadName() << " Heap ThreadLocal to " << (*heap);
    }
-
-   static inline Heap*
-   GetCurrentThreadHeap(){
-     void* ptr = nullptr;
-     if((ptr = pthread_getspecific(kThreadKey)) != nullptr)
-       return (Heap*)ptr;
-     LOG(WARNING) << "cannot get Heap ThreadLocal for thread " << GetCurrentThreadName() << ".";
-     return nullptr;
-   }
   private:
    MemoryRegion* region_;
-   Zone* new_zone_;
+   NewZone* new_zone_;
    Zone* old_zone_;
 
    HeapPage* pages_;
    int32_t num_pages_;
 
-   Heap(MemoryRegion* region, Zone* new_zone, Zone* old_zone):
+   Heap(MemoryRegion* region, NewZone* new_zone, Zone* old_zone):
      region_(region),
      new_zone_(new_zone),
      old_zone_(old_zone),
@@ -280,7 +378,7 @@ namespace poseidon{
    uword AllocateLargeObject(int64_t size);
   public:
    explicit Heap(MemoryRegion* region = new MemoryRegion(GetTotalHeapSize()))://TODO: refactor
-    Heap(region, new Zone(region, 0, GetNewZoneSize()), new Zone(region, GetNewZoneSize(), GetOldZoneSize())){
+    Heap(region, new NewZone(region, 0, GetNewZoneSize()), new Zone(region, GetNewZoneSize(), GetOldZoneSize())){
    }
    Heap(const Heap& rhs) = default;
    ~Heap() override = default;
@@ -297,7 +395,7 @@ namespace poseidon{
      return region_->GetStartingAddress();
    }
 
-   Zone* new_zone() const{
+   NewZone* new_zone() const{
      return new_zone_;
    }
 
@@ -319,6 +417,15 @@ namespace poseidon{
 
    friend std::ostream& operator<<(std::ostream& stream, const Heap& heap){//TODO: implement
      return stream;
+   }
+
+   static inline Heap*
+   GetCurrentThreadHeap(){
+     void* ptr = nullptr;
+     if((ptr = pthread_getspecific(kThreadKey)) != nullptr)
+       return (Heap*)ptr;
+     LOG(WARNING) << "cannot get Heap ThreadLocal for thread " << GetCurrentThreadName() << ".";
+     return nullptr;
    }
 
    /**
