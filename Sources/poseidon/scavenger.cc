@@ -9,34 +9,33 @@
 
 namespace poseidon{
  uword Scavenger::PromoteObject(RawObject* obj){
-   DLOG(INFO) << "promoting " << obj->ToString() << " to new zone.";
+   DVLOG(1) << "promoting " << obj->ToString() << " to new zone.";
    auto new_ptr = (RawObject*)Heap::GetCurrentThreadHeap()->old_zone()->Allocate(obj->GetPointerSize());
    CopyObject(obj, new_ptr);
    new_ptr->SetOldBit();
 
-//   stats_.num_promoted += 1;
-//   stats_.bytes_promoted += obj->GetPointerSize();
+   num_promoted_ += 1;
+   bytes_promoted_ += obj->GetPointerSize();//TODO: should this be total size (object size + header size) instead?
    return new_ptr->GetAddress();
  }
 
  uword Scavenger::ScavengeObject(RawObject* obj){
-   DLOG(INFO) << "scavenging " << obj->ToString() << " in old zone.";
-//   auto new_ptr = zone()->AllocateRawObject(obj->GetPointerSize());
-   auto new_ptr = new RawObject();
+   DVLOG(1) << "scavenging " << obj->ToString() << " in old zone.";
+   auto new_ptr = (RawObject*)zone()->Allocate(obj->GetPointerSize());
    CopyObject(obj, new_ptr);
    new_ptr->SetNewBit();
 
-//   stats_.num_scavenged += 1;
-//   stats_.bytes_scavenged += obj->GetPointerSize();
+   num_scavenged_ += 1;
+   bytes_scavenged_ += obj->GetPointerSize();//TODO: should this be total size (object size + header size) instead?
    return new_ptr->GetAddress();
  }
 
  uword Scavenger::ProcessObject(RawObject* raw){
    if(!raw->IsForwarding()){
-     if(!raw->IsMarked() && raw->IsRemembered()){
+     if(raw->IsRemembered()){
        auto new_address = PromoteObject(raw);
        ForwardObject(raw, new_address);
-     } else if(!raw->IsMarked() && !raw->IsRemembered()){
+     } else{
        auto new_address = ScavengeObject(raw);
        ForwardObject(raw, new_address);
      }
@@ -45,134 +44,133 @@ namespace poseidon{
    return raw->GetForwardingAddress();
  }
 
- class SerialScavenger : public Scavenger{
+ template<bool Parallel>
+ class ScavengerVisitorBase : public RawObjectPointerVisitor{
   protected:
-   void ProcessRoots() override{
-     DLOG(INFO) << "processing roots....";
-//     Allocator::VisitLocals([&](RawObject** val){
-//       auto old_val = (*val);
-//       DLOG(INFO) << "visiting " << old_val->ToString();
-//       if(old_val->IsNew() && !old_val->IsMarked()){
-//         DLOG(INFO) << "processing root: " << old_val->ToString();
-//         (*val) = (RawObject*)ProcessObject(old_val);
-//       }
-//       (*val)->SetRememberedBit();
-//       return true;
-//     });
-     DLOG(INFO) << "processed roots.";
+   Scavenger* scavenger_;
+
+   explicit ScavengerVisitorBase(Scavenger* scavenger):
+    RawObjectPointerVisitor(),
+    scavenger_(scavenger){
    }
 
-   void ProcessToSpace() override{
-     DLOG(INFO) << "processing to-space....";
-     to().VisitRawObjects([&](RawObject* val){
-       DLOG(INFO) << "visiting " << val->ToString();
-       if(val->IsNew() && val->IsMarked() && !val->IsRemembered()){
-         DLOG(INFO) << "processing " << val->ToString();
-       }
-       return true;
-     });
+   inline Scavenger* scavenger() const{
+     return scavenger_;
    }
   public:
-   explicit SerialScavenger(NewZone* zone):
-     Scavenger(zone){
-   }
-   ~SerialScavenger() override = default;
+   ~ScavengerVisitorBase() override = default;
 
-   void ScavengeMemory() override{
-     SwapSpaces();
-     ProcessRoots();
-     ProcessToSpace();
+   bool IsParallel() const{
+     return Parallel;
    }
  };
 
- typedef WorkStealingQueue<uword> WorkQueue;
+ class SerialScavengerVisitor : public ScavengerVisitorBase<false>{
+  public:
+   explicit SerialScavengerVisitor(Scavenger* scavenger):
+     ScavengerVisitorBase<false>(scavenger){
+   }
+   ~SerialScavengerVisitor() override = default;
 
- class ParallelScavengerTask : public Task{
+   bool Visit(RawObject** ptr) override{
+     return true;
+   }
+ };
+
+ class ParallelScavengeTask : public Task, public RawObjectPointerVisitor{
+   friend class ParallelScavengerVisitor;
   private:
-   WorkQueue* queue_;
+   Scavenger* scavenger_;
+   WorkStealingQueue<uword>* work_;
 
-   inline WorkQueue* queue() const{
-     return queue_;
+   ParallelScavengeTask(Scavenger* scavenger, WorkStealingQueue<uword>* work):
+     scavenger_(scavenger),
+     work_(work){
    }
 
-   inline uword next() const{
-     return queue()->Steal();
+   inline Scavenger* scavenger() const{
+     return scavenger_;
+   }
+
+   inline RawObject** next_ptr(){
+     return (RawObject**)work_->Steal();
    }
   public:
-   explicit ParallelScavengerTask(WorkQueue* queue):
-    Task(),
-    queue_(queue){
-   }
-   ~ParallelScavengerTask() override = default;
-
-   void Run() override{
-     int idx = 3;
-     do{
-       uword next_address;
-       while((next_address = next()) != 0){
-         auto ptr = (RawObject*)next_address;
-         DLOG(INFO) << "visiting " << ptr->ToString();
-       }
-     } while(idx-- > 0);
-   }
+   ~ParallelScavengeTask() override = default;
 
    const char* name() const override{
      return "ParallelScavengerTask";
    }
+
+   bool Visit(RawObject** ptr) override{
+     auto old_val = (*ptr);
+     if(old_val->IsForwarding()){
+
+     }
+     return true;
+   }
+
+   void Run() override{
+     RawObject** ptr;
+     while(!work_->empty()){
+       if((ptr = next_ptr()) != nullptr){
+         auto old_val = (*ptr);
+         if(old_val->IsNew() && !old_val->IsRemembered() && !old_val->IsForwarding()){
+           auto new_val = (RawObject*)scavenger()->ProcessObject(old_val);
+           new_val->SetRememberedBit();
+           (*ptr) = new_val;
+         }
+       }
+     }
+   }
  };
 
- class ParallelScavenger : public Scavenger{
-  private:
-   typedef WorkStealingQueue<uword> WorkQueue;
+
+ class ParallelScavengerVisitor : public ScavengerVisitorBase<true>{
   protected:
    TaskPool pool_;
-   WorkQueue queue_;
-
-   void ProcessRoots() override{
-     DLOG(INFO) << "processing roots....";
-     Allocator::VisitRoots([&](uword src, uword dst){
-       auto ptr = (RawObject*)dst;
-       if(ptr->IsNew() && !ptr->IsRemembered()){
-         DLOG(INFO) << "queueing root @ 0x" << std::hex << dst;
-         queue_.Push(dst);
-       }
-       return true;
-     });
-   }
-
-   void ProcessToSpace() override{
-     DLOG(INFO) << "processing to-space....";
-   }
+   WorkStealingQueue<uword> work_;
   public:
-   explicit ParallelScavenger(NewZone* zone):
-    Scavenger(zone),
-    pool_(TaskPool::kDefaultNumberOfWorkers){
+   explicit ParallelScavengerVisitor(Scavenger* scavenger):
+    ScavengerVisitorBase<true>(scavenger),
+    pool_(),
+    work_(){
    }
-   ~ParallelScavenger() override = default;
+   ~ParallelScavengerVisitor() override = default;
 
-   void ScavengeMemory() override{
+   bool Visit(RawObject** ptr) override{
+     work_.Push((uword)ptr);
+     return true;
+   }
+
+   void ScavengeMemory(){
+     Allocator::VisitRoots(this);
      for(auto idx = 0; idx < TaskPool::kDefaultNumberOfWorkers; idx++)
-       pool_.Submit(new ParallelScavengerTask(&queue_));
-     ProcessRoots();
-     ProcessToSpace();
+       pool_.Submit(new ParallelScavengeTask(scavenger(), &work_));
+     while(!work_.empty());// spin
    }
  };
 
- void Scavenger::SerialScavenge(Heap* heap){
-   SerialScavenger scavenger(heap->new_zone());
-   scavenger.ScavengeMemory();
- }
-
- void Scavenger::ParallelScavenge(Heap* heap){
-   ParallelScavenger scavenger(heap->new_zone());
-   scavenger.ScavengeMemory();
- }
-
- void Scavenger::Scavenge(Heap* heap){
+ void Scavenger::Scavenge(){
 #ifdef PSDN_MTA
-   ParallelScavenge(heap);
+   DLOG(INFO) << "performing ParallelScavenge.....";
+   ParallelScavengerVisitor visitor(this);
 #else
-   SerialScavenge(heap);
+   DLOG(INFO) << "performing SerialScavenge.....";
+   SerialScavengerVisitor visitor(this);
 #endif//PSDN_MTA
+
+#ifdef PSDN_DEBUG
+   auto start_ts = Clock::now();
+#endif//PSDN_DEBUG
+
+   visitor.ScavengeMemory();
+
+#ifdef PSDN_DEBUG
+   auto finish_ts = Clock::now();
+   DLOG(INFO) << "finished in " << (finish_ts - start_ts) << ".";
+   DLOG(INFO) << "number of objects scavenged: " << num_scavenged_ << " (" << Bytes(bytes_scavenged_) << ").";
+   DLOG(INFO) << "number of objects promoted: " << num_promoted_ << " (" << Bytes(bytes_promoted_) << ").";
+#endif//PSDN_DEBUG
  }
 }

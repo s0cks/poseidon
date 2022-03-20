@@ -188,6 +188,10 @@ namespace poseidon{
      FOR_EACH_TASK_POOL_WORKER_STATE(DEFINE_STATE_CHECK)
 #undef DEFINE_STATE_CHECK
 
+     inline bool IsRunning() const{
+       return IsIdle() || IsExecuting();
+     }
+
      bool Start(){
        if(!IsStopped())
          return false;
@@ -197,6 +201,7 @@ namespace poseidon{
      }
 
      bool Shutdown(){
+       SetState(State::kStopping);
        return Join(thread_);
      }
 
@@ -234,6 +239,7 @@ namespace poseidon{
        }
      }
      ~WorkerPool(){
+       DVLOG(1) << "shutting down " << num_workers_ << " workers in pool....";
        for(auto& worker : *this){
          if(!worker->Shutdown())
            LOG(ERROR) << "cannot shutdown worker #" << worker->worker_id() << ".";

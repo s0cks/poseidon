@@ -114,6 +114,8 @@ namespace poseidon{
    }
 
    T* Get() const{
+     if(!HasSlot())
+       return nullptr;
      return (T*)GetSlotPointer()->GetPointer();
    }
 
@@ -131,7 +133,7 @@ namespace poseidon{
    Local& operator=(const uword& rhs){
      if(!HasSlot())
        return *this;//TODO: set from allocator
-     (*slot()) = rhs;
+     SetSlotAddress(rhs);
      return *this;
    }
 

@@ -73,7 +73,7 @@ namespace poseidon{
      return false;
    }
 
-   DLOG(INFO) << "starting " << name << " thread w/ parameter: " << std::hex << parameter;
+   DVLOG(1) << "starting " << name << " thread w/ parameter: " << std::hex << parameter;
    auto data = new ThreadStartData(name, func, parameter);
    if((result = pthread_create(thread, &attrs, &HandleThread, data)) != 0){
      LOG(ERROR) << "couldn't start the thread: " << strerror(result);
@@ -98,7 +98,7 @@ namespace poseidon{
      return false;
    }
 
-   DLOG(INFO) << thread_name << " thread finished w/ result: " << std::string(return_data, kThreadMaxResultLength);
+   DVLOG(1) << thread_name << " thread finished w/ result: " << std::string(return_data, kThreadMaxResultLength);
    return true;
  }
 

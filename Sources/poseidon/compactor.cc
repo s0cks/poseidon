@@ -4,11 +4,11 @@
 
 namespace poseidon{
  void Compactor::MarkLiveObjects(){
-   Allocator::VisitLocals([&](RawObject* val){
-     if(Contains(val->GetAddress()) && !val->IsMarked())
-       MarkObject(val);
-     return true;
-   });
+//   Allocator::VisitLocals([&](RawObject* val){
+//     if(Contains(val->GetAddress()) && !val->IsMarked())
+//       MarkObject(val);
+//     return true;
+//   });
  }
 
  void Compactor::ComputeForwardingAddresses(){

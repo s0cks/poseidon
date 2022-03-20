@@ -55,6 +55,18 @@ namespace poseidon{
       memset(GetStartingAddressPointer(), 0, size());
     }
   };
+
+#ifdef PSDN_DEBUG
+#define PSDN_ASSERT(x) assert(x)
+#else
+#define PSDN_ASSERT(x)
+#endif//PSDN_DEBUG
+
+  static constexpr const int64_t kB = 1;
+  static constexpr const int64_t kKB = kB * 1024;
+  static constexpr const int64_t kMB = kKB * 1024;
+  static constexpr const int64_t kGB = kMB * 1024;
+  static constexpr const int64_t kTB = kGB * 1024;
 }
 
 #endif //POSEIDON_COMMON_H

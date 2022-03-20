@@ -145,6 +145,9 @@ namespace poseidon{
     explicit Bytes(int64_t V):
       value(V){
     }
+    explicit Bytes(RelaxedAtomic<int64_t> V):
+      Bytes((int64_t)V){
+    }
     Bytes(const Bytes& rhs) = default;
     ~Bytes() = default;
 

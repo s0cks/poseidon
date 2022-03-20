@@ -16,13 +16,8 @@ namespace poseidon{
  }
 
  static inline int64_t
- GetOldZoneSize() {
-   return FLAGS_old_zone_size;
- }
-
- static inline int64_t
  GetTotalHeapSize(){
-   return GetNewZoneSize() + GetOldZoneSize();
+   return GetNewZoneSize() + kDefaultOldZoneSize;
  }
 
  static inline int64_t
@@ -335,12 +330,12 @@ namespace poseidon{
   private:
    MemoryRegion* region_;
    NewZone* new_zone_;
-   Zone* old_zone_;
+   OldZone* old_zone_;
 
    HeapPage* pages_;
    int32_t num_pages_;
 
-   Heap(MemoryRegion* region, NewZone* new_zone, Zone* old_zone):
+   Heap(MemoryRegion* region, NewZone* new_zone, OldZone* old_zone):
      region_(region),
      new_zone_(new_zone),
      old_zone_(old_zone),
@@ -378,7 +373,7 @@ namespace poseidon{
    uword AllocateLargeObject(int64_t size);
   public:
    explicit Heap(MemoryRegion* region = new MemoryRegion(GetTotalHeapSize()))://TODO: refactor
-    Heap(region, new NewZone(region, 0, GetNewZoneSize()), new Zone(region, GetNewZoneSize(), GetOldZoneSize())){
+    Heap(region, new NewZone(region, 0, GetNewZoneSize()), new OldZone(region, GetNewZoneSize())){
    }
    Heap(const Heap& rhs) = default;
    ~Heap() override = default;
@@ -399,7 +394,7 @@ namespace poseidon{
      return new_zone_;
    }
 
-   Zone* old_zone() const{
+   OldZone* old_zone() const{
      return old_zone_;
    }
 

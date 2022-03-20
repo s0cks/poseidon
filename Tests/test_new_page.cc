@@ -16,14 +16,5 @@ namespace poseidon{
    auto heap = new Heap();
    auto val = (RawObject*)heap->Allocate(sizeof(uword));
    DLOG(INFO) << "val: " << val->ToString();
-
-   heap->new_zone()->VisitPages([&](NewPage* page){
-     DLOG(INFO) << "visiting pointers in " << (*page);
-     page->VisitPointers([&](RawObject* val){
-       DLOG(INFO) << " - " << val->ToString();
-       return true;
-     });
-     return true;
-   });
  }
 }

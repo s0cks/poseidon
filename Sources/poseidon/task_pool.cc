@@ -5,9 +5,9 @@ namespace poseidon{
  void TaskPool::Worker::HandleThread(uword parameter){
    auto worker = (TaskPool::Worker*)parameter;
 
-   DLOG(INFO) << "starting worker #" << worker->worker_id() << "....";
+   DVLOG(1) << "starting worker #" << worker->worker_id() << "....";
    worker->SetState(State::kStarting);
-   //TODO: register queue
+   // do something?
    worker->SetState(State::kIdle);
    do{
      auto next = worker->queue_->Steal();
@@ -18,9 +18,9 @@ namespace poseidon{
        DLOG(ERROR) << "failed to execute " << next->name() << ".";
        continue;
      }
-   } while(!worker->IsStopping());
-   DLOG(INFO) << "worker #" << worker->worker_id() << " is stopping....";
+   } while(worker->IsRunning());
+   DVLOG(1) << "worker #" << worker->worker_id() << " is stopping....";
    worker->SetState(State::kStopped);
-   pthread_exit(nullptr);//TODO: proper exit
+   pthread_exit((void*)"Hello World");//TODO: exit properly
  }
 }

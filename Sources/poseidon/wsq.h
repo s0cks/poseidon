@@ -2,6 +2,7 @@
 #define POSEIDON_WSQ_H
 
 #include <atomic>
+#include <vector>
 #include <optional>
 
 #include "poseidon/utils.h"

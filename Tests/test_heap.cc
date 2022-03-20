@@ -13,7 +13,7 @@ namespace poseidon{
   protected:
    MockMemoryRegion region_;
    MockNewZone new_zone_;
-   MockZone old_zone_;
+   MockOldZone old_zone_;
    Heap* heap_;
 
    inline MockMemoryRegion& region(){
@@ -24,7 +24,7 @@ namespace poseidon{
      return new_zone_;
    }
 
-   inline MockZone& old_zone(){
+   inline MockOldZone& old_zone(){
      return old_zone_;
    }
 
