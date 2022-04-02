@@ -10,8 +10,9 @@ add_library(poseidon
     poseidon/platform.h
     poseidon/common.h
     poseidon/utils.h
+    poseidon/stats.h
     poseidon/heap.h poseidon/heap.cc
-    poseidon/local.h
+    poseidon/local.h poseidon/local.cc
     poseidon/allocator.h poseidon/allocator.cc
     poseidon/raw_object.h poseidon/raw_object.cc
     poseidon/scavenger.h poseidon/scavenger.cc

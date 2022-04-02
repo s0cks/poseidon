@@ -17,6 +17,9 @@ namespace poseidon{
  ThreadId GetCurrentThreadId();
  std::string GetThreadName(const ThreadId& thread);
  bool SetThreadName(const ThreadId& thread, const std::string& name);
+ bool InitializeThreadLocal(ThreadLocalKey& key);
+ bool SetCurrentThreadLocal(const ThreadLocalKey& key, const void* value);
+ void* GetCurrentThreadLocal(const ThreadLocalKey& key);
 
  bool Start(ThreadId* thread, const std::string& name, const ThreadHandler& func, uword parameter);
  bool Join(const ThreadId& thread);

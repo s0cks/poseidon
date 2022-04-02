@@ -73,7 +73,7 @@ namespace poseidon{
        return next;
      }
    };
-  private:
+  protected:
    uword start_;
    uword current_;
    int64_t size_;
@@ -93,17 +93,6 @@ namespace poseidon{
     start_(start),
     current_(start),
     size_(size){
-   }
-
-   /**
-    * Create a {@link Zone} within the {@link MemoryRegion} at the specified offset and size.
-    *
-    * @param region The {@link MemoryRegion} to create the {@link Zone} in
-    * @param offset The offset for the {@link Zone} in the {@link MemoryRegion}
-    * @param size The size of the {@link Zone}
-    */
-   Zone(MemoryRegion* region, int64_t offset, int64_t size)://TODO: refactor?
-       Zone(region->GetStartingAddress() + offset, size){
    }
 
    Zone(const Zone& rhs) = default; // Copy-Constructor
@@ -163,10 +152,6 @@ namespace poseidon{
      }
    }
 
-   int64_t GetNumberOfBytesAllocated() const{
-     return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
-   }
-
    /**
     * Allocates a new object of {@param size} bytes in the from_ {@link Semispace} of this {@link Zone}.
     *
@@ -198,8 +183,7 @@ namespace poseidon{
    friend std::ostream& operator<<(std::ostream& stream, const Zone& zone){
      stream << "Zone(";
      stream << "starting_address=" << zone.GetStartingAddressPointer() << ", ";
-     stream << "total_size=" << Bytes(zone.size()) << ", ";
-     stream << "allocated=" << Bytes(zone.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(zone.GetNumberOfBytesAllocated(), zone.size()) << ")";
+     stream << "total_size=" << Bytes(zone.size());
      stream << ")";
      return stream;
    }
@@ -212,26 +196,36 @@ namespace poseidon{
      return zone_size / 2;
    }
   private:
-   Semispace from_;
-   Semispace to_;
+   uword fromspace_;
+   uword tospace_;
+   int64_t semisize_;
   public:
    NewZone() = default;
    NewZone(uword start, int64_t size):
     Zone(start, size),
-    from_(start, CalculateSemispaceSize(size)),
-    to_(start + CalculateSemispaceSize(size), CalculateSemispaceSize(size)){
+    fromspace_(start),
+    tospace_(start + CalculateSemispaceSize(size)),
+    semisize_(CalculateSemispaceSize(size)){
    }
    NewZone(MemoryRegion* region, int64_t offset, int64_t size):
      NewZone(region->GetStartingAddress() + offset, size){
    }
    ~NewZone() override = default;
 
-   Semispace& from(){
-     return from_;
+   int64_t GetNumberOfBytesAllocated() const{
+     return static_cast<int64_t>(GetCurrentAddress() - Zone::GetStartingAddress());
    }
 
-   Semispace& to(){
-     return to_;
+   uword tospace() const{
+     return tospace_;
+   }
+
+   uword fromspace() const{
+     return fromspace_;
+   }
+
+   int64_t semisize() const{
+     return semisize_;
    }
 
   /**
@@ -240,16 +234,34 @@ namespace poseidon{
    * Called during collection time.
    */
    virtual void SwapSpaces(){
-     std::swap(from_, to_);
+     std::swap(fromspace_, tospace_);
+     current_ = fromspace_;
    }
 
+   uword Allocate(int64_t size) override{
+     auto total_size = size + sizeof(RawObject);
+     if((current_ + total_size) > (fromspace_ + tospace_)){
+       return 0;//TODO: collect memory
+     }
+
+     if((current_ + total_size) > (fromspace_ + tospace_)){
+       LOG(FATAL) << "insufficient memory.";
+       return 0;
+     }
+
+     auto next = (void*)current_;
+     current_ += total_size;
+     auto ptr = new (next)RawObject();
+     ptr->SetPointerSize(size);
+     return ptr->GetAddress();
+   }
 
    NewZone& operator=(const NewZone& rhs){
      if(this == &rhs)
        return *this;
      Zone::operator=(rhs);
-     from_ = rhs.from_;
-     to_ = rhs.to_;
+     fromspace_ = rhs.fromspace_;
+     tospace_ = rhs.tospace_;
      return *this;
    }
 
@@ -433,14 +445,14 @@ namespace poseidon{
    inline void
    MarkPage(const OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     DLOG(INFO) << "marking " << (*page);
+     GCLOG(1) << "marking " << (*page);
      return table_.Set(page->index(), true);
    }
 
    inline void
    UnmarkPage(const OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     DLOG(INFO) << "unmarking " << (*page);
+     GCLOG(1) << "unmarking " << (*page);
      return table_.Set(page->index(), false);
    }
   public:

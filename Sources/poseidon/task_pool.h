@@ -155,6 +155,10 @@ namespace poseidon{
        state_ = state;
      }
 
+     inline bool HasWork() const{
+       return !queue_->empty();
+     }
+
      static void HandleThread(uword parameter);
     public:
      Worker(const TaskPool* pool, WorkerId worker, TaskQueue* queue):

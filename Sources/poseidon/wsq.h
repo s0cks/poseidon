@@ -39,7 +39,7 @@ namespace poseidon{
      }
 
      Item* Resize(int64_t bottom, int64_t top){
-       auto ptr = new Item(2 * C);
+       auto ptr = new Item{2 * C};
        for(auto i = top; i != bottom; i++)
          ptr->Push(i, Pop(i));
        return ptr;
@@ -51,14 +51,15 @@ namespace poseidon{
    std::atomic<Item*> items_;
    std::vector<Item*> garbage_;
   public:
-   explicit WorkStealingQueue(int64_t capacity = 1024):
+   explicit WorkStealingQueue(int64_t capacity = 4096):
      top_(),
      bottom_(),
      items_(),
      garbage_(){
+     auto cap = RoundUpPowTwo(capacity);
     top_.store(0, std::memory_order_relaxed);
     bottom_.store(0, std::memory_order_relaxed);
-    items_.store(new Item(capacity), std::memory_order_relaxed);
+    items_.store(new Item{static_cast<int64_t>(cap)}, std::memory_order_relaxed);
     garbage_.reserve(32);
    }
    ~WorkStealingQueue(){
@@ -86,10 +87,10 @@ namespace poseidon{
    void Push(T item){
      int64_t bottom = bottom_.load(std::memory_order_relaxed);
      int64_t top = top_.load(std::memory_order_acquire);
-     Item* items = items_.load(std::memory_order_relaxed);
+     auto items = items_.load(std::memory_order_relaxed);
 
-     if(items->capacity() - 1 < (bottom - top)){
-       Item* tmp = items->Resize(bottom, top);
+     if((items->capacity() - 1) < (bottom - top)){
+       auto tmp = items->Resize(bottom, top);
        garbage_.push_back(items);
        std::swap(items, tmp);
        items_.store(items, std::memory_order_relaxed);
@@ -102,17 +103,19 @@ namespace poseidon{
 
    T Pop(){
      int64_t bottom = bottom_.load(std::memory_order_relaxed) - 1;
-     Item* items = items_.load(std::memory_order_relaxed);
+     auto items = items_.load(std::memory_order_relaxed);
      bottom_.store(bottom, std::memory_order_relaxed);
      std::atomic_thread_fence(std::memory_order_seq_cst);
      int64_t top = top_.load(std::memory_order_relaxed);
 
-     T value = nullptr;
+     T value = (T)0;
      if(top <= bottom){
        value = items->Pop(bottom);
        if(top == bottom){
-         if(!top_.compare_exchange_strong(top, top + 1, std::memory_order_seq_cst, std::memory_order_relaxed)){
-           value = nullptr;
+         if(!top_.compare_exchange_strong(top, top + 1,
+                                          std::memory_order_seq_cst,
+                                          std::memory_order_relaxed)){
+           value = (T)0;
          }
          bottom_.store(bottom + 1, std::memory_order_relaxed);
        }
@@ -129,9 +132,11 @@ namespace poseidon{
 
      T value = (T)0;
      if(top < bottom){
-       Item* items = items_.load(std::memory_order_consume);
+       auto items = items_.load(std::memory_order_consume);
        value = items->Pop(top);
-       if(!top_.compare_exchange_strong(top, top + 1, std::memory_order_seq_cst, std::memory_order_relaxed)){
+       if(!top_.compare_exchange_strong(top, top + 1,
+                                        std::memory_order_seq_cst,
+                                        std::memory_order_relaxed)){
          return (T)0;
        }
      }

@@ -15,8 +15,8 @@
 namespace poseidon{
   template<typename T>
   static inline double
-  GetPercentageOf(T a, T b){
-    return (static_cast<double>(a) / static_cast<double>(b)) * 100.0;
+  GetPercentageOf(T part, T whole){
+    return (static_cast<double>(part) / static_cast<double>(whole)) * 100.0;
   }
 
   static inline std::string
@@ -28,8 +28,8 @@ namespace poseidon{
 
   template<typename T>
   static inline std::string
-  PrettyPrintPercentage(T a, T b){
-    return PrettyPrintPercentage(GetPercentageOf<T>(a, b));
+  PrettyPrintPercentage(T part, T whole){
+    return PrettyPrintPercentage(GetPercentageOf<T>(part, whole));
   }
 
  static inline uintptr_t

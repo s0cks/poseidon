@@ -62,6 +62,21 @@ namespace poseidon{
 #define PSDN_ASSERT(x)
 #endif//PSDN_DEBUG
 
+#ifdef PSDN_GCLOGS
+
+ // collector logs are enabled:
+#define GCLOG(Level) \
+  DLOG(INFO)
+
+#else
+
+// collector logs are disabled:
+
+#define GCLOG(Level) \
+  DVLOG(Level)
+
+#endif//PSDN_GCLOGS
+
   static constexpr const int64_t kB = 1;
   static constexpr const int64_t kKB = kB * 1024;
   static constexpr const int64_t kMB = kKB * 1024;

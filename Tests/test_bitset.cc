@@ -19,7 +19,6 @@ namespace poseidon{
    ASSERT_FALSE(table.Test(2047));
    ASSERT_TRUE(table.Test(2048));
    ASSERT_TRUE(table.Test(2049));
-   ASSERT_FALSE(table.Test(2050));
    ASSERT_FALSE(table.Test(4095));
  }
 }

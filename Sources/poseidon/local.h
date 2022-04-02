@@ -5,7 +5,9 @@
 #include <typeinfo>
 #include <glog/logging.h>
 
-#include "raw_object.h"
+#include "poseidon/bitset.h"
+#include "poseidon/os_thread.h"
+#include "poseidon/raw_object.h"
 
 namespace poseidon{
  class RawObject;
@@ -16,16 +18,7 @@ namespace poseidon{
    LocalBase* next_;
    uword* slot_;
 
-   LocalBase():
-     previous_(nullptr),
-     next_(nullptr),
-     slot_(nullptr){
-   }
-   explicit LocalBase(uword* slot):
-     previous_(nullptr),
-     next_(nullptr),
-     slot_(slot){
-   }
+   LocalBase();
 
    LocalBase* GetPrevious() const{
      return previous_;
@@ -71,7 +64,11 @@ namespace poseidon{
    }
 
    uword GetSlotAddress() const{
-     return HasSlot() ? (uword)(*slot()) : 0;
+     if(!HasSlot()){
+       DLOG(WARNING) << "no slot for local.";
+       return 0;
+     }
+     return (*slot());
    }
 
    inline RawObject* GetSlotPointer() const{
@@ -81,7 +78,12 @@ namespace poseidon{
    LocalBase(const LocalBase& rhs) = default;
    ~LocalBase() = default;
 
-   LocalBase& operator=(const LocalBase& rhs) = default;
+   LocalBase& operator=(const LocalBase& rhs){
+     if(this == &rhs)
+       return *this;
+     slot_ = rhs.slot_;
+     return *this;
+   }
  };
 
  template<typename T>
@@ -92,25 +94,23 @@ namespace poseidon{
    class Local;
 
    friend class Allocator;
-  private:
-   explicit Local(uword* slot):
-    LocalBase(slot){
-   }
   public:
-   Local(): LocalBase(){}
+   Local():
+    LocalBase(){
+   }
 
-   Local(const Local&& rhs) noexcept:
-       LocalBase(rhs){
+   Local(const Local<T>&& rhs) noexcept:
+     LocalBase(rhs){
    }
 
    template<typename U>
    explicit Local(const Local<U>& h):
-       Local(h){
+     Local(h){
    }
 
    template<typename U>
-   explicit Local(Local<U>&& h):
-       Local(std::move(h)){
+   Local(Local<U>&& h):
+     LocalBase(std::move(h)){
    }
 
    T* Get() const{
@@ -131,8 +131,10 @@ namespace poseidon{
    }
 
    Local& operator=(const uword& rhs){
-     if(!HasSlot())
+     if(!HasSlot()){
+       DLOG(WARNING) << "local slot is null.";
        return *this;//TODO: set from allocator
+     }
      SetSlotAddress(rhs);
      return *this;
    }
@@ -184,31 +186,32 @@ namespace poseidon{
    }
  };
 
- class LocalGroup{
+ class LocalPage{
    friend class Allocator;
+   friend class LocalPageIterator;
   public:
    static const uint64_t kMaxLocalsPerGroup = 65535;
 
-   class Iterator : public RawObjectPointerIterator{
+   class LocalPageIterator : public RawObjectPointerIterator{
     private:
-     const LocalGroup* head_;
-     const LocalGroup* current_group_;
+     const LocalPage* head_;
+     const LocalPage* current_group_;
      uint64_t current_local_;
      bool recursive_: 1;
     public:
-     explicit Iterator(const LocalGroup* group, bool recursive):
+     explicit LocalPageIterator(const LocalPage* group, bool recursive = false):
        head_(group),
        current_group_(group),
        current_local_(0),
        recursive_(recursive){
      }
-     ~Iterator() override = default;
+     ~LocalPageIterator() override = default;
 
-     const LocalGroup* GetCurrentGroup() const{
+     const LocalPage* GetCurrentGroup() const{
        return current_group_;
      }
 
-     const LocalGroup* GetHeadGroup() const{
+     const LocalPage* GetHeadGroup() const{
        return head_;
      }
 
@@ -217,47 +220,45 @@ namespace poseidon{
      }
 
      bool HasNext() const override{
-       if(current_group_ && current_local_ < GetCurrentGroup()->GetNumberOfLocals())
+       if(current_group_ && current_local_ < kMaxLocalsPerGroup)
          return true;// has more in current group
        // no more in current group, check the next group if available
        return current_group_ && IsRecursive() && GetCurrentGroup()->HasNext();
      }
 
      RawObject* Next() override{
-       auto next = GetCurrentGroup()->GetLocal(current_local_);
+       auto next = (RawObject*)current_group_->locals_[current_local_];
        current_local_ += 1;
-       if(IsRecursive() && current_local_ >= GetCurrentGroup()->GetNumberOfLocals())
+       if(IsRecursive() && current_local_ >= kMaxLocalsPerGroup)
          current_group_ = GetCurrentGroup()->GetNext();
-       return (RawObject*)next;
+       return next;
+     }
+
+     RawObject** NextPointer(){
+       auto next = (RawObject**)&(current_group_->locals_[current_local_]);
+       current_local_ += 1;
+       if(IsRecursive() && current_local_ >= kMaxLocalsPerGroup)
+         current_group_ = GetCurrentGroup()->GetNext();
+       return next;
      }
    };
   private:
-   LocalGroup* next_;
-   LocalGroup* previous_;
-   RelaxedAtomic<uword> locals_[kMaxLocalsPerGroup];
-   uword num_locals_;
+   LocalPage* next_;
+   LocalPage* previous_;
+   uword locals_[kMaxLocalsPerGroup];
   public:
-   LocalGroup():
+   LocalPage():
     next_(nullptr),
     previous_(nullptr),
-    locals_(),
-    num_locals_(0){
+    locals_(){
    }
-   explicit LocalGroup(LocalGroup* parent):
-     previous_(nullptr),
-     next_(parent),
-     locals_(),
-     num_locals_(0){
-     if(parent != nullptr)
-       parent->SetPrevious(this);
-   }
-   ~LocalGroup() = default;
+   ~LocalPage() = default;
 
-   LocalGroup* GetNext() const{
+   LocalPage* GetNext() const{
      return next_;
    }
 
-   void SetNext(LocalGroup* group){
+   void SetNext(LocalPage* group){
      next_ = group;
    }
 
@@ -265,11 +266,11 @@ namespace poseidon{
      return next_ != nullptr;
    }
 
-   LocalGroup* GetPrevious() const{
+   LocalPage* GetPrevious() const{
      return previous_;
    }
 
-   void SetPrevious(LocalGroup* group){
+   void SetPrevious(LocalPage* group){
      previous_ = group;
    }
 
@@ -277,50 +278,53 @@ namespace poseidon{
      return previous_ != nullptr;
    }
 
-   RelaxedAtomic<uword>* GetLocalSlot(uword idx){
+   uword* GetLocalSlot(uword idx){
 #ifdef PSDN_DEBUG
-     assert(idx >= 0 && idx <= num_locals_);
+     assert(idx >= 0 && idx <= kMaxLocalsPerGroup);
 #endif//PSDN_DEBUG
      return &locals_[idx];
    }
 
    uword GetLocal(uword idx) const{
 #ifdef PSDN_DEBUG
-     assert(idx >= 0 && idx <= num_locals_);
+     assert(idx >= 0 && idx <= kMaxLocalsPerGroup);
 #endif//PSDN_DEBUG
-     return locals_[idx].load();
+     return locals_[idx];
    }
 
-   uword GetNumberOfLocals() const{
-     return num_locals_;
-   }
-
-   bool IsEmpty() const{
-     return GetNumberOfLocals() == 0;
-   }
-
-   void VisitLocals(RawObjectVisitor* vis) const{
-     if(IsEmpty())
-       return;
-     Iterator iter(this, false);
-     while(iter.HasNext()){
-       auto local = iter.Next();
-       if(local && !vis->Visit(local))
-         return;
+   uword* GetFirstLocalSlotAvailable(){
+     for(auto idx = 0; idx < kMaxLocalsPerGroup; idx++){
+       if(locals_[idx] == 0)
+         return &(locals_[idx]);
      }
+     return nullptr;
    }
 
-   void VisitLocals(const std::function<bool(RawObject*)>& vis) const{
-     if(IsEmpty()){
-       DLOG(WARNING) << "local group is empty.";
-       return;
-     }
-     Iterator iter(this, false);
-     while(iter.HasNext()){
-       auto local = iter.Next();
-       if(local && !vis(local))
-         return;
-     }
+   void VisitObjects(RawObjectVisitor* vis) const;
+   void VisitObjects(const std::function<bool(RawObject*)>& vis) const;
+   void VisitPointers(RawObjectPointerVisitor* vis) const;
+   void VisitPointers(const std::function<bool(RawObject**)>& vis) const;
+  private:
+   static pthread_key_t kThreadKey;
+
+   static inline void
+   SetLocalPageForCurrentThread(LocalPage* page){
+     SetCurrentThreadLocal(kThreadKey, page);
+   }
+
+   static void Initialize(){
+     InitializeThreadLocal(kThreadKey);
+     SetLocalPageForCurrentThread(new LocalPage());
+   }
+  public:
+   static inline bool
+   CurrentThreadHasLocalPage(){
+     return GetCurrentThreadLocal(kThreadKey) != nullptr;
+   }
+
+   static inline LocalPage*
+   GetLocalPageForCurrentThread(){
+     return (LocalPage*)GetCurrentThreadLocal(kThreadKey);
    }
  };
 }

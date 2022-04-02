@@ -40,7 +40,6 @@ namespace poseidon{
    template<typename T>
    void MarkLiveObjects(){
      DLOG(INFO) << "performing SerialMark....";
-     T::VisitRoots(this);
    }
  };
 
@@ -95,7 +94,7 @@ namespace poseidon{
    template<typename T>
    void MarkLiveObjects(){
      DLOG(INFO) << "performing ParallelMark....";
-     T::VisitRoots(this);
+     //TODO: visit roots....
      for(auto idx = 0; idx < TaskPool::kDefaultNumberOfWorkers; idx++)
        pool_.Submit(new ParallelMarkTask(marker_, &work_));
      while(!work_.empty());// spin

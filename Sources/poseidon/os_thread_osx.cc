@@ -3,6 +3,8 @@
 
 #include <glog/logging.h>
 
+#include "common.h"
+
 namespace poseidon{
  class ThreadStartData{
   private:
@@ -98,7 +100,7 @@ namespace poseidon{
      return false;
    }
 
-   DVLOG(1) << thread_name << " thread finished w/ result: " << std::string(return_data, kThreadMaxResultLength);
+   GCLOG(4) << thread_name << " thread finished w/ result: " << std::string(return_data, kThreadMaxResultLength);
    return true;
  }
 
@@ -130,6 +132,34 @@ namespace poseidon{
      return false;
    }
    return true;
+ }
+
+ bool InitializeThreadLocal(ThreadLocalKey& key){
+   int err;
+   if((err = pthread_key_create(&key, nullptr)) != 0){//TODO: fix make second parameter visible to caller
+     LOG(ERROR) << "failed to create ThreadLocal key: " << strerror(err);
+     return false;
+   }
+   GCLOG(3) << "created ThreadLocal key.";
+   return true;
+ }
+
+ bool SetCurrentThreadLocal(const ThreadLocalKey& key, const void* value){
+   int err;
+   if((err = pthread_setspecific(key, value)) != 0){
+     LOG(ERROR) << "couldn't set " << GetCurrentThreadName() << " ThreadLocal: " << strerror(err);
+     return false;
+   }
+   GCLOG(3) << "set " << GetCurrentThreadName() << " ThreadLocal.";
+   return true;
+ }
+
+ void* GetCurrentThreadLocal(const ThreadLocalKey& key){
+   void* ptr;
+   if((ptr = pthread_getspecific(key)) != nullptr)
+     return ptr;
+   LOG(ERROR) << "couldn't get " << GetCurrentThreadName() << " ThreadLocal.";
+   return nullptr;
  }
 }
 

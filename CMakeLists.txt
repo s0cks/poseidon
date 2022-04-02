@@ -18,6 +18,12 @@ if(PSDN_MTA)
     add_compile_definitions(PSDN_MTA)
 endif()
 
+option(PSDN_ENABLE_GCLOGS "Enable the garbage collector logs. Disabled by default, degrades performance due to noise." OFF)
+if(PSDN_ENABLE_GCLOGS)
+    message(STATUS "Compiling w/ Garbage Collector Logs")
+    add_compile_definitions(PSDN_GCLOGS)
+endif()
+
 set(PROJECT_VERSION_MAJOR 0)
 set(PROJECT_VERSION_MINOR 0)
 set(PROJECT_VERSION_PATCH 0)

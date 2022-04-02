@@ -9,6 +9,8 @@ namespace poseidon{
  DECLARE_int64(heap_page_size);
  DECLARE_int32(max_heap_pages);
  DECLARE_int64(large_object_size);
+
+ DECLARE_int32(num_workers);
 }
 
 #endif //POSEIDON_FLAGS_H

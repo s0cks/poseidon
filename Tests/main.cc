@@ -49,7 +49,8 @@ namespace poseidon{
  AllocateWord(word value){
    auto raw_ptr = (RawObject*)Allocator::Allocate(sizeof(word));
    *((word*)raw_ptr->GetPointer()) = value;
-   auto handle = Allocator::AllocateLocal<word>();
+
+   Local<uword> handle;
    handle = raw_ptr->GetAddress();
    return handle;
  }
@@ -60,6 +61,7 @@ int main(int argc, char** argv){
   ::google::InitGoogleLogging(argv[0]);
   ::google::LogToStderr();
   ::testing::InitGoogleTest(&argc, argv);
+  ::google::ParseCommandLineFlags(&argc, &argv, false);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
 
 #ifdef PSDN_MTA
@@ -67,10 +69,8 @@ int main(int argc, char** argv){
 #endif//PSDN_MTA
 
   DLOG(INFO) << "sizeof(NewPage) := " << sizeof(NewPage);
-  DLOG(INFO) << "sizeof(Reference) := " << sizeof(Reference);
   DLOG(INFO) << "sizeof(word) := " << sizeof(word);
 
-  Heap::Initialize();
   Allocator::Initialize();
 
   auto v1 = (RawObject*)Allocator::Allocate(sizeof(word));
@@ -87,6 +87,19 @@ int main(int argc, char** argv){
   DLOG(INFO) << "v1 (before): " << (*((word*)v1->GetPointer())) << " (" << v1->ToString() << ").";
   DLOG(INFO) << "v2 (before): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
 
+  static constexpr const int64_t kNumberOfRoots = 128;
+  static constexpr const int64_t kNumberOfGarbage = 65546;
+
+  for(auto idx = 0; idx < kNumberOfRoots; idx++){
+    auto r = AllocateWord(idx);
+  }
+
+  for(auto idx = 0; idx < kNumberOfGarbage; idx++){
+    auto v = (RawObject*)Allocator::Allocate(sizeof(word));
+    *((word*)v->GetPointer()) = idx;
+  }
+
+  Allocator::MinorCollection();
   Allocator::MinorCollection();
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
@@ -94,7 +107,6 @@ int main(int argc, char** argv){
   DLOG(INFO) << "h3 (after): " << (*h3.Get()) << " (" << h3.raw()->ToString() << ").";
   DLOG(INFO) << "v1 (after): " << (*((word*)v1->GetPointer())) << " (" << v1->ToString() << ").";
   DLOG(INFO) << "v2 (after): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
-
 
 //  auto raw_ptr = (RawObject*)Allocator::Allocate(sizeof(uword));
 //  (*((uword*)raw_ptr->GetPointer())) = 100;

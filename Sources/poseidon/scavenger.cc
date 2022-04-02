@@ -8,25 +8,27 @@
 #include "poseidon/task_pool.h"
 
 namespace poseidon{
+ RelaxedAtomic<bool> Scavenger::scavenging_ = RelaxedAtomic<bool>(false);
+
  uword Scavenger::PromoteObject(RawObject* obj){
-   DVLOG(1) << "promoting " << obj->ToString() << " to new zone.";
-   auto new_ptr = (RawObject*)Heap::GetCurrentThreadHeap()->old_zone()->Allocate(obj->GetPointerSize());
+   GCLOG(1) << "promoting " << obj->ToString() << " to new zone.";
+   auto new_ptr = (RawObject*) promotion_->Allocate(obj->GetPointerSize());
    CopyObject(obj, new_ptr);
    new_ptr->SetOldBit();
 
-   num_promoted_ += 1;
-   bytes_promoted_ += obj->GetPointerSize();//TODO: should this be total size (object size + header size) instead?
+   stats_.num_promoted_ += 1;
+   stats_.bytes_promoted_ += obj->GetPointerSize();
    return new_ptr->GetAddress();
  }
 
  uword Scavenger::ScavengeObject(RawObject* obj){
-   DVLOG(1) << "scavenging " << obj->ToString() << " in old zone.";
-   auto new_ptr = (RawObject*)zone()->Allocate(obj->GetPointerSize());
+   GCLOG(1) << "scavenging " << obj->ToString() << " in old zone.";
+   auto new_ptr = (RawObject*) zone()->Allocate(obj->GetPointerSize());
    CopyObject(obj, new_ptr);
    new_ptr->SetNewBit();
 
-   num_scavenged_ += 1;
-   bytes_scavenged_ += obj->GetPointerSize();//TODO: should this be total size (object size + header size) instead?
+   stats_.num_scavenged_ += 1;
+   stats_.bytes_scavenged_ += obj->GetPointerSize();
    return new_ptr->GetAddress();
  }
 
@@ -40,8 +42,15 @@ namespace poseidon{
        ForwardObject(raw, new_address);
      }
    }
+   PSDN_ASSERT(raw->IsForwarding());
    raw->SetRememberedBit();
    return raw->GetForwardingAddress();
+ }
+
+ void Scavenger::FinalizeObject(RawObject* obj){
+   GCLOG(1) << "finalizing " << obj->ToString() << ".";
+   stats_.num_finalized_ += 1;
+   stats_.bytes_finalized_ += obj->GetPointerSize();
  }
 
  template<bool Parallel>
@@ -50,13 +59,33 @@ namespace poseidon{
    Scavenger* scavenger_;
 
    explicit ScavengerVisitorBase(Scavenger* scavenger):
-    RawObjectPointerVisitor(),
-    scavenger_(scavenger){
+       RawObjectPointerVisitor(),
+       scavenger_(scavenger){
    }
 
    inline Scavenger* scavenger() const{
      return scavenger_;
    }
+
+   inline TaskPool& pool(){
+     return scavenger()->pool();
+   }
+
+   inline void SwapSpaces(){
+     DLOG(INFO) << "swapping spaces.";
+     return scavenger()->SwapSpaces();
+   }
+
+#ifdef PSDN_DEBUG
+   inline void ClearToSpace(){
+     Semispace tospace(scavenger()->zone()->tospace(), scavenger()->zone()->semisize());
+     DLOG(INFO) << "clearing tospace: " << tospace;
+     tospace.Clear();
+   }
+#endif//PSDN_DEBUG
+
+   virtual void ProcessRoots() = 0;
+   virtual void ProcessToSpace() = 0;
   public:
    ~ScavengerVisitorBase() override = default;
 
@@ -66,6 +95,30 @@ namespace poseidon{
  };
 
  class SerialScavengerVisitor : public ScavengerVisitorBase<false>{
+  private:
+   std::deque<uword> work_;
+
+   inline bool
+   HasWork() const{
+     return !work_.empty();
+   }
+
+   void ProcessRoots() override{
+     auto locals = LocalPage::GetLocalPageForCurrentThread();
+     locals->VisitPointers([&](RawObject** ptr){
+       auto old_val = (*ptr);
+       if(old_val->IsNew() && !old_val->IsForwarding()){
+         auto new_val = (RawObject*) scavenger()->ProcessObject(old_val);
+         new_val->SetRememberedBit();
+         (*ptr) = new_val;
+       }
+       return true;
+     });
+   }
+
+   void ProcessToSpace() override{
+
+   }
   public:
    explicit SerialScavengerVisitor(Scavenger* scavenger):
      ScavengerVisitorBase<false>(scavenger){
@@ -75,25 +128,32 @@ namespace poseidon{
    bool Visit(RawObject** ptr) override{
      return true;
    }
+
+   void ScavengeMemory(){
+     SwapSpaces();
+     ProcessRoots();
+     ProcessToSpace();
+
+#ifdef PSDN_DEBUG
+     ClearToSpace();
+#endif//PSDN_DEBUG
+   }
  };
 
  class ParallelScavengeTask : public Task, public RawObjectPointerVisitor{
    friend class ParallelScavengerVisitor;
   private:
    Scavenger* scavenger_;
+   MinorCollectionStats* stats_;
    WorkStealingQueue<uword>* work_;
 
-   ParallelScavengeTask(Scavenger* scavenger, WorkStealingQueue<uword>* work):
+   ParallelScavengeTask(Scavenger* scavenger, WorkStealingQueue<uword>* work, MinorCollectionStats* stats):
      scavenger_(scavenger),
-     work_(work){
+     work_(work  ){
    }
 
    inline Scavenger* scavenger() const{
      return scavenger_;
-   }
-
-   inline RawObject** next_ptr(){
-     return (RawObject**)work_->Steal();
    }
   public:
    ~ParallelScavengeTask() override = default;
@@ -110,67 +170,101 @@ namespace poseidon{
      return true;
    }
 
+   bool HasWork() const{
+     return !work_->empty();
+   }
+
    void Run() override{
-     RawObject** ptr;
-     while(!work_->empty()){
-       if((ptr = next_ptr()) != nullptr){
-         auto old_val = (*ptr);
-         if(old_val->IsNew() && !old_val->IsRemembered() && !old_val->IsForwarding()){
-           auto new_val = (RawObject*)scavenger()->ProcessObject(old_val);
-           new_val->SetRememberedBit();
-           (*ptr) = new_val;
+     do{
+       do{
+         uword next;
+         if((next = work_->Steal()) != 0){
+           auto old_val = (RawObject*)next;
+           if(old_val->IsNew() && !old_val->IsForwarding()){
+             auto new_val = (RawObject*) scavenger()->ProcessObject(old_val);
+             new_val->SetRememberedBit();
+           }
          }
-       }
-     }
+       } while(HasWork());
+     } while(Scavenger::IsScavenging());
    }
  };
 
-
  class ParallelScavengerVisitor : public ScavengerVisitorBase<true>{
   protected:
-   TaskPool pool_;
-   WorkStealingQueue<uword> work_;
+   WorkStealingQueue<uword>* work_;
+   MinorCollectionStats* stats_;
+
+   void ProcessRoots() override{
+     DLOG(INFO) << "processing roots.....";
+     auto locals = LocalPage::GetLocalPageForCurrentThread();
+     locals->VisitObjects([&](RawObject* val){
+       work_->Push(val->GetAddress());
+       return true;
+     });
+   }
+
+   void ProcessToSpace() override{
+     DLOG(INFO) << "processing to-space....";
+     auto locals = LocalPage::GetLocalPageForCurrentThread();
+     locals->VisitPointers([&](RawObject** val){
+       auto old_val = (*val);
+       if(old_val && old_val->IsForwarding()){
+         auto new_val = (RawObject*)old_val->GetForwardingAddress();
+         GCLOG(3) << "forwarding " << (val) << " to " << new_val->ToString();
+         (*val) = (RawObject*)old_val->GetForwardingAddress();
+       }
+       return true;
+     });
+   }
   public:
    explicit ParallelScavengerVisitor(Scavenger* scavenger):
-    ScavengerVisitorBase<true>(scavenger),
-    pool_(),
-    work_(){
+     ScavengerVisitorBase<true>(scavenger),
+     work_(new WorkStealingQueue<uword>()),
+     stats_(new MinorCollectionStats()){
+     for(auto idx = 0; idx < TaskPool::kDefaultNumberOfWorkers; idx++)
+       pool().Submit(new ParallelScavengeTask(scavenger, work_, stats_));
    }
-   ~ParallelScavengerVisitor() override = default;
+   ~ParallelScavengerVisitor() override{
+     delete work_;
+     delete stats_;
+   }
 
    bool Visit(RawObject** ptr) override{
-     work_.Push((uword)ptr);
+     auto old_val = (*ptr);
+     if(old_val != nullptr)
+       work_->Push((uword) ptr);
      return true;
    }
 
    void ScavengeMemory(){
-     Allocator::VisitRoots(this);
-     for(auto idx = 0; idx < TaskPool::kDefaultNumberOfWorkers; idx++)
-       pool_.Submit(new ParallelScavengeTask(scavenger(), &work_));
-     while(!work_.empty());// spin
+
+     SwapSpaces();
+
+     ProcessRoots();
+     ProcessToSpace();
+
+#ifdef PSDN_DEBUG
+     ClearToSpace();
+#endif//PSDN_DEBUG
    }
  };
 
+ void Scavenger::SerialScavenge(){
+   return ScavengeMemory<SerialScavengerVisitor>();
+ }
+
+ void Scavenger::ParallelScavenge(){
+   return ScavengeMemory<ParallelScavengerVisitor>();
+ }
+
  void Scavenger::Scavenge(){
-#ifdef PSDN_MTA
-   DLOG(INFO) << "performing ParallelScavenge.....";
-   ParallelScavengerVisitor visitor(this);
-#else
-   DLOG(INFO) << "performing SerialScavenge.....";
-   SerialScavengerVisitor visitor(this);
-#endif//PSDN_MTA
-
-#ifdef PSDN_DEBUG
-   auto start_ts = Clock::now();
-#endif//PSDN_DEBUG
-
-   visitor.ScavengeMemory();
-
-#ifdef PSDN_DEBUG
-   auto finish_ts = Clock::now();
-   DLOG(INFO) << "finished in " << (finish_ts - start_ts) << ".";
-   DLOG(INFO) << "number of objects scavenged: " << num_scavenged_ << " (" << Bytes(bytes_scavenged_) << ").";
-   DLOG(INFO) << "number of objects promoted: " << num_promoted_ << " (" << Bytes(bytes_promoted_) << ").";
-#endif//PSDN_DEBUG
+   if(ShouldUseParallelScavenger()){
+     DLOG(INFO) << "using parallel scavenger.";
+     ParallelScavenge();
+   } else{
+     DLOG(INFO) << "using serial scavenger.";
+     SerialScavenge();
+   }
  }
 }

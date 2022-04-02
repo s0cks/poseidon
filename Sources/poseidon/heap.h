@@ -436,7 +436,12 @@ namespace poseidon{
        return;
      }
      DLOG(INFO) << "initialized Heap ThreadLocal.";
-     SetCurrentThreadHeap(new Heap());//TODO: refactor.
+     auto heap = new Heap();
+     SetCurrentThreadHeap(heap);//TODO: refactor.
+     DLOG(INFO) << "new-zone: " << (*heap->new_zone());
+     DLOG(INFO) << " - from: " << ((void*)heap->new_zone()->fromspace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
+     DLOG(INFO) << " - to: " << ((void*)heap->new_zone()->tospace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
+     DLOG(INFO) << "old-zone: " << (*heap->old_zone());
    }
  };
 

@@ -61,9 +61,7 @@ namespace poseidon{
      }
 
      bool HasNext() const override{
-#ifdef PSDN_DEBUG
-       assert(valid());
-#endif//PSDN_DEBUG
+       PSDN_ASSERT(valid());
        if(next_address() > GetEndingAddress())
          return false;
        return next_ptr()->GetPointerSize() > 0;
