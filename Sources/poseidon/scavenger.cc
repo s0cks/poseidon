@@ -72,14 +72,14 @@ namespace poseidon{
    }
 
    inline void SwapSpaces(){
-     DLOG(INFO) << "swapping spaces.";
+     GCLOG(3) << "swapping spaces.";
      return scavenger()->SwapSpaces();
    }
 
 #ifdef PSDN_DEBUG
    inline void ClearToSpace(){
      Semispace tospace(scavenger()->zone()->tospace(), scavenger()->zone()->semisize());
-     DLOG(INFO) << "clearing tospace: " << tospace;
+     GCLOG(3) << "clearing tospace: " << tospace;
      tospace.Clear();
    }
 #endif//PSDN_DEBUG
@@ -140,16 +140,15 @@ namespace poseidon{
    }
  };
 
- class ParallelScavengeTask : public Task, public RawObjectPointerVisitor{
+ class ParallelScavengeTask : public Task{
    friend class ParallelScavengerVisitor;
   private:
    Scavenger* scavenger_;
-   MinorCollectionStats* stats_;
    WorkStealingQueue<uword>* work_;
 
-   ParallelScavengeTask(Scavenger* scavenger, WorkStealingQueue<uword>* work, MinorCollectionStats* stats):
+   ParallelScavengeTask(Scavenger* scavenger, WorkStealingQueue<uword>* work):
      scavenger_(scavenger),
-     work_(work  ){
+     work_(work){
    }
 
    inline Scavenger* scavenger() const{
@@ -162,14 +161,6 @@ namespace poseidon{
      return "ParallelScavengerTask";
    }
 
-   bool Visit(RawObject** ptr) override{
-     auto old_val = (*ptr);
-     if(old_val->IsForwarding()){
-
-     }
-     return true;
-   }
-
    bool HasWork() const{
      return !work_->empty();
    }
@@ -180,10 +171,8 @@ namespace poseidon{
          uword next;
          if((next = work_->Steal()) != 0){
            auto old_val = (RawObject*)next;
-           if(old_val->IsNew() && !old_val->IsForwarding()){
-             auto new_val = (RawObject*) scavenger()->ProcessObject(old_val);
-             new_val->SetRememberedBit();
-           }
+           auto new_val = (RawObject*)scavenger()->ProcessObject(old_val);
+           new_val->SetRememberedBit();
          }
        } while(HasWork());
      } while(Scavenger::IsScavenging());
@@ -193,19 +182,20 @@ namespace poseidon{
  class ParallelScavengerVisitor : public ScavengerVisitorBase<true>{
   protected:
    WorkStealingQueue<uword>* work_;
-   MinorCollectionStats* stats_;
 
    void ProcessRoots() override{
-     DLOG(INFO) << "processing roots.....";
+     GCLOG(3) << "processing roots.....";
      auto locals = LocalPage::GetLocalPageForCurrentThread();
-     locals->VisitObjects([&](RawObject* val){
-       work_->Push(val->GetAddress());
+     locals->VisitPointers([&](RawObject** ptr){
+       auto old_val = (*ptr);
+       if(old_val->IsNew() && !old_val->IsForwarding())
+         scavenger()->work().Push(old_val->GetAddress());
        return true;
      });
    }
 
    void ProcessToSpace() override{
-     DLOG(INFO) << "processing to-space....";
+     GCLOG(3) << "processing to-space....";
      auto locals = LocalPage::GetLocalPageForCurrentThread();
      locals->VisitPointers([&](RawObject** val){
        auto old_val = (*val);
@@ -219,26 +209,20 @@ namespace poseidon{
    }
   public:
    explicit ParallelScavengerVisitor(Scavenger* scavenger):
-     ScavengerVisitorBase<true>(scavenger),
-     work_(new WorkStealingQueue<uword>()),
-     stats_(new MinorCollectionStats()){
+     ScavengerVisitorBase<true>(scavenger){
      for(auto idx = 0; idx < TaskPool::kDefaultNumberOfWorkers; idx++)
-       pool().Submit(new ParallelScavengeTask(scavenger, work_, stats_));
+       pool().Submit(new ParallelScavengeTask(scavenger, &scavenger->work()));
    }
-   ~ParallelScavengerVisitor() override{
-     delete work_;
-     delete stats_;
-   }
+   ~ParallelScavengerVisitor() override = default;
 
    bool Visit(RawObject** ptr) override{
      auto old_val = (*ptr);
      if(old_val != nullptr)
-       work_->Push((uword) ptr);
+       scavenger()->work().Push((uword) ptr);
      return true;
    }
 
    void ScavengeMemory(){
-
      SwapSpaces();
 
      ProcessRoots();
@@ -260,10 +244,10 @@ namespace poseidon{
 
  void Scavenger::Scavenge(){
    if(ShouldUseParallelScavenger()){
-     DLOG(INFO) << "using parallel scavenger.";
+     GCLOG(1) << "using parallel scavenger.";
      ParallelScavenge();
    } else{
-     DLOG(INFO) << "using serial scavenger.";
+     GCLOG(1) << "using serial scavenger.";
      SerialScavenge();
    }
  }

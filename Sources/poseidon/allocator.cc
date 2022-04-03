@@ -17,7 +17,7 @@ namespace poseidon{
      return;
    }
 
-   DLOG(INFO) << "starting minor collection.....";
+   DLOG(INFO)<< "starting minor collection.....";
    Scavenger scavenger(Heap::GetCurrentThreadHeap());
 
 #ifdef PSDN_DEBUG

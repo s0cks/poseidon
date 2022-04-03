@@ -19,8 +19,6 @@ namespace poseidon{
 
    friend class ParallelScavengeTask;
   protected:
-   static ThreadId* workers_;
-
    TaskPool pool_;
    NewZone* zone_;
    OldZone* promotion_;
@@ -48,6 +46,10 @@ namespace poseidon{
    inline TaskPool&
    pool(){
      return pool_;
+   }
+
+   inline WorkStealingQueue<uword>& work(){
+     return work_;
    }
 
    static inline void
