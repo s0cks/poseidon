@@ -17,26 +17,15 @@ namespace poseidon{
      return;
    }
 
-   DLOG(INFO)<< "starting minor collection.....";
    Scavenger scavenger(Heap::GetCurrentThreadHeap());
-
-#ifdef PSDN_DEBUG
-   auto start_ts = Clock::now();
-#endif//PSDN_DEBUG
-
-   scavenger.Scavenge();
-
-#ifdef PSDN_DEBUG
-   auto finish_ts = Clock::now();
-   DLOG(INFO) << "minor collection finished in " << (finish_ts - start_ts) << ".";
-//TODO:
-//   DLOG(INFO) << " - " << scavenger.num_scavenged_ << " objects scavenged (" << Bytes(scavenger.bytes_scavenged_) << ").";
-//   DLOG(INFO) << " - " << scavenger.num_promoted_ << " objects promoted (" << Bytes(scavenger.bytes_promoted_) << ").";
-//   DLOG(INFO) << " - " << scavenger.num_finalized_ << " objects finalized (" << Bytes(scavenger.bytes_finalized_) << ").";
-#endif//PSDN_DEBUG
+   TIMED_SECTION("Minor Collection.", {
+     scavenger.Scavenge();
+   });
  }
 
  void Allocator::MajorCollection(){
+   //TODO: collection check.
 
+   DLOG(INFO) << "starting major collection.....";
  }
 }

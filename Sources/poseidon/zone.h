@@ -3,6 +3,7 @@
 
 #include "poseidon/flags.h"
 #include "poseidon/bitset.h"
+#include "poseidon/freelist.h"
 #include "poseidon/semispace.h"
 #include "poseidon/memory_region.h"
 
@@ -270,141 +271,147 @@ namespace poseidon{
    }
  };
 
- static constexpr const int64_t kDefaultOldZoneSize = 128 * kMB;
- class OldZone : public Zone{
+ class OldPage : public AllocationSection{
+   friend class OldZone;
   public:
-   class OldPage : public AllocationSection{
-     friend class OldZone;
-    public:
-     static constexpr const int64_t kDefaultPageSize = 256 * 1024;
+   static constexpr const int64_t kDefaultPageSize = 256 * 1024;
 
-     class OldPageIterator : public RawObjectPointerIterator{
-      private:
-       const OldPage* page_;
-       uword current_;
-
-       inline RawObject* current_ptr() const{
-         return (RawObject*)current_;
-       }
-      public:
-       explicit OldPageIterator(const OldPage* page):
-        RawObjectPointerIterator(),
-        page_(page),
-        current_(page->GetStartingAddress()){
-       }
-       ~OldPageIterator() override = default;
-
-       const OldPage* page() const{
-         return page_;
-       }
-
-       bool HasNext() const override{
-         auto next = current_ptr();
-#ifdef PSDN_DEBUG
-         assert(page()->Contains(next->GetAddress()));
-#endif//PSDN_DEBUG
-         return next->GetPointerSize() > 0;
-       }
-
-       RawObject* Next() override{
-         auto next = current_ptr();
-         current_ += next->GetTotalSize();
-         return next;
-       }
-     };
-    protected:
-     int64_t index_;
-     uword start_;
+   class OldPageIterator : public RawObjectPointerIterator{
+    private:
+     const OldPage* page_;
      uword current_;
-     int64_t size_;
 
-     OldPage* next_;
-     OldPage* previous_;
-
-     OldPage() = default;
-     OldPage(int64_t index, uword start, int64_t size):
-      index_(index),
-      start_(start),
-      current_(start),
-      size_(size),
-      next_(nullptr),
-      previous_(nullptr){
+     inline RawObject* current_ptr() const{
+       return (RawObject*)current_;
      }
     public:
-     OldPage(const OldPage& rhs) = default;
-     ~OldPage() override = default;
+     explicit OldPageIterator(const OldPage* page):
+       RawObjectPointerIterator(),
+       page_(page),
+       current_(page->GetStartingAddress()){
+     }
+     ~OldPageIterator() override = default;
 
-     int64_t index() const{
-       return index_;
+     const OldPage* page() const{
+       return page_;
      }
 
-     int64_t size() const override{
-       return size_;
+     bool HasNext() const override{
+       auto next = current_ptr();
+#ifdef PSDN_DEBUG
+       assert(page()->Contains(next->GetAddress()));
+#endif//PSDN_DEBUG
+       return next->GetPointerSize() > 0;
      }
 
-     uword GetStartingAddress() const override{
-       return start_;
-     }
-
-     uword GetCurrentAddress() const{
-       return current_;
-     }
-
-     void* GetCurrentAddressPointer() const{
-       return (void*)GetCurrentAddress();
-     }
-
-     bool HasNext() const{
-       return next_ != nullptr;
-     }
-
-     OldPage* GetNext() const{
-       return next_;
-     }
-
-     void SetNext(OldPage* page){
-       next_ = page;
-     }
-
-     bool HasPrevious() const{
-       return previous_ != nullptr;
-     }
-
-     OldPage* GetPrevious() const{
-       return previous_;
-     }
-
-     void SetPrevious(OldPage* page){
-       previous_ = page;
-     }
-
-     uword Allocate(int64_t size) override{
-       auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
-       if(!Contains(current_ + total_size)){
-         DLOG(ERROR) << "cannot allocate object of size " << Bytes(size) << " in " << (*this);
-         return 0;
-       }
-       auto next = (void*)current_;
-       current_ += total_size;
-       auto ptr = new (next)RawObject();
-       ptr->SetPointerSize(size);
-       return ptr->GetAddress();
-     }
-
-     void VisitPointers(const std::function<bool(RawObject*)>& vis) const{
-       OldPageIterator iter(this);
-       while(iter.HasNext()){
-         if(!vis(iter.Next()))
-           return;
-       }
-     }
-
-     OldPage& operator=(const OldPage& rhs) = default;
-
-     friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
-       return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.size()) << ")";
+     RawObject* Next() override{
+       auto next = current_ptr();
+       current_ += next->GetTotalSize();
+       return next;
      }
    };
+  protected:
+   OldPage* next_;
+   OldPage* previous_;
+
+   int64_t index_;
+   uword start_;
+   uword current_;
+   int64_t size_;
+
+   FreeList free_list_;
+
+   OldPage():
+    next_(nullptr),
+    previous_(nullptr),
+    index_(0),
+    start_(0),
+    current_(0),
+    size_(0),
+    free_list_(){
+   }
+   OldPage(int64_t index, uword start, int64_t size):
+     next_(nullptr),
+     previous_(nullptr),
+     index_(index),
+     start_(start),
+     current_(start),
+     size_(size),
+     free_list_(start, size){
+   }
+  public:
+   OldPage(const OldPage& rhs) = default;
+   ~OldPage() override = default;
+
+   int64_t index() const{
+     return index_;
+   }
+
+   int64_t size() const override{
+     return size_;
+   }
+
+   uword GetStartingAddress() const override{
+     return start_;
+   }
+
+   uword GetCurrentAddress() const{
+     return current_;
+   }
+
+   void* GetCurrentAddressPointer() const{
+     return (void*)GetCurrentAddress();
+   }
+
+   bool HasNext() const{
+     return next_ != nullptr;
+   }
+
+   OldPage* GetNext() const{
+     return next_;
+   }
+
+   void SetNext(OldPage* page){
+     next_ = page;
+   }
+
+   bool HasPrevious() const{
+     return previous_ != nullptr;
+   }
+
+   OldPage* GetPrevious() const{
+     return previous_;
+   }
+
+   void SetPrevious(OldPage* page){
+     previous_ = page;
+   }
+
+   uword Allocate(int64_t size) override{
+     auto total_size = size + static_cast<int64_t>(sizeof(RawObject));
+     auto address = free_list_.TryAllocate(total_size);//TODO: update
+     auto raw_ptr = new ((void*)address)RawObject();
+     raw_ptr->SetPointerSize(size);
+     return raw_ptr->GetAddress();
+   }
+
+   void VisitPointers(const std::function<bool(RawObject*)>& vis) const{
+     OldPageIterator iter(this);
+     while(iter.HasNext()){
+       if(!vis(iter.Next()))
+         return;
+     }
+   }
+
+   OldPage& operator=(const OldPage& rhs) = default;
+
+   friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
+     return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.size()) << ")";
+   }
+ };
+
+ static constexpr const int64_t kDefaultOldZoneSize = 128 * kMB;
+ class OldZone : public Zone{
   protected:
    OldPage* pages_;
    BitSet table_;

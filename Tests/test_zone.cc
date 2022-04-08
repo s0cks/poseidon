@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include "poseidon/zone.h"
-#include "poseidon/heap.h"
 
 namespace poseidon{
  using namespace ::testing;
@@ -28,6 +27,16 @@ namespace poseidon{
 
    OldZone zone(&region);
 
-   auto val = zone.Allocate(sizeof(uword));
+   auto new_ptr = zone.Allocate(sizeof(uword));
+   ASSERT_NE(new_ptr, 0);
+
+   DLOG(INFO) << "objects: ";
+   zone.VisitMarkedPages([&](OldPage* page){
+     page->VisitPointers([&](RawObject* val){
+       DLOG(INFO) << " - " << val->ToString();
+       return true;
+     });
+     return true;
+   });
  }
 }

@@ -11,6 +11,21 @@ namespace poseidon{
  DECLARE_int64(large_object_size);
 
  DECLARE_int32(num_workers);
+
+ static inline int32_t
+ GetNumberOfWorkers(){
+   return FLAGS_num_workers;
+ }
+
+ static inline bool
+ ShouldUseParallelScavenge(){
+   return GetNumberOfWorkers() > 0;
+ }
+
+ static inline bool
+ ShouldUseParallelMark(){
+   return GetNumberOfWorkers() > 0;
+ }
 }
 
 #endif //POSEIDON_FLAGS_H

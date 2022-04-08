@@ -10,10 +10,10 @@
 namespace poseidon{
  class ProcessOldPageTask : public Task{
   protected:
-   OldZone::OldPage* page_;
+   OldPage* page_;
    RelaxedAtomic<int64_t>* countdown_;
 
-   inline OldZone::OldPage* page() const{
+   inline OldPage* page() const{
      return page_;
    }
 
@@ -33,7 +33,7 @@ namespace poseidon{
     page_(nullptr),
     countdown_(nullptr){
    }
-   explicit ProcessOldPageTask(OldZone::OldPage* page, RelaxedAtomic<int64_t>* countdown):
+   explicit ProcessOldPageTask(OldPage* page, RelaxedAtomic<int64_t>* countdown):
     Task(),
     page_(page),
     countdown_(countdown){

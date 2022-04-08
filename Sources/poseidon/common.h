@@ -10,51 +10,51 @@
   LOG(Level) << __FUNCTION__ << " is not implemented!"
 
 namespace poseidon{
-  static inline uword
-  RoundUpPow2(uword x){
-    x = x - 1;
-    x = x | (x >> 1);
-    x = x | (x >> 2);
-    x = x | (x >> 4);
-    x = x | (x >> 8);
-    x = x | (x >> 16);
+ static inline uword
+ RoundUpPow2(uword x){
+   x = x - 1;
+   x = x | (x >> 1);
+   x = x | (x >> 2);
+   x = x | (x >> 4);
+   x = x | (x >> 8);
+   x = x | (x >> 16);
 #ifdef ARCHITECTURE_IS_X64
-    x = x | (x >> 32);
+   x = x | (x >> 32);
 #endif
-    return x + 1;
-  }
+   return x + 1;
+ }
 
-  class AllocationSection{
-   protected:
-    AllocationSection() = default;
-   public:
-    virtual ~AllocationSection() = default;
+ class AllocationSection{
+  protected:
+   AllocationSection() = default;
+  public:
+   virtual ~AllocationSection() = default;
 
-    virtual int64_t size() const = 0;
-    virtual uword Allocate(int64_t size) = 0;
-    virtual uword GetStartingAddress() const = 0;
+   virtual int64_t size() const = 0;
+   virtual uword Allocate(int64_t size) = 0;
+   virtual uword GetStartingAddress() const = 0;
 
-    virtual void* GetStartingAddressPointer() const{
-      return (void*)GetStartingAddress();
-    }
+   virtual void* GetStartingAddressPointer() const{
+     return (void*) GetStartingAddress();
+   }
 
-    virtual uword GetEndingAddress() const{
-      return GetStartingAddress() + size();
-    }
+   virtual uword GetEndingAddress() const{
+     return GetStartingAddress() + size();
+   }
 
-    virtual void* GetEndingAddressPointer() const{
-      return (void*)GetEndingAddress();
-    }
+   virtual void* GetEndingAddressPointer() const{
+     return (void*) GetEndingAddress();
+   }
 
-    virtual bool Contains(uword address) const{
-      return GetStartingAddress() <= address
-          && GetEndingAddress() >= address;
-    }
+   virtual bool Contains(uword address) const{
+     return GetStartingAddress() <= address
+         && GetEndingAddress() >= address;
+   }
 
-    virtual void Clear(){
-      memset(GetStartingAddressPointer(), 0, size());
-    }
-  };
+   virtual void Clear(){
+     memset(GetStartingAddressPointer(), 0, size());
+   }
+ };
 
 #ifdef PSDN_DEBUG
 #define PSDN_ASSERT(x) assert(x)
@@ -77,11 +77,20 @@ namespace poseidon{
 
 #endif//PSDN_GCLOGS
 
-  static constexpr const int64_t kB = 1;
-  static constexpr const int64_t kKB = kB * 1024;
-  static constexpr const int64_t kMB = kKB * 1024;
-  static constexpr const int64_t kGB = kMB * 1024;
-  static constexpr const int64_t kTB = kGB * 1024;
+ static constexpr const int64_t kB = 1;
+ static constexpr const int64_t kKB = kB * 1024;
+ static constexpr const int64_t kMB = kKB * 1024;
+ static constexpr const int64_t kGB = kMB * 1024;
+ static constexpr const int64_t kTB = kGB * 1024;
+
+#define TIMED_SECTION(Name, Section) \
+  do {                               \
+    DLOG(INFO) << "starting " << (Name) << "...."; \
+    auto start_ts = Clock::now();    \
+    Section;                         \
+    auto finish_ts = Clock::now();   \
+    DLOG(INFO) << (Name) << " finished in " << (finish_ts - start_ts) << "."; \
+  } while(0);
 }
 
 #endif //POSEIDON_COMMON_H

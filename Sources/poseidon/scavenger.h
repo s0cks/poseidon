@@ -4,6 +4,7 @@
 #include "poseidon/zone.h"
 #include "poseidon/heap.h"
 #include "poseidon/stats.h"
+#include "poseidon/utils.h"
 #include "poseidon/task_pool.h"
 
 namespace poseidon{
@@ -61,7 +62,7 @@ namespace poseidon{
 
    static inline void
    CopyObject(RawObject* src, RawObject* dst){//TODO: create a better copy
-     PSDN_ASSERT(src->GetTotalSize() == dst->GetTotalSize());
+  //   PSDN_ASSERT(src->GetTotalSize() == dst->GetTotalSize());
      memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
    }
 

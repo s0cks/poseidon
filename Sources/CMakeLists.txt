@@ -18,7 +18,7 @@ add_library(poseidon
     poseidon/scavenger.h poseidon/scavenger.cc
     poseidon/marker.h poseidon/marker.cc
     poseidon/finalizer.h
-    poseidon/memory_region.h poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc poseidon/zone.h poseidon/semispace.h poseidon/flags.h poseidon/relaxed_atomic.h poseidon/compactor.cc poseidon/compactor.h poseidon/task_pool.h poseidon/wsq.h poseidon/os_thread.h poseidon/os_thread_linux.h poseidon/os_thread_osx.h poseidon/os_thread_linux.cc poseidon/os_thread_osx.cc poseidon/task_pool.cc poseidon/bitset.h poseidon/zone.cc)
+    poseidon/memory_region.h poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc poseidon/zone.h poseidon/semispace.h poseidon/flags.h poseidon/relaxed_atomic.h poseidon/compactor.cc poseidon/compactor.h poseidon/task_pool.h poseidon/wsq.h poseidon/os_thread.h poseidon/os_thread_linux.h poseidon/os_thread_osx.h poseidon/os_thread_linux.cc poseidon/os_thread_osx.cc poseidon/task_pool.cc poseidon/bitset.h poseidon/zone.cc poseidon/freelist.h poseidon/sweeper.cc poseidon/sweeper.h)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     glog::glog
