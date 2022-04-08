@@ -4,16 +4,15 @@
 #include "poseidon/runtime.h"
 
 namespace poseidon{
- static TaskPool task_pool(GetNumberOfWorkers());
+ static TaskPool* task_pool = nullptr;
 
  void Runtime::Initialize(){
    DLOG(INFO) << "initializing runtime....";
-
-   DLOG(INFO) << "starting task pool....";
-   task_pool.StartAll();
+   task_pool = new TaskPool(GetNumberOfWorkers());
+   task_pool->StartAll();
  }
 
  TaskPool* Runtime::GetTaskPool(){
-   return &task_pool;
+   return task_pool;
  }
 }

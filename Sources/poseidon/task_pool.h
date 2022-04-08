@@ -9,6 +9,7 @@
 #include <ostream>
 
 #include "poseidon/wsq.h"
+#include "poseidon/common.h"
 #include "poseidon/os_thread.h"
 #include "poseidon/relaxed_atomic.h"
 
@@ -145,7 +146,6 @@ namespace poseidon{
        }
      }
     private:
-     const TaskPool* pool_;
      ThreadId thread_;
      WorkerId worker_;
      RelaxedAtomic<State> state_;
@@ -161,8 +161,7 @@ namespace poseidon{
 
      static void HandleThread(uword parameter);
     public:
-     Worker(const TaskPool* pool, WorkerId worker, TaskQueue* queue):
-       pool_(pool),
+     Worker(WorkerId worker, TaskQueue* queue):
        thread_(),
        worker_(worker),
        state_(State::kStopped),
@@ -170,10 +169,6 @@ namespace poseidon{
      }
      Worker(const Worker& rhs) = delete;
      ~Worker() = default;
-
-     const TaskPool* pool() const{
-       return pool_;
-     }
 
      ThreadId thread_id() const{
        return thread_;
@@ -227,12 +222,15 @@ namespace poseidon{
        return distribution_(engine_);
      }
     public:
-     WorkerPool(const TaskPool* pool, size_t num_workers, int64_t queue_size = kDefaultMaxQueueSize):
+     explicit WorkerPool(size_t num_workers, int64_t queue_size = kDefaultMaxQueueSize):
       queue_(queue_size),
       workers_(new Worker*[num_workers]),
       num_workers_(num_workers),
       engine_(Clock::now().time_since_epoch().count()),
-      distribution_(0, static_cast<WorkerId>(num_workers) - 1){
+      distribution_(0, static_cast<WorkerId>(num_workers - 1)){
+       for(WorkerId widx = 0; widx < static_cast<WorkerId>(num_workers); widx++){
+         workers_[widx] = new Worker(widx, &queue_);
+       }
      }
      ~WorkerPool(){
        DVLOG(1) << "shutting down " << num_workers_ << " workers in pool....";
@@ -273,10 +271,12 @@ namespace poseidon{
      }
 
      void Submit(Task* task){
+       GCLOG(3) << "submitting " << task->name() << "....";
        queue_.Push(task);
      }
 
      void StartAll() const{
+       GCLOG(3) << "starting " << size() << " workers....";
        for(auto& worker : *this){
          if(!worker->Start())
            LOG(ERROR) << "cannot start worker #" << worker->worker_id() << ".";
@@ -284,6 +284,7 @@ namespace poseidon{
      }
 
      void ShutdownAll() const{
+       GCLOG(3) << "stopping " << size() << " workers....";
        for(auto& worker : *this){
          if(!worker->Shutdown())
            LOG(ERROR) << "cannot shutdown worker #" << worker->worker_id() << ".";
@@ -294,7 +295,7 @@ namespace poseidon{
    WorkerPool wpool_;
   public:
    explicit TaskPool(size_t num_workers = kDefaultNumberOfWorkers):
-    wpool_(this, num_workers){
+    wpool_(num_workers){
    }
    ~TaskPool() = default;
 

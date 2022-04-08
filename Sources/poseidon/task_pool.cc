@@ -1,10 +1,12 @@
 #include <glog/logging.h>
+
+#include "poseidon/common.h"
 #include "poseidon/task_pool.h"
 
 namespace poseidon{
  void TaskPool::Worker::HandleThread(uword parameter){
    auto worker = (TaskPool::Worker*)parameter;
-   DVLOG(1) << "starting worker #" << worker->worker_id() << "....";
+   GCLOG(3) << "starting worker #" << worker->worker_id() << "....";
    worker->SetState(State::kStarting);
    // do something?
    worker->SetState(State::kIdle);
@@ -13,14 +15,16 @@ namespace poseidon{
        auto next = worker->queue_->Steal();
        if(!next)
          continue;
-       //TODO: calculate timings?
-       if(!next->Execute()){
-         DLOG(ERROR) << "failed to execute " << next->name() << ".";
-         continue;
-       }
+
+       DTIMED_SECTION(next->name(), {
+         if(!next->Execute()){
+           DLOG(ERROR) << "failed to execute " << next->name() << ".";
+           continue;
+         }
+       });
      } while(worker->HasWork());
    } while(worker->IsRunning());
-   DVLOG(1) << "worker #" << worker->worker_id() << " is stopping....";
+   GCLOG(3) << "worker #" << worker->worker_id() << " is stopping....";
    worker->SetState(State::kStopped);
    pthread_exit((void*)"Hello World");//TODO: exit properly
  }

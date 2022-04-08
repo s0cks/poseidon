@@ -325,7 +325,6 @@ namespace poseidon{
        LOG(ERROR) << "cannot set Heap ThreadLocal: " << strerror(err);
        return;
      }
-     DLOG(INFO) << "set thread " << GetCurrentThreadName() << " Heap ThreadLocal to " << (*heap);
    }
   private:
    MemoryRegion* region_;

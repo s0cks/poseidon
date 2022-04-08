@@ -18,10 +18,9 @@ namespace poseidon{
      return;
    }
 
-   Scavenger scavenger(Heap::GetCurrentThreadHeap());
-   TIMED_SECTION("Minor Collection.", {
-     scavenger.Scavenge();
-   });
+   TIMED_SECTION("MinorCollection", {
+     Scavenger::ScavengeMemory();
+   })
  }
 
  void Allocator::MajorCollection(){

@@ -85,11 +85,20 @@ namespace poseidon{
 
 #define TIMED_SECTION(Name, Section) \
   do {                               \
-    DLOG(INFO) << "starting " << (Name) << "...."; \
+    LOG(INFO) << "starting " << (Name) << "...."; \
     auto start_ts = Clock::now();    \
     Section;                         \
     auto finish_ts = Clock::now();   \
-    DLOG(INFO) << (Name) << " finished in " << (finish_ts - start_ts) << "."; \
+    LOG(INFO) << (Name) << " finished in " << (finish_ts - start_ts) << "."; \
+  } while(0);
+
+#define DTIMED_SECTION(Name, Section) \
+ do {                               \
+    GCLOG(1) << "starting " << (Name) << "...."; \
+    auto start_ts = Clock::now();    \
+    Section;                         \
+    auto finish_ts = Clock::now();   \
+    GCLOG(1) << (Name) << " finished in " << (finish_ts - start_ts) << "."; \
   } while(0);
 }
 

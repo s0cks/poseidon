@@ -150,7 +150,6 @@ namespace poseidon{
      LOG(ERROR) << "couldn't set " << GetCurrentThreadName() << " ThreadLocal: " << strerror(err);
      return false;
    }
-   GCLOG(3) << "set " << GetCurrentThreadName() << " ThreadLocal.";
    return true;
  }
 
