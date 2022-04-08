@@ -34,7 +34,7 @@ namespace poseidon{//TODO: clean-up this code
    LocalPageIterator iter(this);
    while(iter.HasNext()){
      auto next = iter.NextPointer();
-     if(!vis->Visit(next))
+     if((*next) && !vis->Visit(next))//TODO: investigate null next value
        return;
    }
  }
@@ -43,7 +43,7 @@ namespace poseidon{//TODO: clean-up this code
    LocalPageIterator iter(this);
    while(iter.HasNext()){
      auto next = iter.NextPointer();
-     if((*next) && (*next)->GetPointerSize() > 0 && !vis(next))
+     if((*next) && (*next)->GetPointerSize() > 0 && !vis(next))//TODO: investigate null next value
        return;
    }
  }

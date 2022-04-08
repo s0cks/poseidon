@@ -229,18 +229,10 @@ namespace poseidon{
     public:
      WorkerPool(const TaskPool* pool, size_t num_workers, int64_t queue_size = kDefaultMaxQueueSize):
       queue_(queue_size),
-      workers_(nullptr),
+      workers_(new Worker*[num_workers]),
       num_workers_(num_workers),
       engine_(Clock::now().time_since_epoch().count()),
       distribution_(0, static_cast<WorkerId>(num_workers) - 1){
-       if(num_workers > 0){
-         workers_ = new Worker*[num_workers];
-         for(auto idx = 0; idx < num_workers; idx++){
-           workers_[idx] = new Worker(pool, static_cast<WorkerId>(idx), &queue_);
-           if(!workers_[idx]->Start())
-             LOG(ERROR) << "cannot start worker #" << idx << ".";
-         }
-       }
      }
      ~WorkerPool(){
        DVLOG(1) << "shutting down " << num_workers_ << " workers in pool....";
@@ -308,6 +300,14 @@ namespace poseidon{
 
    void Submit(Task* task){
      wpool_.Submit(task);
+   }
+
+   void StartAll(){
+     return wpool_.StartAll();
+   }
+
+   void ShutdownAll(){
+     return wpool_.ShutdownAll();
    }
  };
 }

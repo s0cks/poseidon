@@ -4,7 +4,7 @@
 #include "poseidon/raw_object.h"
 
 namespace poseidon{
-
+ static RelaxedAtomic<bool> marking_(false);
 
  template<bool Parallel>
  class MarkerVisitorBase : public RawObjectPointerVisitor{
@@ -35,7 +35,7 @@ namespace poseidon{
      auto old_val = (*ptr);
      if(old_val->IsOld() && !old_val->IsMarked()){
        old_val->SetMarkedBit();
-       GCLOG(3) << "marked " << old_val->ToString();
+       DLOG(INFO) << "marked " << old_val->ToString();
      }
      //TODO: mark references?
      return true;
@@ -71,10 +71,15 @@ namespace poseidon{
    visitor.MarkAll();
  }
 
- void Marker::Mark(){
-   if(ShouldUseParallelMark()){
-     return ParallelMark();
-   }
-   return SerialMark();
+ bool Marker::IsMarking(){
+   return (bool)marking_;
+ }
+
+ void Marker::SetMarking(){
+   marking_ = true;
+ }
+
+ void Marker::ClearMarking(){
+   marking_ = false;
  }
 }

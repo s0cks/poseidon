@@ -20,14 +20,12 @@ namespace poseidon{
 
    friend class ParallelScavengeTask;
   protected:
-   TaskPool pool_;
    NewZone* zone_;
    OldZone* promotion_;
    WorkStealingQueue<uword> work_;
    MinorCollectionStats stats_;
 
    explicit Scavenger(Heap* heap):
-     pool_(),
      zone_(heap->new_zone()),
      promotion_(heap->old_zone()),
      work_(),
@@ -42,11 +40,6 @@ namespace poseidon{
    inline void
    SwapSpaces(){
      zone()->SwapSpaces();
-   }
-
-   inline TaskPool&
-   pool(){
-     return pool_;
    }
 
    inline WorkStealingQueue<uword>& work(){

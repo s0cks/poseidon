@@ -3,6 +3,7 @@
 
 #include "poseidon/utils.h"
 #include "poseidon/local.h"
+#include "poseidon/runtime.h"
 #include "poseidon/scavenger.h"
 #include "poseidon/allocator.h"
 #include "poseidon/task_pool.h"
@@ -65,10 +66,6 @@ namespace poseidon{
 
    inline Scavenger* scavenger() const{
      return scavenger_;
-   }
-
-   inline TaskPool& pool(){
-     return scavenger()->pool();
    }
 
    inline void SwapSpaces(){
@@ -188,8 +185,10 @@ namespace poseidon{
      auto locals = LocalPage::GetLocalPageForCurrentThread();
      locals->VisitPointers([&](RawObject** ptr){
        auto old_val = (*ptr);
-       if(old_val->IsNew() && !old_val->IsForwarding())
+       if(old_val->IsNew() && !old_val->IsForwarding()){
+         GCLOG(10) << "pushing " << old_val->ToString();
          scavenger()->work().Push(old_val->GetAddress());
+       }
        return true;
      });
    }
@@ -210,8 +209,9 @@ namespace poseidon{
   public:
    explicit ParallelScavengerVisitor(Scavenger* scavenger):
      ScavengerVisitorBase<true>(scavenger){
-     for(auto idx = 0; idx < TaskPool::kDefaultNumberOfWorkers; idx++)
-       pool().Submit(new ParallelScavengeTask(scavenger, &scavenger->work()));
+     for(auto idx = 0; idx < TaskPool::kDefaultNumberOfWorkers; idx++){
+       Runtime::GetTaskPool()->Submit(new ParallelScavengeTask(scavenger, &scavenger->work()));
+     }
    }
    ~ParallelScavengerVisitor() override = default;
 

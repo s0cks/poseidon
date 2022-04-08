@@ -2,49 +2,12 @@
 #include <glog/logging.h>
 
 #include "poseidon/local.h"
+#include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
 #include "poseidon/scavenger.h"
 #include "poseidon/allocator.h"
-#include "poseidon/task_pool.h"
 
 namespace poseidon{
- class ProcessOldPageTask : public Task{
-  protected:
-   OldPage* page_;
-   RelaxedAtomic<int64_t>* countdown_;
-
-   inline OldPage* page() const{
-     return page_;
-   }
-
-   void Run() override{
-     DLOG(INFO) << "[" << GetCurrentThreadName() << "] processing " << (*page()) << ".....";
-     page()->VisitPointers([&](RawObject* val){
-       DLOG(INFO) << "[" << GetCurrentThreadName() << "] marking " << val->ToString() << ".....";
-       val->SetMarkedBit();
-       return true;
-     });
-     DLOG(INFO) << "[" << GetCurrentThreadName() << "] done processing " << (*page()) << "....";
-     countdown_ -= 1;
-   }
-  public:
-   ProcessOldPageTask():
-    Task(),
-    page_(nullptr),
-    countdown_(nullptr){
-   }
-   explicit ProcessOldPageTask(OldPage* page, RelaxedAtomic<int64_t>* countdown):
-    Task(),
-    page_(page),
-    countdown_(countdown){
-   }
-   ~ProcessOldPageTask() override = default;
-
-   const char* name() const override{
-     return "ProcessOldPageTask";
-   }
- };
-
  static inline Local<word>
  AllocateWord(word value){
    auto raw_ptr = (RawObject*)Allocator::Allocate(sizeof(word));
@@ -71,6 +34,7 @@ int main(int argc, char** argv){
   DLOG(INFO) << "sizeof(NewPage) := " << sizeof(NewPage);
   DLOG(INFO) << "sizeof(word) := " << sizeof(word);
 
+  Runtime::Initialize();
   Allocator::Initialize();
 
   auto v1 = (RawObject*)Allocator::Allocate(sizeof(word));
@@ -101,6 +65,7 @@ int main(int argc, char** argv){
 
   Allocator::MinorCollection();
   Allocator::MinorCollection();
+  Allocator::MajorCollection();
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (after): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";

@@ -1,5 +1,6 @@
 #include "poseidon/utils.h"
 #include "poseidon/local.h"
+#include "poseidon/marker.h"
 #include "poseidon/allocator.h"
 #include "poseidon/os_thread.h"
 #include "poseidon/scavenger.h"
@@ -26,6 +27,6 @@ namespace poseidon{
  void Allocator::MajorCollection(){
    //TODO: collection check.
 
-   DLOG(INFO) << "starting major collection.....";
+   Marker::Mark();
  }
 }

@@ -59,7 +59,6 @@ namespace poseidon{
 
  void Sweeper::Sweep(OldPage* page){
    DLOG(INFO) << "sweeping " << (*page) << "....";
-
    SerialSweep(page);
  }
 }
