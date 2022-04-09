@@ -9,7 +9,7 @@
 
 namespace poseidon{
  class NewPage;
- class Zone : public AllocationSection{
+ class Zone : public Section{
    friend class Scavenger;
   private:
    class ZoneIterator : public RawObjectPointerIterator{
@@ -271,7 +271,7 @@ namespace poseidon{
    }
  };
 
- class OldPage : public AllocationSection{
+ class OldPage : public Section{
    friend class OldZone;
   public:
    static constexpr const int64_t kDefaultPageSize = 256 * 1024;
@@ -498,7 +498,7 @@ namespace poseidon{
      } while(page != nullptr);
 
      //TODO: major collection
-     LOG(FATAL) << "cannot allocate object of " << Bytes(size) << " size in " << (*this) << ".";
+     LOG(ERROR) << "cannot allocate object of " << Bytes(size) << " size in " << (*this) << ".";
      return 0;
    }
 

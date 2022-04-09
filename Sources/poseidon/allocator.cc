@@ -7,7 +7,6 @@
 
 namespace poseidon{
  void Allocator::Initialize(){
-   DLOG(INFO) << "initializing....";
    Heap::Initialize();
    LocalPage::Initialize();
  }

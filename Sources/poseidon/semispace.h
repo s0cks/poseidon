@@ -2,10 +2,11 @@
 #define POSEIDON_POSEIDON_SEMISPACE_H
 
 #include <glog/logging.h>
+
 #include "poseidon/raw_object.h"
 
 namespace poseidon{
- class Semispace : public AllocationSection{
+ class Semispace{
   private:
    class SemispaceIterator : public RawObjectPointerIterator{
     private:
@@ -82,11 +83,11 @@ namespace poseidon{
     * Create an empty {@link Semispace}.
     */
    Semispace():
-    AllocationSection(),
     start_(0),
     current_(0),
     size_(0){
    }
+
    /**
     * Create a {@link Semispace} with the specified starting address and size.
     *
@@ -94,25 +95,25 @@ namespace poseidon{
     * @param size The size of the {@link Semispace}
     */
    Semispace(uword start, int64_t size):
-    AllocationSection(),
-    start_(start),
-    current_(start),
-    size_(size){
+     start_(start),
+     current_(start),
+     size_(size){
    }
-   Semispace(const Semispace& rhs):
-    AllocationSection(),
-    start_(rhs.start_),
-    current_(rhs.current_),
-    size_(rhs.size_){
-   }
-   ~Semispace() override = default;
 
-   uword GetStartingAddress() const override{
+   /**
+    * Copy-Constructor.
+    *
+    * @param rhs The {@link Semispace} to copy
+    */
+   Semispace(const Semispace& rhs) = default;
+   virtual ~Semispace() = default;
+
+   uword GetStartingAddress() const{
      return start_;
    }
 
-   int64_t size() const override{
-     return size_;
+   void* GetStartingAddressPointer() const{
+     return (void*)GetStartingAddress();
    }
 
    uword GetCurrentAddress() const{
@@ -123,31 +124,42 @@ namespace poseidon{
      return (void*)GetCurrentAddress();
    }
 
-   uword GetEndingAddress() const override{
-     return GetStartingAddress() + size();
+   int64_t GetSize() const{
+     return size_;
+   }
+
+   uword GetEndingAddress() const{
+     return GetStartingAddress() + GetSize();
+   }
+
+   void* GetEndingAddressPointer() const{
+     return (void*)GetEndingAddress();
    }
 
    bool IsEmpty() const{
      return GetStartingAddress() == GetCurrentAddress();
    }
 
-   void Clear() override{
-     AllocationSection::Clear();
+   bool Contains(uword address) const{
+     return GetStartingAddress() <= address
+         && GetEndingAddress() <= address;
+   }
+
+   void Clear(){
+     memset(GetStartingAddressPointer(), 0, GetSize());
      current_ = start_;
    }
 
-   uword Allocate(int64_t size) override{
-     auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
-     if(!Contains(current_ + total_size)){
-       DLOG(WARNING) << "cannot allocate object of size " << Bytes(size) << " in space.";
+   uword TryAllocate(int64_t size){
+     auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+     if((current_ + total_size) > GetEndingAddress()){
+       DLOG(ERROR) << "cannot allocate object of " << Bytes(total_size) << " in Semispace.";
        return 0;
      }
 
-     auto next = (void*)current_;
+     auto address = current_;
      current_ += total_size;
-     auto ptr = new (next)RawObject();
-     ptr->SetPointerSize(size);
-     return ptr->GetAddress();
+     return address;
    }
 
    void VisitRawObjects(RawObjectVisitor* vis) const{
@@ -188,17 +200,10 @@ namespace poseidon{
    }
 
    int64_t GetNumberOfBytesRemaining() const{
-     return size() - GetNumberOfBytesAllocated();
+     return GetSize() - GetNumberOfBytesAllocated();
    }
 
-   Semispace& operator=(const Semispace& rhs){
-     if(this == &rhs)
-       return *this;
-     start_ = rhs.start_;
-     current_ = rhs.current_;
-     size_ = rhs.size_;
-     return *this;
-   }
+   Semispace& operator=(const Semispace& rhs)= default;
 
    friend bool operator==(const Semispace& lhs, const Semispace& rhs){
      return lhs.size_ == rhs.size_
@@ -215,8 +220,8 @@ namespace poseidon{
    friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
      stream << "Semispace(";
      stream << "start=" << ((void*)space.GetStartingAddress()) << ", ";
-     stream << "allocated=" << Bytes(space.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(space.GetNumberOfBytesAllocated(), space.size()) << "), ";
-     stream << "total_size=" << Bytes(space.size());
+     stream << "allocated=" << Bytes(space.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(space.GetNumberOfBytesAllocated(), space.GetSize()) << "), ";
+     stream << "total_size=" << Bytes(space.GetSize());
      stream << ")";
      return stream;
    }

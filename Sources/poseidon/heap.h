@@ -310,7 +310,7 @@ namespace poseidon{
    }
  };
 
- class Heap : public AllocationSection{
+ class Heap : public Section{
    friend class HeapTest;
    friend class Scavenger;
    friend class Compactor;
@@ -434,13 +434,12 @@ namespace poseidon{
        LOG(ERROR) << "failed to create Heap ThreadLocal: " << strerror(err);
        return;
      }
-     DLOG(INFO) << "initialized Heap ThreadLocal.";
      auto heap = new Heap();
      SetCurrentThreadHeap(heap);//TODO: refactor.
-     DLOG(INFO) << "new-zone: " << (*heap->new_zone());
-     DLOG(INFO) << " - from: " << ((void*)heap->new_zone()->fromspace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
-     DLOG(INFO) << " - to: " << ((void*)heap->new_zone()->tospace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
-     DLOG(INFO) << "old-zone: " << (*heap->old_zone());
+     GCLOG(10) << "new-zone: " << (*heap->new_zone());
+     GCLOG(10) << " - from: " << ((void*)heap->new_zone()->fromspace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
+     GCLOG(10) << " - to: " << ((void*)heap->new_zone()->tospace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
+     GCLOG(10) << "old-zone: " << (*heap->old_zone());
    }
  };
 

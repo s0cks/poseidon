@@ -24,11 +24,11 @@ namespace poseidon{
    return x + 1;
  }
 
- class AllocationSection{
+ class Section{
   protected:
-   AllocationSection() = default;
+   Section() = default;
   public:
-   virtual ~AllocationSection() = default;
+   virtual ~Section() = default;
 
    virtual int64_t size() const = 0;
    virtual uword Allocate(int64_t size) = 0;
@@ -92,14 +92,26 @@ namespace poseidon{
     LOG(INFO) << (Name) << " finished in " << (finish_ts - start_ts) << "."; \
   } while(0);
 
+#ifdef PSDN_DEBUG
+
 #define DTIMED_SECTION(Name, Section) \
- do {                               \
+ do {                                 \
     GCLOG(1) << "starting " << (Name) << "...."; \
-    auto start_ts = Clock::now();    \
-    Section;                         \
-    auto finish_ts = Clock::now();   \
+    auto start_ts = Clock::now();     \
+    Section;                          \
+    auto finish_ts = Clock::now();    \
     GCLOG(1) << (Name) << " finished in " << (finish_ts - start_ts) << "."; \
-  } while(0);
+ } while(0);
+
+#else
+
+#define DTIMED_SECTION(Name, Section) \
+ do {                                 \
+  Section;                            \
+ } while(0);
+
+#endif
+
 }
 
 #endif //POSEIDON_COMMON_H
