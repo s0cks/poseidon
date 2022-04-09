@@ -89,7 +89,6 @@ namespace poseidon{
          uword next;
          if((next = GetNext()) != 0){
            auto ptr = (RawObject*)next;
-           GCLOG(10) << "next: " << ptr->ToString();
            ptr->SetMarkedBit();
          }
        } while(HasWork());

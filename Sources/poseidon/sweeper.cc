@@ -1,8 +1,24 @@
 #include "poseidon/wsq.h"
 #include "poseidon/sweeper.h"
+#include "poseidon/runtime.h"
 #include "poseidon/allocator.h"
+#include "poseidon/task_pool.h"
 
 namespace poseidon{
+ static RelaxedAtomic<bool> sweeping(false);
+
+ bool Sweeper::IsSweeping(){
+   return (bool)sweeping;
+ }
+
+ void Sweeper::SetSweeping(){
+   sweeping = true;
+ }
+
+ void Sweeper::ClearSweeping(){
+   sweeping = false;
+ }
+
  template<bool Parallel>
  class SweeperVisitorBase : public RawObjectPointerVisitor{
   protected:
@@ -15,50 +31,122 @@ namespace poseidon{
    }
  };
 
- class SerialSweeperVisitor : public SweeperVisitorBase<false>{
+ class SerialSweeper : public SweeperVisitorBase<false>{
   protected:
-   OldPage* page_;
-   WorkStealingQueue<uword>* work_;
+
   public:
-   explicit SerialSweeperVisitor(OldPage* page):
-    page_(page),
-    work_(nullptr){
-   }
-   ~SerialSweeperVisitor() override = default;
+   explicit SerialSweeper() = default;
+   ~SerialSweeper() override = default;
 
    bool Visit(RawObject** ptr) override{
      return true;
    }
  };
 
- void Sweeper::SerialSweep(OldPage* page){
-   SerialSweeperVisitor visitor(page);
-//   auto locals = LocalPage::GetLocalPageForCurrentThread();
-//   locals->VisitPointers([&](RawObject** ptr){
-//     auto old_val = (*ptr);
-//     if(old_val->IsNew() && !old_val->IsForwarding()){
-//       auto new_val = (RawObject*)scavenger()->ProcessObject(old_val);
-//       new_val->SetRememberedBit();
-//       (*ptr) = new_val;
-//     }
-//     return true;
-//   });
+ class ParallelSweeper : public SweeperVisitorBase<true>{
+   friend class ParallelSweeperTask;
+  protected:
+   WorkStealingQueue<uword> work_;
+  public:
+   ParallelSweeper():
+    SweeperVisitorBase<true>(),
+    work_(4096){
+   }
+   ~ParallelSweeper() override = default;
+
+   bool Visit(RawObject** ptr) override{
+     return true;
+   }
+ };
+
+ class ParallelSweeperTask : public Task{
+   friend class ParallelSweeperTask;
+  private:
+   ParallelSweeper* sweeper_;
+   WorkStealingQueue<uword>* work_;
+
+   inline ParallelSweeper* sweeper() const{
+     return sweeper_;
+   }
+
+   inline bool HasWork(){
+     return !work_->empty();
+   }
+
+   inline uword GetNext(){
+     return work_->Steal();
+   }
+  public:
+   explicit ParallelSweeperTask(ParallelSweeper* sweeper):
+    Task(),
+    sweeper_(sweeper),
+    work_(&sweeper->work_){
+   }
+   ~ParallelSweeperTask() override = default;
+
+   const char* name() const override{
+     return "ParallelSweeperTask";
+   }
+
+   void Run() override{
+     do{
+       do{
+         uword next;
+         if((next = GetNext()) != 0){
+           auto old_val = (RawObject*)next;
+           DLOG(INFO) << "sweeping " << old_val->ToString() << "....";
+           //TODO: process object
+         }
+       } while(HasWork());
+     } while(Sweeper::IsSweeping());
+   }
+ };
+
+ void Sweeper::SerialSweep(){
+   auto heap = Heap::GetCurrentThreadHeap();
+   auto old_zone = heap->old_zone();
+
+   SerialSweeper sweeper;
+   TIMED_SECTION("SerialSweep", {
+
+   });
  }
 
- class ParallelSweeperVisitor : public SweeperVisitorBase<true>{
-  protected:
-   WorkStealingQueue<uword>* work_;
-  public:
-   ParallelSweeperVisitor() = default;
-   ~ParallelSweeperVisitor() override = default;
+ void Sweeper::ParallelSweep(){
+   auto heap = Heap::GetCurrentThreadHeap();
+   auto old_zone = heap->old_zone();
+   ParallelSweeper sweeper;
 
-   bool Visit(RawObject** ptr) override{
-     return true;
+   //TODO: cleanup this loop.
+   for(auto idx = 0; idx < GetNumberOfWorkers(); idx++)
+     Runtime::GetTaskPool()->Submit(new ParallelSweeperTask(&sweeper));
+
+   TIMED_SECTION("ParallelSweep", {
+     old_zone->VisitPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
+       DLOG(INFO) << "visiting " << (*page) << "....";
+       page->VisitPointers([&](RawObject* raw){
+         if(!raw->IsMarked()){
+           DLOG(INFO) << "sweeping " << raw->ToString();
+         }
+         return true;
+       });
+       return true;
+     });
+   });
+ }
+
+ void Sweeper::Sweep(){
+   if(IsSweeping()){
+     DLOG(WARNING) << "already sweeping.";
+     return;
    }
- };
 
- void Sweeper::Sweep(OldPage* page){
-   DLOG(INFO) << "sweeping " << (*page) << "....";
-   SerialSweep(page);
+   SetSweeping();
+   if(ShouldUseParallelMark()){
+     ParallelSweep();
+   } else{
+     SerialSweep();
+   }
+   ClearSweeping();
  }
 }

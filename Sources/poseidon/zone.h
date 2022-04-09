@@ -281,8 +281,20 @@ namespace poseidon{
      const OldPage* page_;
      uword current_;
 
+     inline uword current_address() const{
+       return current_;
+     }
+
      inline RawObject* current_ptr() const{
-       return (RawObject*)current_;
+       return (RawObject*)current_address();
+     }
+
+     inline uword next_address() const{
+       return current_ + current_ptr()->GetPointerSize();
+     }
+
+     inline RawObject* next_ptr() const{
+       return (RawObject*)next_address();
      }
     public:
      explicit OldPageIterator(const OldPage* page):
@@ -297,11 +309,7 @@ namespace poseidon{
      }
 
      bool HasNext() const override{
-       auto next = current_ptr();
-#ifdef PSDN_DEBUG
-       assert(page()->Contains(next->GetAddress()));
-#endif//PSDN_DEBUG
-       return next->GetPointerSize() > 0;
+       return current_address() < page_->GetEndingAddress() && current_ptr()->GetPointerSize() > 0;
      }
 
      RawObject* Next() override{
@@ -394,7 +402,7 @@ namespace poseidon{
      if((address = free_list_.TryAllocate(total_size)) != 0){
        auto raw_ptr = new ((void*)address)RawObject();
        raw_ptr->SetPointerSize(size);
-       return raw_ptr->GetAddress();
+       return address;
      }
 
      DLOG(ERROR) << "failed to allocate " << Bytes(total_size) << " in " << (*this);
@@ -404,15 +412,20 @@ namespace poseidon{
    void VisitPointers(const std::function<bool(RawObject*)>& vis) const{
      OldPageIterator iter(this);
      while(iter.HasNext()){
-       if(!vis(iter.Next()))
+       auto next = iter.Next();
+       if(next->GetPointerSize() > 0 && !vis(next))
          return;
      }
+   }
+
+   int64_t GetTotalBytesAllocated() const{
+     return GetCurrentAddress() - GetStartingAddress();
    }
 
    OldPage& operator=(const OldPage& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
-     return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.size()) << ")";
+     return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.size()) << ", allocated=" << PrettyPrintPercentage(val.GetTotalBytesAllocated(), val.size()) << ").";
    }
  };
 

@@ -6,15 +6,21 @@
 
 namespace poseidon{
  class Sweeper{
+   friend class SerialSweeper;
+   friend class ParallelSweeperTask;
   private:
-   static void SerialSweep(OldPage* page);
-   static void ParallelSweep(OldPage* page);
+   static void SetSweeping();
+   static void ClearSweeping();
+
+   static void SerialSweep();
+   static void ParallelSweep();
   public:
    Sweeper() = delete;
    Sweeper(const Sweeper& rhs) = delete;
    ~Sweeper() = delete;
 
-   static void Sweep(OldPage* page);
+   static void Sweep();
+   static bool IsSweeping();
 
    Sweeper& operator=(const Sweeper& rhs) = delete;
  };

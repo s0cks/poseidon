@@ -26,6 +26,11 @@ namespace poseidon{
  ShouldUseParallelMark(){
    return GetNumberOfWorkers() > 0;
  }
+
+ static inline bool
+ ShouldUseParallelSweep(){
+   return GetNumberOfWorkers() > 0;
+ }
 }
 
 #endif //POSEIDON_FLAGS_H
