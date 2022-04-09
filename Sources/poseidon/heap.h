@@ -125,26 +125,6 @@ namespace poseidon{
      GCLOG(10) << "old-zone: " << (*heap->old_zone());
    }
  };
-
- class HeapPrinter{
-  public:
-   enum Flags : uint64_t{
-     kNone = 0,
-     kDetailed = 1 << 1,
-     kHexDump = 1 << 2,
-
-#ifdef PSDN_DEBUG
-     kDefault = kDetailed | kHexDump,
-#else
-     kDefault = kNone,
-#endif//PSDN_DEBUG
-   };
-
-   HeapPrinter() = delete;
-   ~HeapPrinter() = delete;
-
-   static void Print(Heap* heap, uint64_t flags = kDefault);
- };
 }
 
 #endif //POSEIDON_HEAP_H
