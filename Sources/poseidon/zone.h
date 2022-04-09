@@ -389,10 +389,16 @@ namespace poseidon{
 
    uword Allocate(int64_t size) override{
      auto total_size = size + static_cast<int64_t>(sizeof(RawObject));
-     auto address = free_list_.TryAllocate(total_size);//TODO: update
-     auto raw_ptr = new ((void*)address)RawObject();
-     raw_ptr->SetPointerSize(size);
-     return raw_ptr->GetAddress();
+
+     uword address;
+     if((address = free_list_.TryAllocate(total_size)) != 0){
+       auto raw_ptr = new ((void*)address)RawObject();
+       raw_ptr->SetPointerSize(size);
+       return raw_ptr->GetAddress();
+     }
+
+     DLOG(ERROR) << "failed to allocate " << Bytes(total_size) << " in " << (*this);
+     return 0;
    }
 
    void VisitPointers(const std::function<bool(RawObject*)>& vis) const{
@@ -487,6 +493,7 @@ namespace poseidon{
          MarkPage(page);
          return result;
        }
+
        page = page->GetNext();
      } while(page != nullptr);
 

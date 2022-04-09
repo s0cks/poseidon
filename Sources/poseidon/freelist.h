@@ -104,9 +104,9 @@ namespace poseidon{
      //TODO: align size
      auto best_fit = FindBestFit(size);
      if(!best_fit){
-       DLOG(ERROR) << "cannot find block of " << Bytes(size) << " in free list.";
        return 0;
      }
+
      if(CanSplit(best_fit, size)){
        auto new_node = Split(best_fit, size);
        InsertAfter(list_, new_node);

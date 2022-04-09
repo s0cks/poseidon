@@ -26,6 +26,8 @@ namespace poseidon{
  void Allocator::MajorCollection(){
    //TODO: collection check.
 
-   Marker::Mark();
+   TIMED_SECTION("MajorCollection", {
+     Marker::MarkAllLiveObjects();
+   });
  }
 }

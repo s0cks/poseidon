@@ -1,10 +1,24 @@
 #include "poseidon/flags.h"
 #include "poseidon/local.h"
 #include "poseidon/marker.h"
+#include "poseidon/runtime.h"
+#include "poseidon/task_pool.h"
 #include "poseidon/raw_object.h"
 
 namespace poseidon{
- static RelaxedAtomic<bool> marking_(false);
+ static RelaxedAtomic<bool> marking(false);
+
+ bool Marker::IsMarking(){
+   return (bool)marking;
+ }
+
+ void Marker::SetMarking(){
+   marking = true;
+ }
+
+ void Marker::ClearMarking(){
+   marking = false;
+ }
 
  template<bool Parallel>
  class MarkerVisitorBase : public RawObjectPointerVisitor{
@@ -46,40 +60,116 @@ namespace poseidon{
    }
  };
 
- void Marker::SerialMark(){
-   SerialMarkerVisitor visitor;
-   visitor.MarkAll();
- }
+ class ParallelMarker;
+ class ParallelMarkerTask : public Task{
+   friend class ParallelMarker;
+  private:
+   ParallelMarker* marker_;
 
- class ParallelMarkerVisitor : public MarkerVisitorBase<true>{
+   inline ParallelMarker* marker() const{
+     return marker_;
+   }
+
+   inline bool HasWork() const;
+   inline uword GetNext();
   public:
-   ParallelMarkerVisitor() = default;
-   ~ParallelMarkerVisitor() override = default;
+   explicit ParallelMarkerTask(ParallelMarker* marker):
+    Task(),
+    marker_(marker){
+   }
+   ~ParallelMarkerTask() override = default;
+
+   const char* name() const override{
+     return "ParallelMarkerTask";
+   }
+
+   void Run() override{
+     do{
+       do{
+         uword next;
+         if((next = GetNext()) != 0){
+           auto ptr = (RawObject*)next;
+           GCLOG(10) << "next: " << ptr->ToString();
+           ptr->SetMarkedBit();
+         }
+       } while(HasWork());
+     } while(Marker::IsMarking());
+   }
+ };
+
+ class ParallelMarker : public MarkerVisitorBase<true>{
+   friend class ParallelMarkerTask;
+  private:
+   WorkStealingQueue<uword> work_;
+
+   inline WorkStealingQueue<uword>& work(){
+     return work_;
+   }
+
+   void MarkRoots(){
+     auto locals = LocalPage::GetLocalPageForCurrentThread();
+     while(locals != nullptr){
+       locals->VisitPointers(this);
+       locals = locals->GetNext();
+     }
+   }
+  public:
+   ParallelMarker() = default;
+   ~ParallelMarker() override = default;
 
    bool Visit(RawObject** ptr) override{
-     NOT_IMPLEMENTED(ERROR);
+     auto old_val = (*ptr);
+     if(old_val->IsOld() && !old_val->IsMarked() && !old_val->IsForwarding()){
+       GCLOG(10) << "pushing " << old_val->ToString();
+       work_.Push(old_val->GetAddress());
+     }
      return true;
    }
 
    void MarkAll(){
-     NOT_IMPLEMENTED(ERROR);
+     MarkRoots();
    }
  };
 
+ uword ParallelMarkerTask::GetNext(){
+   return marker()->work().Steal();
+ }
+
+ bool ParallelMarkerTask::HasWork() const{
+   return !marker()->work().empty();
+ }
+
+ void Marker::SerialMark(){
+   SerialMarkerVisitor marker;
+   TIMED_SECTION("SerialMark", {
+     marker.MarkAll();
+   });
+ }
+
  void Marker::ParallelMark(){
-   ParallelMarkerVisitor visitor;
-   visitor.MarkAll();
+   ParallelMarker marker;
+
+   //TODO: cleanup this loop
+   for(auto idx = 0; idx < GetNumberOfWorkers(); idx++)
+     Runtime::GetTaskPool()->Submit(new ParallelMarkerTask(&marker));
+
+   TIMED_SECTION("ParallelMark", {
+     marker.MarkAll();
+   });
  }
 
- bool Marker::IsMarking(){
-   return (bool)marking_;
- }
+ void Marker::MarkAllLiveObjects(){
+   if(IsMarking()){
+     DLOG(WARNING) << "already marking.";
+     return;
+   }
 
- void Marker::SetMarking(){
-   marking_ = true;
- }
-
- void Marker::ClearMarking(){
-   marking_ = false;
+   SetMarking();
+   if(ShouldUseParallelMark()){
+     ParallelMark();
+   } else{
+     SerialMark();
+   }
+   ClearMarking();
  }
 }

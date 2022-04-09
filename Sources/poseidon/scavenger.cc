@@ -11,6 +11,18 @@
 namespace poseidon{
  static RelaxedAtomic<bool> scavenging(false);
 
+ bool Scavenger::IsScavenging(){
+   return (bool)scavenging;
+ }
+
+ void Scavenger::SetScavenging(){
+   scavenging = true;
+ }
+
+ void Scavenger::ClearScavenging(){
+   scavenging = false;
+ }
+
  template<bool Parallel>
  class ScavengerVisitorBase : public RawObjectPointerVisitor{
   protected:
@@ -262,16 +274,13 @@ namespace poseidon{
    return scavenger()->ProcessObject(raw);
  }
 
- bool Scavenger::IsScavenging(){
-   return (bool)scavenging;
- }
+ void Scavenger::SerialScavenge(){
+   auto heap = Heap::GetCurrentThreadHeap();
+   SerialScavengerVisitor visitor(heap);
 
- void Scavenger::SetScavenging(){
-   scavenging = true;
- }
-
- void Scavenger::ClearScavenging(){
-   scavenging = false;
+   DTIMED_SECTION("SerialScavenge", {
+     visitor.ScavengeMemory();
+   });
  }
 
  void Scavenger::ParallelScavenge(){
@@ -283,15 +292,6 @@ namespace poseidon{
      Runtime::GetTaskPool()->Submit(new ParallelScavengerTask(&visitor));
 
    DTIMED_SECTION("ParallelScavenge", {
-     visitor.ScavengeMemory();
-   });
- }
-
- void Scavenger::SerialScavenge(){
-   auto heap = Heap::GetCurrentThreadHeap();
-   SerialScavengerVisitor visitor(heap);
-
-   DTIMED_SECTION("SerialScavenge", {
      visitor.ScavengeMemory();
    });
  }

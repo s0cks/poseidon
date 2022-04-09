@@ -17,25 +17,7 @@ namespace poseidon{
    ~Marker() = delete;
 
    static bool IsMarking();
-
-   static void Mark(){
-     if(IsMarking()){
-       DLOG(WARNING) << "already marking.";
-       return;
-     }
-
-     SetMarking();
-     if(false){
-       TIMED_SECTION("ParallelMark", {
-         ParallelMark();
-       });
-     } else{
-       TIMED_SECTION("SerialMark", {
-         SerialMark();
-       });
-     }
-     ClearMarking();
-   }
+   static void MarkAllLiveObjects();
 
    Marker& operator=(const Marker& rhs) = delete;
  };

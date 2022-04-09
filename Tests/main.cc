@@ -65,6 +65,12 @@ int main(int argc, char** argv){
 
   Allocator::MinorCollection();
   Allocator::MinorCollection();
+
+  for(auto idx = 0; idx < kNumberOfGarbage; idx++){
+    auto v = (RawObject*)Heap::GetCurrentThreadHeap()->old_zone()->Allocate(sizeof(word));
+    *((word*)v->GetPointer()) = idx;
+  }
+
   Allocator::MajorCollection();
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
