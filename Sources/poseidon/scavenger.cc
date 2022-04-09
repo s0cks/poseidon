@@ -118,36 +118,65 @@ namespace poseidon{
    }
  };
 
- class SerialScavengerVisitor : public ScavengerVisitorBase<false>{
+ class SerialScavenger : public ScavengerVisitorBase<false>{
   private:
-   std::deque<uword> work_;
-
-   inline bool
-   HasWork() const{
-     return !work_.empty();
+   void ProcessLocals(){
+     TIMED_SECTION("ProcessLocals", {
+       auto locals = LocalPage::GetLocalPageForCurrentThread();
+       locals->VisitPointers([&](RawObject** ptr){
+         auto old_val = (*ptr);
+         if(old_val->IsNew() && !old_val->IsForwarding()){
+           auto new_val = (RawObject*)ProcessObject(old_val);
+           new_val->SetRememberedBit();
+           (*ptr) = new_val;
+         }
+         return true;
+       });
+     });
    }
 
    void ProcessRoots() override{
-     auto locals = LocalPage::GetLocalPageForCurrentThread();
-     locals->VisitPointers([&](RawObject** ptr){
-       auto old_val = (*ptr);
-       if(old_val->IsNew() && !old_val->IsForwarding()){
-         auto new_val = (RawObject*)ProcessObject(old_val);
-         new_val->SetRememberedBit();
-         (*ptr) = new_val;
-       }
-       return true;
+     TIMED_SECTION("ProcessRoots", {
+       ProcessLocals();
+       //TODO: process old to new references
      });
    }
 
    void ProcessToSpace() override{
+     TIMED_SECTION("ProcessToSpace", {
+       zone_->VisitObjectPointers([&](RawObject* val){
+         if(val->IsForwarding()){
+           DLOG(INFO) << "scavenged " << val->ToString();
+         } else{
+           DLOG(INFO) << "freeing " << val->ToString();
+         }
+         return true;
+       });
+     });
+   }
 
+   inline void ProcessAll(){
+     ProcessRoots();
+     ProcessToSpace();
+   }
+
+   void NotifyLocals(){
+     DTIMED_SECTION("NotifyLocals", {
+       auto locals = LocalPage::GetLocalPageForCurrentThread();
+       locals->VisitPointers([&](RawObject** ptr){
+         auto old_val = (*ptr);
+         if(old_val->IsNew() && old_val->IsForwarding()){
+           (*ptr) = (RawObject*)old_val->GetForwardingAddress();
+         }
+         return true;
+       });
+     });
    }
   public:
-   explicit SerialScavengerVisitor(Heap* heap):
+   explicit SerialScavenger(Heap* heap):
      ScavengerVisitorBase<false>(heap){
    }
-   ~SerialScavengerVisitor() override = default;
+   ~SerialScavenger() override = default;
 
    bool Visit(RawObject** ptr) override{
      return true;
@@ -155,8 +184,9 @@ namespace poseidon{
 
    void ScavengeMemory(){
      SwapSpaces();
-     ProcessRoots();
-     ProcessToSpace();
+
+     ProcessAll();
+     NotifyLocals();
 
 #ifdef PSDN_DEBUG
      ClearFromSpace();
@@ -164,20 +194,20 @@ namespace poseidon{
    }
  };
 
- class ParallelScavengerVisitor;
+ class ParallelScavenger;
  class ParallelScavengerTask : public Task{
-   friend class ParallelScavengerVisitor;
+   friend class ParallelScavenger;
   private:
-   ParallelScavengerVisitor* scavenger_;
+   ParallelScavenger* scavenger_;
 
-   inline ParallelScavengerVisitor* scavenger(){
+   inline ParallelScavenger* scavenger(){
      return scavenger_;
    }
 
    uword GetNext();
    uword ProcessObject(RawObject* raw);
   public:
-   explicit ParallelScavengerTask(ParallelScavengerVisitor* scavenger):
+   explicit ParallelScavengerTask(ParallelScavenger* scavenger):
     Task(),
     scavenger_(scavenger){
    }
@@ -203,7 +233,7 @@ namespace poseidon{
    }
  };
 
- class ParallelScavengerVisitor : public ScavengerVisitorBase<true>{
+ class ParallelScavenger : public ScavengerVisitorBase<true>{
    friend class ParallelScavengerTask;
   protected:
    WorkStealingQueue<uword> work_;
@@ -233,16 +263,16 @@ namespace poseidon{
 
    void ProcessToSpace() override{
      TIMED_SECTION("ProcessToSpace", {
-       auto locals = LocalPage::GetLocalPageForCurrentThread();
-       locals->VisitPointers([&](RawObject** val){
-         auto old_val = (*val);
-         if(old_val && old_val->IsForwarding()){
-           auto new_val = (RawObject*)old_val->GetForwardingAddress();
-           GCLOG(3) << "forwarding " << (val) << " to " << new_val->ToString();
-           (*val) = (RawObject*)old_val->GetForwardingAddress();
+       auto address = to_.GetStartingAddress();
+       while(address < to_.GetEndingAddress() && ((RawObject*)address)->GetPointerSize() > 0){
+         auto ptr = (RawObject*)address;
+         if(!ptr->IsForwarding() && !ptr->IsRemembered()){
+           DLOG(INFO) << "freed " << ptr->ToString();
+         } else{
+           DLOG(INFO) << "scavenged " << ptr->ToString();
          }
-         return true;
-       });
+         address += ptr->GetTotalSize();
+       }
      });
    }
 
@@ -264,11 +294,11 @@ namespace poseidon{
      });
    }
   public:
-   explicit ParallelScavengerVisitor(Heap* heap):
+   explicit ParallelScavenger(Heap* heap):
      ScavengerVisitorBase<true>(heap),
      work_(4096){
    }
-   ~ParallelScavengerVisitor() override = default;
+   ~ParallelScavenger() override = default;
 
    bool Visit(RawObject** ptr) override{
      auto old_val = (*ptr);
@@ -303,7 +333,7 @@ namespace poseidon{
 
  void Scavenger::SerialScavenge(){
    auto heap = Heap::GetCurrentThreadHeap();
-   SerialScavengerVisitor visitor(heap);
+   SerialScavenger visitor(heap);
 
    TIMED_SECTION("SerialScavenge", {
      visitor.ScavengeMemory();
@@ -312,7 +342,7 @@ namespace poseidon{
 
  void Scavenger::ParallelScavenge(){
    auto heap = Heap::GetCurrentThreadHeap();
-   ParallelScavengerVisitor visitor(heap);
+   ParallelScavenger visitor(heap);
 
    //TODO: cleanup this loop
    for(auto idx = 0; idx < GetNumberOfWorkers(); idx++)

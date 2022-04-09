@@ -12,15 +12,6 @@ namespace poseidon{//TODO: clean-up this code
      slot_ = page->GetFirstLocalSlotAvailable();
  }
 
- void LocalPage::VisitObjects(RawObjectVisitor* vis) const{
-   LocalPageIterator iter(this);
-   while(iter.HasNext()){
-     auto next = iter.Next();
-     if(!vis->Visit(next))
-       return;
-   }
- }
-
  void LocalPage::VisitObjects(const std::function<bool(RawObject*)>& vis) const{
    LocalPageIterator iter(this);
    while(iter.HasNext()){
@@ -28,6 +19,10 @@ namespace poseidon{//TODO: clean-up this code
      if(!vis(next))
        return;
    }
+ }
+
+ void LocalPage::VisitObjects(RawObjectVisitor* vis) const{
+   return VisitObjects(std::bind(&RawObjectVisitor::Visit, vis, std::placeholders::_1));
  }
 
  void LocalPage::VisitPointers(RawObjectPointerVisitor* vis) const{

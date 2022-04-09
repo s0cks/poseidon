@@ -10,7 +10,7 @@
 namespace poseidon{
  class Scavenger{
    friend class ParallelScavengerTask;
-   friend class SerialScavengerVisitor;
+   friend class SerialScavenger;
   private:
    static void SetScavenging();
    static void ClearScavenging();
