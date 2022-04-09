@@ -9,13 +9,13 @@ namespace poseidon{
 
  uword Heap::AllocateNewObject(int64_t size){
    RawObject* val = nullptr;
-   if((val = (RawObject*)new_zone()->Allocate(size)) != nullptr)
+   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << Bytes(size) << ".";
    //TODO: free memory from new_zone()
 
-   if((val = (RawObject*)new_zone()->Allocate(size)) != nullptr)
+   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    LOG(FATAL) << "cannot allocate new object of " << Bytes(size) << "!";

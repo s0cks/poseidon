@@ -8,7 +8,6 @@
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
- class NewPage;
  class Zone{
    friend class Scavenger;
   private:
@@ -97,11 +96,6 @@ namespace poseidon{
     size_(size){
    }
 
-   /**
-    * Copy-Constructor.
-    *
-    * @param rhs The {@link Zone} to copy.
-    */
    Zone(const Zone& rhs) = default;
    virtual ~Zone() = default;
 
@@ -138,26 +132,12 @@ namespace poseidon{
          && GetEndingAddress() >= address;
    }
 
-   /**
-    * Allocates a new object of size bytes in the from_ Semispace of this Zone.
-    *
-    * @param size The size of the new object to allocate
-    * @return A pointer to the beginning of the object and i's header
-    */
-   uword TryAllocate(int64_t size);
-
    void VisitObjectPointers(RawObjectVisitor* vis) const;
    void VisitObjectPointers(const std::function<bool(RawObject*)>& vis) const;
    void VisitMarkedObjectPointers(RawObjectVisitor* vis) const;
    void VisitMarkedObjectPointers(const std::function<bool(RawObject*)>& vis) const;
 
-   Zone& operator=(const Zone& rhs){
-     if(this == &rhs)
-       return *this;
-     start_ = rhs.GetStartingAddress();
-     size_ = rhs.GetSize();
-     return *this;
-   }
+   Zone& operator=(const Zone& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const Zone& zone){
      stream << "Zone(";
@@ -168,7 +148,7 @@ namespace poseidon{
    }
  };
 
- class NewZone : public Zone{
+ class NewZone : public Zone{//TODO: pages?
   public:
    static inline int64_t
    CalculateSemispaceSize(int64_t zone_size){
@@ -179,7 +159,12 @@ namespace poseidon{
    uword tospace_;
    int64_t semisize_;
   public:
-   NewZone() = default;
+   NewZone():
+    Zone(),
+    fromspace_(0),
+    tospace_(0),
+    semisize_(0){
+   }
    NewZone(uword start, int64_t size):
     Zone(start, size),
     fromspace_(start),
@@ -190,10 +175,6 @@ namespace poseidon{
      NewZone(region->GetStartingAddress() + offset, size){
    }
    ~NewZone() override = default;
-
-   int64_t GetNumberOfBytesAllocated() const{
-     return static_cast<int64_t>(GetCurrentAddress() - Zone::GetStartingAddress());
-   }
 
    uword tospace() const{
      return tospace_;
@@ -217,32 +198,19 @@ namespace poseidon{
      current_ = fromspace_;
    }
 
-   uword Allocate(int64_t size){
-     auto total_size = size + sizeof(RawObject);
-     if((current_ + total_size) > (fromspace_ + tospace_)){
-       return 0;//TODO: collect memory
-     }
+   /**
+    * Allocates a new object of size bytes in the from_ Semispace of this Zone.
+    *
+    * @param size The size of the new object to allocate
+    * @return A pointer to the beginning of the object and i's header
+    */
+   uword TryAllocate(int64_t size);
 
-     if((current_ + total_size) > (fromspace_ + tospace_)){
-       LOG(FATAL) << "insufficient memory.";
-       return 0;
-     }
-
-     auto next = (void*)current_;
-     current_ += total_size;
-     auto ptr = new (next)RawObject();
-     ptr->SetPointerSize(size);
-     return ptr->GetAddress();
+   int64_t GetNumberOfBytesAllocated() const{
+     return static_cast<int64_t>(GetCurrentAddress() - Zone::GetStartingAddress());
    }
 
-   NewZone& operator=(const NewZone& rhs){
-     if(this == &rhs)
-       return *this;
-     Zone::operator=(rhs);
-     fromspace_ = rhs.fromspace_;
-     tospace_ = rhs.tospace_;
-     return *this;
-   }
+   NewZone& operator=(const NewZone& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){
      return stream << (Zone&)val;

@@ -1,20 +1,6 @@
 #include "poseidon/zone.h"
 
 namespace poseidon{
- uword Zone::TryAllocate(int64_t size){
-   auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
-   if(!Contains(current_ + total_size)){
-     DLOG(WARNING) << "cannot allocate object of size " << Bytes(size) << " in space.";
-     return 0;
-   }
-
-   auto next = (void*)current_;
-   current_ += total_size;
-   auto ptr = new (next)RawObject();
-   ptr->SetPointerSize(size);
-   return ptr->GetAddress();
- }
-
  void Zone::VisitObjectPointers(RawObjectVisitor* vis) const{
    ZoneIterator it(this);
    while(it.HasNext()){
@@ -45,5 +31,23 @@ namespace poseidon{
      if(!vis(it.Next()))
        return;
    }
+ }
+
+ uword NewZone::TryAllocate(int64_t size){
+   auto total_size = size + sizeof(RawObject);
+   if((current_ + total_size) > (fromspace_ + tospace_)){
+     return 0;//TODO: collect memory
+   }
+
+   if((current_ + total_size) > (fromspace_ + tospace_)){
+     LOG(FATAL) << "insufficient memory.";
+     return 0;
+   }
+
+   auto next = (void*)current_;
+   current_ += total_size;
+   auto ptr = new (next)RawObject();
+   ptr->SetPointerSize(size);
+   return ptr->GetAddress();
  }
 }

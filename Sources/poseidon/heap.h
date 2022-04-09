@@ -8,8 +8,6 @@
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
- static constexpr const uint64_t kNewZonePageSize = 256 * 1024;
-
  static inline int64_t
  GetNewZoneSize(){
    return FLAGS_new_zone_size;
