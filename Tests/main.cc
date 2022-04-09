@@ -17,6 +17,15 @@ namespace poseidon{
    handle = raw_ptr->GetAddress();
    return handle;
  }
+
+ static inline Local<uword>
+ AllocateLargeObject(int64_t size){
+   auto raw_ptr = (RawObject*)Allocator::Allocate(sizeof(uint8_t) * size);
+
+   Local<uword> handle;
+   handle = raw_ptr->GetAddress();
+   return handle;
+ }
 }
 
 int main(int argc, char** argv){
@@ -38,17 +47,27 @@ int main(int argc, char** argv){
   auto h1 = AllocateWord(100);
   auto h2 = AllocateWord(1000);
   auto h3 = AllocateWord(10);
+
+  auto l1 = AllocateLargeObject(128 * kKB);
+  (*((uword*)l1.Get())) = 10;
+
+  auto l2 = AllocateLargeObject(128 * kKB);
+  (*((uword*)l2.Get())) = 1000;
+
   DLOG(INFO) << "h1 (before): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (before): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";
   DLOG(INFO) << "h3 (before): " << (*h3.Get()) << " (" << h3.raw()->ToString() << ").";
   DLOG(INFO) << "v1 (before): " << (*((word*)v1->GetPointer())) << " (" << v1->ToString() << ").";
   DLOG(INFO) << "v2 (before): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
+  DLOG(INFO) << "l1 (before): " << (*l1.Get()) << " (" << l1.raw()->ToString() << ").";
+  DLOG(INFO) << "l2 (before): " << (*l2.Get()) << " (" << l2.raw()->ToString() << ").";
 
-  static constexpr const int64_t kNumberOfRoots = 128;
+  static constexpr const int64_t kNumberOfRoots = 32;
   static constexpr const int64_t kNumberOfGarbage = 65546;
 
   for(auto idx = 0; idx < kNumberOfRoots; idx++){
     auto r = AllocateWord(idx);
+    auto l = AllocateLargeObject(32 * kKB);
   }
 
   for(auto idx = 0; idx < kNumberOfGarbage; idx++){
@@ -70,6 +89,8 @@ int main(int argc, char** argv){
   DLOG(INFO) << "h3 (after): " << (*h3.Get()) << " (" << h3.raw()->ToString() << ").";
   DLOG(INFO) << "v1 (after): " << (*((word*)v1->GetPointer())) << " (" << v1->ToString() << ").";
   DLOG(INFO) << "v2 (after): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
+  DLOG(INFO) << "l1 (after): " << (*l1.Get()) << " (" << l1.raw()->ToString() << ").";
+  DLOG(INFO) << "l2 (after): " << (*l2.Get()) << " (" << l2.raw()->ToString() << ").";
 
 //  auto raw_ptr = (RawObject*)Allocator::Allocate(sizeof(uword));
 //  (*((uword*)raw_ptr->GetPointer())) = 100;

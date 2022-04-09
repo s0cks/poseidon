@@ -363,7 +363,7 @@ namespace poseidon{
        return address;
      }
 
-     DLOG(ERROR) << "failed to allocate " << Bytes(total_size) << " in " << (*this);
+     GCLOG(1) << "failed to allocate " << Bytes(total_size) << " in " << (*this);
      return 0;
    }
 

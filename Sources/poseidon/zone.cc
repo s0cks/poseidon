@@ -1,4 +1,5 @@
 #include "poseidon/zone.h"
+#include "poseidon/allocator.h"
 
 namespace poseidon{
  void Zone::VisitObjectPointers(RawObjectVisitor* vis) const{
@@ -36,7 +37,11 @@ namespace poseidon{
  uword NewZone::TryAllocate(int64_t size){
    auto total_size = size + sizeof(RawObject);
    if((current_ + total_size) > (fromspace_ + tospace_)){
-     return 0;//TODO: collect memory
+     Allocator::MinorCollection();
+     if((current_ + total_size) > (fromspace_ + tospace_)){
+       DLOG(ERROR) << "failed to allocate object of " << Bytes(total_size) << " in new zone after, scavenging it.";//TODO: better error handling.
+       return 0;
+     }
    }
 
    if((current_ + total_size) > (fromspace_ + tospace_)){

@@ -135,7 +135,6 @@ namespace poseidon{
          auto new_val = (RawObject*)ProcessObject(old_val);
          new_val->SetRememberedBit();
          (*ptr) = new_val;
-         DLOG(INFO) << "set " << (*ptr) << " to " << new_val->ToString();
        }
        return true;
      });
