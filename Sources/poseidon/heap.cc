@@ -42,16 +42,7 @@ finish_allocation:
 
    // 4. Try Pages w/ Grow
    {
-     auto page = GetCurrentPage();
-     while(page != nullptr){
-       if((val = page->Allocate(size)) != nullptr)
-         goto finish_allocation;
-       page = page->next();
-     }
-
-     page = CreateNewHeapPage(page);
-     if((val = page->Allocate(size)) != nullptr)
-       goto finish_allocation;
+     //TODO: allocate using pages, with growth
    }
 
    // 5. Crash
@@ -76,23 +67,6 @@ finish_allocation:
      return AllocateLargeObject(size);
    }
    return AllocateNewObject(size);
- }
-
- RawObject* HeapPage::Allocate(uint64_t size){
-   uint64_t total_size = sizeof(RawObject) + size;
-   if((current_ + total_size) > GetEndingAddress()){
-     DLOG(WARNING) << "cannot allocate object of size " << Bytes(size) << " in " << Bytes(region_.size()) << " heap page.";
-     return nullptr;
-   }
-
-   uword paddress = current_;
-   current_ += total_size;
-   void* ptr = (void*)paddress;
-   memset(ptr, 0, total_size);
-   auto raw = new (ptr)RawObject();
-   raw->SetPointerSize(size);
-   raw->SetOldBit();
-   return raw;
  }
 
  static inline bool

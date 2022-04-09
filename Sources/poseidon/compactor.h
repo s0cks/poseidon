@@ -69,9 +69,9 @@ namespace poseidon{
      return CopyObject(val, (RawObject*)next_address);
    }
   public:
-   explicit Compactor(HeapPage* page):
+   explicit Compactor(OldPage* page):
     start_(page->GetStartingAddress()),
-    size_(page->size()),
+    size_(page->GetSize()),
     live_(page->GetStartingAddress()),
     free_(page->GetStartingAddress()){
    }
