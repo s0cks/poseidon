@@ -63,7 +63,7 @@ namespace poseidon{
 
    inline uword PromoteObject(RawObject* raw){
      GCLOG(1) << "promoting " << raw->ToString() << " to new zone.";
-     auto new_ptr = (RawObject*)promotion_->Allocate(raw->GetPointerSize());
+     auto new_ptr = (RawObject*)promotion_->TryAllocate(raw->GetPointerSize());
      CopyObject(raw, new_ptr);
      new_ptr->SetOldBit();
 //TODO:

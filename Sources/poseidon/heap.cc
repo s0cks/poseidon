@@ -30,14 +30,14 @@ finish_allocation:
    RawObject* val = nullptr;
 
    // 1. Try Allocation
-   if((val = (RawObject*)old_zone()->Allocate(size)) != nullptr)
+   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 2. Try Major Collection
    //TODO: free memory from old_zone
 
    // 3. Try Allocation Again
-   if((val = (RawObject*)old_zone()->Allocate(size)) != nullptr)
+   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 4. Try Pages w/ Grow
@@ -67,7 +67,7 @@ finish_allocation:
    return AllocateOldObject(size);//TODO: refactor
  }
 
- uword Heap::Allocate(int64_t size){
+ uword Heap::TryAllocate(int64_t size){
    if(size < kWordSize)
      size = kWordSize;
 
@@ -148,32 +148,5 @@ finish_allocation:
    char result[max_length];
    memset(result, c, max_length);
    return {result, max_length};
- }
-
-// static inline std::string
-// GetHexForRegion(const MemoryRegion& region){
-//   static const char* kHexAlphabet = "0123456789ABCDEF";
-//   char data[region.GetSize() * 2];
-//
-//   int index = 0;
-//   for(auto it = region.bytes_begin(); it != region.bytes_end(); it++){
-//     data[index] = kHexAlphabet[(*it) >> 4];
-//     data[index + 1] = kHexAlphabet[(*it) & 0x0F];
-//     index += 2;
-//   }
-//   return {data, region.GetSize() * 2};
-// }
-
- void HeapPrinter::Print(Heap* heap, uint64_t flags){
-   LOG(INFO) << CreateHeader("Heap Dump");
-   if(HasDetailedFlag(flags)){
-     LOG(INFO) << "* Starting Address: " << ((void*) heap->GetStartingAddress());
-     LOG(INFO) << "*   Ending Address: " << ((void*) heap->GetEndingAddress());
-   }
-
-   if((flags & kHexDump) == kHexDump){
-     DLOG(INFO) << "Allocated: ";
-   }
-   LOG(INFO) << CreateFooter();
  }
 }

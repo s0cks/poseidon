@@ -310,7 +310,7 @@ namespace poseidon{
    }
  };
 
- class Heap : public Section{
+ class Heap{
    friend class HeapTest;
    friend class Scavenger;
    friend class Compactor;
@@ -375,18 +375,18 @@ namespace poseidon{
     Heap(region, new NewZone(region, 0, GetNewZoneSize()), new OldZone(region, GetNewZoneSize())){
    }
    Heap(const Heap& rhs) = default;
-   ~Heap() override = default;
+   virtual ~Heap() = default;
 
    const MemoryRegion* region() const{
      return region_;
    }
 
-   int64_t size() const override{
-     return static_cast<int64_t>(region_->size());
+   uword GetStartingAddress() const{
+     return region_->GetStartingAddress();
    }
 
-   uword GetStartingAddress() const override{
-     return region_->GetStartingAddress();
+   uword GetEndingAddress() const{
+     return region_->GetEndingAddress();
    }
 
    NewZone* new_zone() const{
@@ -405,7 +405,7 @@ namespace poseidon{
      }
    }
 
-   uword Allocate(int64_t size) override;
+   uword TryAllocate(int64_t size);
 
    Heap& operator=(const Heap& rhs) = delete;
 

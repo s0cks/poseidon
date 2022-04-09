@@ -14,7 +14,7 @@ namespace poseidon{
 
  TEST(NewPageTest, Test){
    auto heap = new Heap();
-   auto val = (RawObject*)heap->Allocate(sizeof(uword));
+   auto val = (RawObject*)heap->TryAllocate(sizeof(uword));
    DLOG(INFO) << "val: " << val->ToString();
  }
 }

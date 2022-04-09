@@ -52,7 +52,7 @@ namespace poseidon{
    EXPECT_CALL(new_zone_, Allocate(_))
     .WillRepeatedly(AllocateNewObjectUsingSystem);
 
-   auto val = (RawObject*)heap()->Allocate(sizeof(word));
+   auto val = (RawObject*)heap()->TryAllocate(sizeof(word));
 
    ASSERT_EQ(val->GetPointerSize(), kWordSize);
    ASSERT_TRUE(val->IsNew());
@@ -68,7 +68,7 @@ namespace poseidon{
      .WillOnce(FailAllocation)
      .WillRepeatedly(AllocateNewObjectUsingSystem);
 
-   auto val = (RawObject*)heap()->Allocate(sizeof(word));
+   auto val = (RawObject*)heap()->TryAllocate(sizeof(word));
 
    ASSERT_EQ(val->GetPointerSize(), kWordSize);
    ASSERT_TRUE(val->IsNew());

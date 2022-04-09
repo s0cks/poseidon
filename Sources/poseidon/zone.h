@@ -9,7 +9,7 @@
 
 namespace poseidon{
  class NewPage;
- class Zone : public Section{
+ class Zone{
    friend class Scavenger;
   private:
    class ZoneIterator : public RawObjectPointerIterator{
@@ -79,10 +79,11 @@ namespace poseidon{
    uword current_;
    int64_t size_;
   public:
-   /**
-    * Create an empty {@link Zone}.
-    */
-   Zone() = default;
+   Zone():
+    start_(0),
+    current_(0),
+    size_(0){
+   }
 
    /**
     * Create a {@link Zone} with the specified starting address and size.
@@ -96,19 +97,23 @@ namespace poseidon{
     size_(size){
    }
 
-   Zone(const Zone& rhs) = default; // Copy-Constructor
-   ~Zone() override = default; // Destructor
-
    /**
-    * Returns the address of the beginning of this {@link Zone}.
+    * Copy-Constructor.
     *
-    * @return The address of the beginning of this {@link Zone}.
+    * @param rhs The {@link Zone} to copy.
     */
-   uword GetStartingAddress() const override{
+   Zone(const Zone& rhs) = default;
+   virtual ~Zone() = default;
+
+   uword GetStartingAddress() const{
      return start_;
    }
 
-   int64_t size() const override{
+   void* GetStartingAddressPointer() const{
+     return (void*)GetStartingAddress();
+   }
+
+   int64_t GetSize() const{
      return size_;
    }
 
@@ -120,71 +125,44 @@ namespace poseidon{
      return (void*)GetCurrentAddress();
    }
 
-   void VisitRawObjects(RawObjectVisitor* vis) const{//TODO: document
-     ZoneIterator iter(this);
-     while(iter.HasNext()){
-       if(!vis->Visit(iter.Next()))
-         return;
-     }
+   uword GetEndingAddress() const{
+     return GetStartingAddress() + GetSize();
    }
 
-   void VisitRawObjects(const std::function<bool(RawObject*)>& vis) const{//TODO: document
-     ZoneIterator iter(this);
-     while(iter.HasNext()){
-       if(!vis(iter.Next()))
-         return;
-     }
+   void* GetEndingAddressPointer() const{
+     return (void*)GetEndingAddress();
    }
 
-   void VisitMarkedRawObjects(RawObjectVisitor* vis) const{//TODO: document
-     ZoneIterator iter(this);
-     while(iter.HasNext()){
-       if(!vis->Visit(iter.Next()))
-         return;
-     }
-   }
-
-   void VisitMarkedRawObjects(const std::function<bool(RawObject*)>& vis) const{//TODO: document
-     ZoneIterator iter(this);
-     while(iter.HasNext()){
-       auto next = iter.Next();
-       if(next->IsMarked() && !vis(next))
-         return;
-     }
+   bool Contains(uword address) const{
+     return GetStartingAddress() <= address
+         && GetEndingAddress() >= address;
    }
 
    /**
-    * Allocates a new object of {@param size} bytes in the from_ {@link Semispace} of this {@link Zone}.
+    * Allocates a new object of size bytes in the from_ Semispace of this Zone.
     *
     * @param size The size of the new object to allocate
     * @return A pointer to the beginning of the object and i's header
     */
-   uword Allocate(int64_t size) override{
-     auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
-     if(!Contains(current_ + total_size)){
-       DLOG(WARNING) << "cannot allocate object of size " << Bytes(size) << " in space.";
-       return 0;
-     }
+   uword TryAllocate(int64_t size);
 
-     auto next = (void*)current_;
-     current_ += total_size;
-     auto ptr = new (next)RawObject();
-     ptr->SetPointerSize(size);
-     return ptr->GetAddress();
-   }
+   void VisitObjectPointers(RawObjectVisitor* vis) const;
+   void VisitObjectPointers(const std::function<bool(RawObject*)>& vis) const;
+   void VisitMarkedObjectPointers(RawObjectVisitor* vis) const;
+   void VisitMarkedObjectPointers(const std::function<bool(RawObject*)>& vis) const;
 
    Zone& operator=(const Zone& rhs){
      if(this == &rhs)
        return *this;
      start_ = rhs.GetStartingAddress();
-     size_ = rhs.size();
+     size_ = rhs.GetSize();
      return *this;
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const Zone& zone){
      stream << "Zone(";
      stream << "starting_address=" << zone.GetStartingAddressPointer() << ", ";
-     stream << "total_size=" << Bytes(zone.size());
+     stream << "total_size=" << Bytes(zone.GetSize());
      stream << ")";
      return stream;
    }
@@ -239,7 +217,7 @@ namespace poseidon{
      current_ = fromspace_;
    }
 
-   uword Allocate(int64_t size) override{
+   uword Allocate(int64_t size){
      auto total_size = size + sizeof(RawObject);
      if((current_ + total_size) > (fromspace_ + tospace_)){
        return 0;//TODO: collect memory
@@ -271,7 +249,7 @@ namespace poseidon{
    }
  };
 
- class OldPage : public Section{
+ class OldPage{
    friend class OldZone;
   public:
    static constexpr const int64_t kDefaultPageSize = 256 * 1024;
@@ -349,18 +327,22 @@ namespace poseidon{
    }
   public:
    OldPage(const OldPage& rhs) = default;
-   ~OldPage() override = default;
+   virtual ~OldPage() = default;
 
    int64_t index() const{
      return index_;
    }
 
-   int64_t size() const override{
+   int64_t GetSize() const{
      return size_;
    }
 
-   uword GetStartingAddress() const override{
+   uword GetStartingAddress() const{
      return start_;
+   }
+
+   void* GetStartingAddressPointer() const{
+     return (void*)GetStartingAddress();
    }
 
    uword GetCurrentAddress() const{
@@ -369,6 +351,14 @@ namespace poseidon{
 
    void* GetCurrentAddressPointer() const{
      return (void*)GetCurrentAddress();
+   }
+
+   uword GetEndingAddress() const{
+     return GetStartingAddress() + GetSize();
+   }
+
+   void* GetEndingAddressPointer() const{
+     return (void*)GetEndingAddress();
    }
 
    bool HasNext() const{
@@ -395,7 +385,7 @@ namespace poseidon{
      previous_ = page;
    }
 
-   uword Allocate(int64_t size) override{
+   uword TryAllocate(int64_t size){
      auto total_size = size + static_cast<int64_t>(sizeof(RawObject));
 
      uword address;
@@ -419,13 +409,13 @@ namespace poseidon{
    }
 
    int64_t GetTotalBytesAllocated() const{
-     return GetCurrentAddress() - GetStartingAddress();
+     return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
    }
 
    OldPage& operator=(const OldPage& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
-     return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.size()) << ", allocated=" << PrettyPrintPercentage(val.GetTotalBytesAllocated(), val.size()) << ").";
+     return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.GetSize()) << ", allocated=" << PrettyPrintPercentage(val.GetTotalBytesAllocated(), val.GetSize()) << ").";
    }
  };
 
@@ -497,12 +487,12 @@ namespace poseidon{
      return table_;
    }
 
-   uword Allocate(int64_t size) override{
+   uword TryAllocate(int64_t size){
      PSDN_ASSERT(pages_ != nullptr);
      auto page = pages_;
      do{
        uword result = 0;
-       if((result = page->Allocate(size)) != 0){
+       if((result = page->TryAllocate(size)) != 0){
          MarkPage(page);
          return result;
        }

@@ -24,38 +24,6 @@ namespace poseidon{
    return x + 1;
  }
 
- class Section{
-  protected:
-   Section() = default;
-  public:
-   virtual ~Section() = default;
-
-   virtual int64_t size() const = 0;
-   virtual uword Allocate(int64_t size) = 0;
-   virtual uword GetStartingAddress() const = 0;
-
-   virtual void* GetStartingAddressPointer() const{
-     return (void*) GetStartingAddress();
-   }
-
-   virtual uword GetEndingAddress() const{
-     return GetStartingAddress() + size();
-   }
-
-   virtual void* GetEndingAddressPointer() const{
-     return (void*) GetEndingAddress();
-   }
-
-   virtual bool Contains(uword address) const{
-     return GetStartingAddress() <= address
-         && GetEndingAddress() >= address;
-   }
-
-   virtual void Clear(){
-     memset(GetStartingAddressPointer(), 0, size());
-   }
- };
-
 #ifdef PSDN_DEBUG
 #define PSDN_ASSERT(x) assert(x)
 #else

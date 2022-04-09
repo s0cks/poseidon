@@ -27,7 +27,7 @@ namespace poseidon{
 
    OldZone zone(&region);
 
-   auto new_ptr = zone.Allocate(sizeof(uword));
+   auto new_ptr = zone.TryAllocate(sizeof(uword));
    ASSERT_NE(new_ptr, 0);
 
    DLOG(INFO) << "objects: ";
