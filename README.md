@@ -1,7 +1,6 @@
 # Poseidon
 
-Generational Garbage Collector based on Cheney's Algorithm.
-
+Generational Garbage Collector based on dart/v8's parallel scavenge algorithm
 # Building
 
 ## Prerequisites
