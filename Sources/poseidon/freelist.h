@@ -2,6 +2,7 @@
 #define POSEIDON_FREELIST_H
 
 #include <cstdlib>
+#include <functional>
 #include <glog/logging.h>
 
 #include "poseidon/utils.h"

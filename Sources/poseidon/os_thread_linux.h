@@ -8,6 +8,10 @@
 #include <pthread.h>
 #include "poseidon/platform.h"
 
+#ifndef PTHREAD_KEYS_MAX
+#define PTHREAD_KEYS_MAX 16
+#endif//PTHREAD_KEYS_MAX
+
 namespace poseidon{
  static const int kThreadNameMaxLength = 16;
  static const int kThreadMaxResultLength = 128;

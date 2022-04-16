@@ -1,8 +1,10 @@
+#include <functional>
 #include <glog/logging.h>
 
 #include "heap.h"
 #include "utils.h"
 #include "raw_object.h"
+#include "poseidon/os_thread.h"
 
 namespace poseidon{
  pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;

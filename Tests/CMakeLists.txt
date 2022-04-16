@@ -1,4 +1,4 @@
-find_package(GTest REQUIRED)
+find_package(GTest REQUIRED CONFIG)
 find_package(Threads REQUIRED)
 find_package(Glog REQUIRED)
 
@@ -10,3 +10,5 @@ target_link_libraries(poseidon-tests
     GTest::gtest
     GTest::gmock
     glog::glog)
+
+include(GoogleTest)

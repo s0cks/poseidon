@@ -1,3 +1,4 @@
+#include <functional>
 #include "poseidon/local.h"
 
 namespace poseidon{//TODO: clean-up this code

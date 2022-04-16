@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <typeinfo>
+#include <functional>
 #include <glog/logging.h>
 
 #include "poseidon/bitset.h"

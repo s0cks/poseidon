@@ -2,6 +2,7 @@
 #define POSEIDON_COMMON_H
 
 #include <cstdint>
+#include <cassert>
 #include <iostream>
 
 #include "platform.h"
