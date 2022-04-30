@@ -3,6 +3,7 @@
 /*/
 
 # Except These
+!/build/
 !/Sources/
 !/Tests/
 !/CMakeLists.txt
