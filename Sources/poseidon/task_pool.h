@@ -303,6 +303,12 @@ namespace poseidon{
      wpool_.Submit(task);
    }
 
+   template<class T, typename... Args>
+   void SubmitToAll(Args... args){
+     for(auto widx = 0; widx < wpool_.size(); widx++)
+       wpool_.Submit(new T(args...));
+   }
+
    void StartAll(){
      return wpool_.StartAll();
    }

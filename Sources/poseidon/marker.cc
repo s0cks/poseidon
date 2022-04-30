@@ -147,11 +147,7 @@ namespace poseidon{
 
  void Marker::ParallelMark(){
    ParallelMarker marker;
-
-   //TODO: cleanup this loop
-   for(auto idx = 0; idx < GetNumberOfWorkers(); idx++)
-     Runtime::GetTaskPool()->Submit(new ParallelMarkerTask(&marker));
-
+   Runtime::GetTaskPool()->SubmitToAll<ParallelMarkerTask>(&marker);
    TIMED_SECTION("ParallelMark", {
      marker.MarkAll();
    });

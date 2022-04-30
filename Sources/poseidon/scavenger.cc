@@ -343,11 +343,7 @@ namespace poseidon{
  void Scavenger::ParallelScavenge(){
    auto heap = Heap::GetCurrentThreadHeap();
    ParallelScavenger visitor(heap);
-
-   //TODO: cleanup this loop
-   for(auto idx = 0; idx < GetNumberOfWorkers(); idx++)
-     Runtime::GetTaskPool()->Submit(new ParallelScavengerTask(&visitor));
-
+   Runtime::GetTaskPool()->SubmitToAll<ParallelScavengerTask>(&visitor);
    TIMED_SECTION("ParallelScavenge", {
      visitor.ScavengeMemory();
    });

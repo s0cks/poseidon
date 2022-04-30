@@ -116,11 +116,7 @@ namespace poseidon{
    auto heap = Heap::GetCurrentThreadHeap();
    auto old_zone = heap->old_zone();
    ParallelSweeper sweeper;
-
-   //TODO: cleanup this loop.
-   for(auto idx = 0; idx < GetNumberOfWorkers(); idx++)
-     Runtime::GetTaskPool()->Submit(new ParallelSweeperTask(&sweeper));
-
+   Runtime::GetTaskPool()->SubmitToAll<ParallelSweeperTask>(&sweeper);
    TIMED_SECTION("ParallelSweep", {
      old_zone->VisitPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
        DLOG(INFO) << "visiting " << (*page) << "....";
