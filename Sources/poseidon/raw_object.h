@@ -34,6 +34,7 @@ namespace poseidon{
 
   class RawObject{
     friend class Semispace;
+    friend class RawObjectTest;
    private:
     typedef uword ObjectTag;
 
@@ -169,7 +170,7 @@ namespace poseidon{
     }
 
     uint64_t GetTotalSize() const{
-      return sizeof(RawObject)+GetPointerSize();
+      return sizeof(RawObject) + GetPointerSize();
     }
 
     std::string ToString() const{

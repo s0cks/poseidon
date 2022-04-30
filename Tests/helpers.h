@@ -14,10 +14,20 @@ namespace poseidon{
  }
 
  static inline uword
- AllocateNewObjectUsingSystem(int64_t size){
+ SystemAlloc(int64_t size){
+   return (uword)malloc(size);
+ }
+
+ static inline uword
+ SystemAllocNewObject(int64_t size){
    DLOG(INFO) << "allocating new object (" << Bytes(size) << ") using malloc.";
    auto total_size = sizeof(RawObject) + size;
-   auto val = (RawObject*)malloc(total_size);
+   auto val = (RawObject*)SystemAlloc(size);
+   if(!val){
+     LOG(FATAL) << "failed to allocate new object (" << Bytes(size) << ") using system [malloc].";
+     return 0;
+   }
+
    memset((void*)val, 0, total_size);
    val->SetPointerSize(size);
    return val->GetAddress();
