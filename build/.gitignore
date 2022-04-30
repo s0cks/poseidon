@@ -1,8 +1,9 @@
 # Ignore Everything
-/*
-/*/
+*
 
 # Except These
+!/debug/
 !/debug/.gitkeep
+
+!/release/
 !/release/.gitkeep
-!/.gitignore
