@@ -346,7 +346,7 @@ namespace poseidon{
    Runtime::GetTaskPool()->SubmitToAll<ParallelScavengerTask>(&visitor);
    TIMED_SECTION("ParallelScavenge", {
      visitor.ScavengeMemory();
-x   });
+   });
  }
 
  void Scavenger::ScavengeMemory(){

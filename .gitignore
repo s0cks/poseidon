@@ -4,6 +4,7 @@
 
 # Except These
 !/build/
+!/jenkins/
 !/Sources/
 !/Tests/
 !/CMakeLists.txt
