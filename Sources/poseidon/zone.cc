@@ -36,21 +36,15 @@ namespace poseidon{
 
  uword NewZone::TryAllocate(int64_t size){
    auto total_size = size + sizeof(RawObject);
-   if((current_ + total_size) > (fromspace_ + tospace_)){
+   if((current_ + total_size) >= (fromspace_ + tospace_))
      Allocator::MinorCollection();
-     if((current_ + total_size) > (fromspace_ + tospace_)){
-       DLOG(ERROR) << "failed to allocate object of " << Bytes(total_size) << " in new zone after, scavenging it.";//TODO: better error handling.
-       return 0;
-     }
-   }
-
-   if((current_ + total_size) > (fromspace_ + tospace_)){
+   if((current_ + total_size) >= (fromspace_ + tospace_)){
      LOG(FATAL) << "insufficient memory.";
      return 0;
    }
 
    auto next = (void*)current_;
-   current_ += total_size;
+   current_ = current_ + total_size;
    auto ptr = new (next)RawObject();
    ptr->SetPointerSize(size);
    return ptr->GetAddress();

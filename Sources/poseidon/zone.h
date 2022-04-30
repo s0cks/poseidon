@@ -195,7 +195,7 @@ namespace poseidon{
    */
    virtual void SwapSpaces(){
      std::swap(fromspace_, tospace_);
-     current_ = fromspace_;
+     current_ = tospace_;
    }
 
    /**
