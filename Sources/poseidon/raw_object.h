@@ -2,6 +2,8 @@
 #define POSEIDON_RAW_OBJECT_H
 
 #include <sstream>
+#include <glog/logging.h>
+
 #include "utils.h"
 #include "common.h"
 
@@ -33,8 +35,13 @@ namespace poseidon{
   };
 
   class RawObject{
-    friend class Semispace;
     friend class RawObjectTest;
+
+    friend class Semispace;
+    friend class Zone;
+    friend class NewZone;
+    friend class OldPage;
+    friend class Compactor;
    private:
     typedef uword ObjectTag;
 
@@ -74,12 +81,17 @@ namespace poseidon{
     RelaxedAtomic<ObjectTag> tag_;
     RelaxedAtomic<uword> forwarding_;
 
+    explicit RawObject(int64_t size):
+      RawObject(){
+      SetPointerSize(size);
+    }
+
     inline ObjectTag
     tag() const{
       return (ObjectTag)tag_;
     }
    public:
-    RawObject():
+    RawObject()://TODO: make private
       tag_(0),
       forwarding_(0){
     }
@@ -186,6 +198,21 @@ namespace poseidon{
       ss << "forwarding=" << GetForwardingPointer();
       ss << ")";
       return ss.str();
+    }
+   public:
+    template<class T>
+    static inline uword
+    TryAllocateIn(T* area, int64_t size){
+      auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+      if((area->current_ + total_size) > area->GetEndingAddress()){
+        DLOG(ERROR) << "cannot allocate object of " << Bytes(total_size) << " in Semispace.";
+        return 0;
+      }
+
+      auto address = area->current_;
+      area->current_ += total_size;
+      new ((void*)address)RawObject(size);
+      return address;
     }
   };
 }

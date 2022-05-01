@@ -38,15 +38,15 @@ namespace poseidon{
    auto total_size = size + sizeof(RawObject);
    if((current_ + total_size) >= (fromspace_ + tospace_))
      Allocator::MinorCollection();
+
    if((current_ + total_size) >= (fromspace_ + tospace_)){
      LOG(FATAL) << "insufficient memory.";
      return 0;
    }
 
-   auto next = (void*)current_;
+   auto ptr = current_;
    current_ = current_ + total_size;
-   auto ptr = new (next)RawObject();
-   ptr->SetPointerSize(size);
-   return ptr->GetAddress();
+   new ((void*)ptr)RawObject(size);
+   return ptr;
  }
 }

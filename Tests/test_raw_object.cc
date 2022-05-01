@@ -23,7 +23,7 @@ namespace poseidon{
 
  TEST_F(RawObjectTest, TestObjectAddress){
    RawObject val;
-   uword address = (uword)&val;
+   auto address = (uword)&val;
    ASSERT_EQ(val.GetObjectPointerAddress(), address + sizeof(RawObject));
  }
 

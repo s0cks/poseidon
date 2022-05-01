@@ -1,6 +1,7 @@
 #ifndef POSEIDON_POSEIDON_SEMISPACE_H
 #define POSEIDON_POSEIDON_SEMISPACE_H
 
+#include <ostream>
 #include <glog/logging.h>
 
 #include "poseidon/raw_object.h"
@@ -142,7 +143,7 @@ namespace poseidon{
 
    bool Contains(uword address) const{
      return GetStartingAddress() <= address
-         && GetEndingAddress() <= address;
+         && GetEndingAddress() >= address;
    }
 
    void Clear(){
@@ -170,7 +171,7 @@ namespace poseidon{
      }
    }
 
-   void VisitRawObjects(const std::function<bool(RawObject*)>& vis) const{
+   void VisitRawObjects(const ::std::function<bool(RawObject*)>& vis) const{
      SemispaceIterator iter(this);
      while(iter.HasNext()){
        if(!vis(iter.Next()))
@@ -186,7 +187,7 @@ namespace poseidon{
      }
    }
 
-   void VisitMarkedRawObjects(const std::function<bool(RawObject*)>& vis) const{
+   void VisitMarkedRawObjects(const ::std::function<bool(RawObject*)>& vis) const{
      SemispaceIterator iter(this);
      while(iter.HasNext()){
        auto next = iter.Next();
@@ -217,7 +218,7 @@ namespace poseidon{
          || lhs.current_ != rhs.current_;
    }
 
-   friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
+   friend ::std::ostream& operator<<(::std::ostream& stream, const Semispace& space){
      stream << "Semispace(";
      stream << "start=" << ((void*)space.GetStartingAddress()) << ", ";
      stream << "allocated=" << Bytes(space.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(space.GetNumberOfBytesAllocated(), space.GetSize()) << "), ";

@@ -61,7 +61,7 @@ namespace poseidon{
    uword AllocateLargeObject(int64_t size);
   public:
    explicit Heap(MemoryRegion* region = new MemoryRegion(GetTotalHeapSize()))://TODO: refactor
-    Heap(region, new NewZone(region, 0, GetNewZoneSize()), new OldZone(region, GetNewZoneSize())){
+    Heap(region, new NewZone(*region, 0, GetNewZoneSize()), new OldZone(*region, GetNewZoneSize(), kDefaultOldZoneSize, OldPage::kDefaultPageSize)){
    }
    Heap(const Heap& rhs) = default;
    virtual ~Heap() = default;

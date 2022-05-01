@@ -9,6 +9,8 @@
 
 namespace poseidon{
  class Zone{
+   friend class ZoneTest;
+   friend class RawObject;
    friend class Scavenger;
   private:
    class ZoneIterator : public RawObjectPointerIterator{
@@ -96,6 +98,20 @@ namespace poseidon{
     size_(size){
    }
 
+   Zone(const MemoryRegion& region, int64_t offset, int64_t size):
+    start_(region.GetStartingAddress()),
+    current_(region.GetStartingAddress() + offset),
+    size_(size){
+   }
+
+   Zone(const MemoryRegion& region, int64_t size):
+    Zone(region, 0, size){
+   }
+
+   Zone(const MemoryRegion& region):
+    Zone(region, region.size()){
+   }
+
    Zone(const Zone& rhs) = default;
    virtual ~Zone() = default;
 
@@ -130,6 +146,10 @@ namespace poseidon{
    bool Contains(uword address) const{
      return GetStartingAddress() <= address
          && GetEndingAddress() >= address;
+   }
+
+   virtual uword TryAllocate(int64_t size){
+     return RawObject::TryAllocateIn<Zone>(this, size);
    }
 
    void VisitObjectPointers(RawObjectVisitor* vis) const;
@@ -171,8 +191,17 @@ namespace poseidon{
     tospace_(start + CalculateSemispaceSize(size)),
     semisize_(CalculateSemispaceSize(size)){
    }
-   NewZone(MemoryRegion* region, int64_t offset, int64_t size):
-     NewZone(region->GetStartingAddress() + offset, size){
+
+   NewZone(const MemoryRegion& region, int64_t offset, int64_t size):
+    NewZone(region.GetStartingAddress() + offset, size){//TODO: check MemoryRegion bounds
+   }
+
+   NewZone(const MemoryRegion& region, int64_t size):
+    NewZone(region, 0, size){
+   }
+
+   explicit NewZone(const MemoryRegion& region):
+    NewZone(region, region.size()){
    }
    ~NewZone() override = default;
 
@@ -204,7 +233,7 @@ namespace poseidon{
     * @param size The size of the new object to allocate
     * @return A pointer to the beginning of the object and i's header
     */
-   uword TryAllocate(int64_t size);
+   uword TryAllocate(int64_t size) override;
 
    int64_t GetNumberOfBytesAllocated() const{
      return static_cast<int64_t>(GetCurrentAddress() - Zone::GetStartingAddress());
@@ -390,18 +419,19 @@ namespace poseidon{
  static constexpr const int64_t kDefaultOldZoneSize = 128 * kMB;
  class OldZone : public Zone{
   protected:
+   int64_t num_pages_;
    OldPage* pages_;
    BitSet table_;
 
    static inline int64_t
-   GetNumberOfPages(const int64_t& size){
+   GetNumberOfPages(int64_t size, int64_t page_size){
      PSDN_ASSERT(size % OldPage::kDefaultPageSize == 0);
      return size / OldPage::kDefaultPageSize;
    }
 
    static inline OldPage*
-   GetPages(const uword& start, const int64_t& size){
-     auto num_pages = GetNumberOfPages(size);
+   GetPages(const uword& start, int64_t size, int64_t page_size){
+     auto num_pages = GetNumberOfPages(size, page_size);
 
      OldPage* page = nullptr;
      do{
@@ -439,23 +469,28 @@ namespace poseidon{
      GCLOG(1) << "unmarking " << (*page);
      return table_.Set(page->index(), false);
    }
+
+   static inline int64_t
+   CalculateTableSize(int64_t size, int64_t page_size){
+     return size / page_size;
+   }
   public:
    OldZone() = default;
-   explicit OldZone(uword start):
-     Zone(start, kDefaultOldZoneSize),
-     table_(kDefaultOldZoneSize / OldPage::kDefaultPageSize),
-     pages_(GetPages(start, kDefaultOldZoneSize)){
+   explicit OldZone(uword start, int64_t size = kDefaultOldZoneSize, int64_t page_size = OldPage::kDefaultPageSize):
+     Zone(start, size),
+     table_(CalculateTableSize(size, page_size)),
+     pages_(GetPages(start, size, page_size)),
+     num_pages_(GetNumberOfPages(size, page_size)){
    }
-   explicit OldZone(MemoryRegion* region, int64_t offset = 0):
-     OldZone(region->GetStartingAddress() + offset){
+   explicit OldZone(const MemoryRegion& region, int64_t offset, int64_t size = kDefaultOldZoneSize, int64_t page_size = OldPage::kDefaultPageSize):
+    OldZone(region.GetStartingAddress() + offset, size, page_size){
+   }
+   explicit OldZone(const MemoryRegion& region, int64_t size = kDefaultOldZoneSize, int64_t page_size = OldPage::kDefaultPageSize):
+    OldZone(region, 0, size, page_size){
    }
    ~OldZone() override = default;
 
-   BitSet table() const{
-     return table_;
-   }
-
-   uword TryAllocate(int64_t size){
+   uword TryAllocate(int64_t size) override{
      PSDN_ASSERT(pages_ != nullptr);
      auto page = pages_;
      do{
@@ -474,7 +509,7 @@ namespace poseidon{
    }
 
    int64_t GetNumberOfPages() const{
-     return GetNumberOfPages(kDefaultOldZoneSize);
+     return num_pages_;
    }
 
    void VisitAllPages(const std::function<bool(OldPage*)>& vis){
