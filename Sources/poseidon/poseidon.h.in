@@ -10,8 +10,6 @@ namespace poseidon{
 #define POSEIDON_VERSION_PATCH @PROJECT_VERSION_PATCH@
 
     std::string GetVersion();
-
-DECLARE_uint64(heap_size);
 }
 
 #endif //POSEIDON_H

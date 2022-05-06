@@ -118,7 +118,7 @@ namespace poseidon{
    ParallelSweeper sweeper;
    Runtime::GetTaskPool()->SubmitToAll<ParallelSweeperTask>(&sweeper);
    TIMED_SECTION("ParallelSweep", {
-     old_zone->VisitPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
+     old_zone.VisitPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
        DLOG(INFO) << "visiting " << (*page) << "....";
        page->VisitPointers([&](RawObject* raw){
          if(!raw->IsMarked()){
