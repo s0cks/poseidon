@@ -416,7 +416,6 @@ namespace poseidon{
    }
  };
 
- static constexpr const int64_t kDefaultOldZoneSize = 128 * kMB;
  class OldZone : public Zone{
   protected:
    int64_t num_pages_;

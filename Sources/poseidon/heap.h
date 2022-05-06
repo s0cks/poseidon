@@ -8,26 +8,6 @@
 #include "poseidon/memory_region.h"
 
 namespace poseidon{
- static inline int64_t
- GetNewZoneSize(){
-   return FLAGS_new_zone_size;
- }
-
- static inline int64_t
- GetTotalHeapSize(){
-   return GetNewZoneSize() + kDefaultOldZoneSize;
- }
-
- static inline int64_t
- GetHeapPageSize(){
-   return FLAGS_heap_page_size;
- }
-
- static inline int64_t
- GetLargeObjectSize(){
-   return FLAGS_large_object_size;
- }
-
  class Heap{
    friend class Scavenger;
    friend class Compactor;
@@ -60,7 +40,7 @@ namespace poseidon{
    uword AllocateOldObject(int64_t size);
    uword AllocateLargeObject(int64_t size);
   public:
-   explicit Heap(MemoryRegion* region = new MemoryRegion(GetTotalHeapSize()))://TODO: refactor
+   explicit Heap(MemoryRegion* region = new MemoryRegion(GetTotalInitialHeapSize()))://TODO: refactor
     Heap(region, new NewZone(*region, 0, GetNewZoneSize()), new OldZone(*region, GetNewZoneSize(), kDefaultOldZoneSize, OldPage::kDefaultPageSize)){
    }
    Heap(const Heap& rhs) = default;

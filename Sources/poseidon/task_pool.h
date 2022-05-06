@@ -294,7 +294,7 @@ namespace poseidon{
   private:
    WorkerPool wpool_;
   public:
-   explicit TaskPool(size_t num_workers = kDefaultNumberOfWorkers):
+   explicit TaskPool(int64_t num_workers = kDefaultNumberOfWorkers):
     wpool_(num_workers){
    }
    ~TaskPool() = default;

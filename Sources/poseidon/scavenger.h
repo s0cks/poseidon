@@ -14,16 +14,15 @@ namespace poseidon{
   private:
    static void SetScavenging();
    static void ClearScavenging();
-
-   static void SerialScavenge();
-   static void ParallelScavenge();
   public:
    Scavenger() = delete;
    Scavenger(const Scavenger& rhs) = delete;
    ~Scavenger() = delete;
 
    static bool IsScavenging();
-   static void ScavengeMemory();
+   static void Scavenge();
+   static void SerialScavenge();
+   static void ParallelScavenge();
 
    Scavenger& operator=(const Scavenger& rhs) = delete;
  };

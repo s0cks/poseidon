@@ -87,6 +87,7 @@ namespace poseidon{
    }
 
    inline uword ProcessObject(RawObject* raw){
+     DLOG(INFO) << "processing " << raw->ToString();
      if(!raw->IsForwarding()){
        if(raw->IsRemembered()){
          auto new_address = PromoteObject(raw);
@@ -247,10 +248,13 @@ namespace poseidon{
        auto locals = LocalPage::GetLocalPageForCurrentThread();
        locals->VisitPointers([&](RawObject** ptr){
          auto old_val = (*ptr);
-         if(old_val->IsNew() && !old_val->IsForwarding())
+         if(old_val->IsNew() && !old_val->IsForwarding()){
            work_.Push(old_val->GetAddress());
+         }
          return true;
        });
+
+       while(!work_.empty());//spin
      });
    }
 
@@ -266,10 +270,8 @@ namespace poseidon{
        auto address = to_.GetStartingAddress();
        while(address < to_.GetEndingAddress() && ((RawObject*)address)->GetPointerSize() > 0){
          auto ptr = (RawObject*)address;
-         if(!ptr->IsForwarding() && !ptr->IsRemembered()){
-           DLOG(INFO) << "freed " << ptr->ToString();
-         } else{
-           DLOG(INFO) << "scavenged " << ptr->ToString();
+         if(ptr->IsForwarding()){
+           DLOG(INFO) << "processing " << ptr->ToString();
          }
          address += ptr->GetTotalSize();
        }
@@ -349,7 +351,7 @@ namespace poseidon{
    });
  }
 
- void Scavenger::ScavengeMemory(){
+ void Scavenger::Scavenge(){
    if(IsScavenging()){
      DLOG(WARNING) << "already scavenging.";
      return;
