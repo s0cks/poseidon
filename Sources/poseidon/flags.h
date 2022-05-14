@@ -21,7 +21,7 @@ namespace poseidon{
    return FLAGS_old_zone_size;
  }
 
- static const constexpr int64_t kDefaultOldPageSize = 32 * kMB;
+ static const constexpr int64_t kDefaultOldPageSize = 16 * kMB;
  DECLARE_int64(old_page_size);
 
  static inline int64_t

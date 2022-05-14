@@ -26,22 +26,22 @@ namespace poseidon{
  template<bool Parallel>
  class ScavengerVisitorBase : public RawObjectPointerVisitor{
   protected:
-   NewZone& zone_;
+   NewZone* zone_;
    Semispace from_;
    Semispace to_;
-   OldZone& promotion_;
+   OldZone* promotion_;
 
    explicit ScavengerVisitorBase(Heap* heap):
     RawObjectPointerVisitor(),
     zone_(heap->new_zone()),
-    from_(heap->new_zone().fromspace(), heap->new_zone().semisize()),
-    to_(heap->new_zone().tospace(), heap->new_zone().semisize()),
+    from_(heap->new_zone()->fromspace(), heap->new_zone()->semisize()),
+    to_(heap->new_zone()->tospace(), heap->new_zone()->semisize()),
     promotion_(heap->old_zone()){
    }
 
    inline void SwapSpaces(){
      GCLOG(3) << "swapping spaces.";
-     return zone_.SwapSpaces();
+     return zone_->SwapSpaces();
    }
 
    inline void ClearFromSpace(){
@@ -63,7 +63,7 @@ namespace poseidon{
 
    inline uword PromoteObject(RawObject* raw){
      GCLOG(1) << "promoting " << raw->ToString() << " to new zone.";
-     auto new_ptr = (RawObject*)promotion_.TryAllocate(raw->GetPointerSize());
+     auto new_ptr = (RawObject*)promotion_->TryAllocate(raw->GetPointerSize());
      CopyObject(raw, new_ptr);
      new_ptr->SetOldBit();
 //TODO:
@@ -145,7 +145,7 @@ namespace poseidon{
 
    void ProcessToSpace() override{
      TIMED_SECTION("ProcessToSpace", {
-       zone_.VisitObjectPointers([&](RawObject* val){
+       zone_->VisitObjectPointers([&](RawObject* val){
          if(val->IsForwarding()){
            DLOG(INFO) << "scavenged " << val->ToString();
          } else{
@@ -253,8 +253,6 @@ namespace poseidon{
          }
          return true;
        });
-
-       while(!work_.empty());//spin
      });
    }
 
@@ -262,6 +260,9 @@ namespace poseidon{
      TIMED_SECTION("ProcessRoots", {
        ProcessLocals();
        //TODO: process old to new references
+
+       // wait for work to finish.
+       while(!work_.empty());//spin
      });
    }
 

@@ -284,7 +284,7 @@ namespace poseidon{
      }
 
      bool HasNext() const override{
-       return current_address() < page_->GetEndingAddress() && current_ptr()->GetPointerSize() > 0;
+       return current_address() < page_->GetEndingAddress() && current_ptr() && current_ptr()->GetPointerSize() > 0;
      }
 
      RawObject* Next() override{
@@ -319,8 +319,7 @@ namespace poseidon{
      index_(index),
      start_(start),
      current_(start),
-     size_(size),
-     free_list_(start, size){
+     size_(size){
    }
   public:
    OldPage(const OldPage& rhs) = default;
@@ -358,6 +357,11 @@ namespace poseidon{
      return (void*)GetEndingAddress();
    }
 
+   bool Contains(uword address) const{
+     return address >= GetStartingAddress()
+         && address <= GetEndingAddress();
+   }
+
    bool HasNext() const{
      return next_ != nullptr;
    }
@@ -385,8 +389,9 @@ namespace poseidon{
    uword TryAllocate(int64_t size){
      auto total_size = size + static_cast<int64_t>(sizeof(RawObject));
 
-     uword address;
-     if((address = free_list_.TryAllocate(total_size)) != 0){
+     uword address = current_;
+     current_ += total_size;
+     if(address != 0){
        auto raw_ptr = new ((void*)address)RawObject();
        raw_ptr->SetPointerSize(size);
        return address;
@@ -417,15 +422,24 @@ namespace poseidon{
  };
 
  class OldZone : public Zone{
+   friend class OldZoneTest;
+
+   friend class SerialSweeper;
+   friend class ParallelSweeper;
   protected:
    int64_t num_pages_;
    OldPage* pages_;
+
    BitSet table_;
+   BitSet marked_;
+   BitSet full_;
+
+   FreeList* free_list_;
 
    static inline int64_t
    GetNumberOfPages(int64_t size, int64_t page_size){
-     PSDN_ASSERT(size % OldPage::kDefaultPageSize == 0);
-     return size / OldPage::kDefaultPageSize;
+     PSDN_ASSERT(size % page_size == 0);
+     return size / page_size;
    }
 
    static inline OldPage*
@@ -434,14 +448,26 @@ namespace poseidon{
 
      OldPage* page = nullptr;
      do{
-       auto offset = num_pages * OldPage::kDefaultPageSize;
-       auto new_page = new OldPage(num_pages, start + offset, OldPage::kDefaultPageSize);
+       auto offset = num_pages * page_size;
+       auto new_page = new OldPage(num_pages, start + offset, page_size);
        new_page->SetNext(page);
        if(page)
          page->SetPrevious(new_page);
        page = new_page;
      } while(--num_pages >= 0);
      return page;
+   }
+
+   inline OldPage*
+   GetPageFor(RawObject* ptr){//TODO: optimize
+     auto start = ptr->GetAddress();
+     auto end = start + ptr->GetTotalSize();
+     auto page = pages_;
+     while(page != nullptr){
+       if(page->Contains(start) && page->Contains(end))
+         return page;
+     }
+     return nullptr;
    }
 
    inline bool
@@ -458,14 +484,14 @@ namespace poseidon{
    inline void
    MarkPage(const OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     GCLOG(1) << "marking " << (*page);
+     DLOG(INFO) << "marking " << (*page);
      return table_.Set(page->index(), true);
    }
 
    inline void
    UnmarkPage(const OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     GCLOG(1) << "unmarking " << (*page);
+     DLOG(INFO) << "unmarking " << (*page);
      return table_.Set(page->index(), false);
    }
 
@@ -473,38 +499,36 @@ namespace poseidon{
    CalculateTableSize(int64_t size, int64_t page_size){
      return size / page_size;
    }
+
+   inline OldPage* pages(int64_t idx){
+     return pages_;
+   }
   public:
-   OldZone() = default;
-   explicit OldZone(uword start, int64_t size = kDefaultOldZoneSize, int64_t page_size = OldPage::kDefaultPageSize):
+   explicit OldZone(uword start, int64_t size, int64_t page_size):
      Zone(start, size),
      table_(CalculateTableSize(size, page_size)),
      pages_(GetPages(start, size, page_size)),
-     num_pages_(GetNumberOfPages(size, page_size)){
+     num_pages_(GetNumberOfPages(size, page_size)),
+     free_list_(){
    }
-   explicit OldZone(const MemoryRegion& region, int64_t offset, int64_t size = kDefaultOldZoneSize, int64_t page_size = OldPage::kDefaultPageSize):
+   explicit OldZone(const MemoryRegion& region, int64_t offset, int64_t size, int64_t page_size):
     OldZone(region.GetStartingAddress() + offset, size, page_size){
    }
-   explicit OldZone(const MemoryRegion& region, int64_t size = kDefaultOldZoneSize, int64_t page_size = OldPage::kDefaultPageSize):
-    OldZone(region, 0, size, page_size){
+   ~OldZone() override{
+     delete free_list_;
    }
-   ~OldZone() override = default;
 
-   uword TryAllocate(int64_t size) override{
-     PSDN_ASSERT(pages_ != nullptr);
-     auto page = pages_;
-     do{
-       uword result = 0;
-       if((result = page->TryAllocate(size)) != 0){
-         MarkPage(page);
-         return result;
-       }
+   inline FreeList* free_list() const{
+     return free_list_;
+   }
 
-       page = page->GetNext();
-     } while(page != nullptr);
-
-     //TODO: major collection
-     LOG(ERROR) << "cannot allocate object of " << Bytes(size) << " size in " << (*this) << ".";
-     return 0;
+   uword TryAllocate(int64_t size) override{//TODO: allocate using freelist
+     auto address = pages_->TryAllocate(size);
+     auto val = new ((void*)address)RawObject();
+     val->SetPointerSize(size);
+     val->SetOldBit();
+     MarkPage(GetPageFor(val));
+     return val->GetAddress();
    }
 
    int64_t GetNumberOfPages() const{

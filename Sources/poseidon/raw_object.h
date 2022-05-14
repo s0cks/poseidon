@@ -34,18 +34,13 @@ namespace poseidon{
     virtual RawObject* Next() = 0;
   };
 
-  class RawObject{
-    friend class RawObjectTest;
+  typedef uword RawObjectTag;
 
-    friend class Semispace;
-    friend class Zone;
-    friend class NewZone;
-    friend class OldPage;
-    friend class Compactor;
+  static const constexpr RawObjectTag kInvalidObjectTag = 0;
+
+  class ObjectTag{
    private:
-    typedef uword ObjectTag;
-
-    enum{ // 61
+    enum Layout{
       // NewBit
       kNewBitOffset = 0,
       kBitsForNewBit = 1,
@@ -65,34 +60,213 @@ namespace poseidon{
       // Size
       kSizeTagOffset = kRememberedBitOffset+kBitsForRememberedBit,
       kBitsForSizeTag = 32,
+
+      kTotalBits = kBitsForNewBit + kBitsForOldBit + kBitsForMarkedBit + kBitsForRememberedBit + kBitsForSizeTag,
     };
-
+   public:
     // The object's size.
-    class SizeTag : public BitField<ObjectTag, uint32_t, kSizeTagOffset, kBitsForSizeTag>{};
+    class SizeTag : public BitField<RawObjectTag, int64_t, kSizeTagOffset, kBitsForSizeTag>{};
     // allocated in the new heap.
-    class NewBit : public BitField<ObjectTag, bool, kNewBitOffset, kBitsForNewBit>{};
+    class NewBit : public BitField<RawObjectTag, bool, kNewBitOffset, kBitsForNewBit>{};
     // allocated in the old heap.
-    class OldBit : public BitField<ObjectTag, bool, kOldBitOffset, kBitsForOldBit>{};
+    class OldBit : public BitField<RawObjectTag, bool, kOldBitOffset, kBitsForOldBit>{};
     // marked by the scavenger
-    class MarkedBit : public BitField<ObjectTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
+    class MarkedBit : public BitField<RawObjectTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
     // remembered by the scavenger
-    class RememberedBit : public BitField<ObjectTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
+    class RememberedBit : public BitField<RawObjectTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
+   private:
+    RawObjectTag raw_;
 
-    RelaxedAtomic<ObjectTag> tag_;
+    inline RawObjectTag raw() const{
+      return raw_;
+    }
+   public:
+    explicit ObjectTag(RawObjectTag raw=kInvalidObjectTag):
+      raw_(raw){
+    }
+    ObjectTag(const ObjectTag& rhs) = default;
+    ~ObjectTag() = default;
+
+    ObjectTag& operator=(const ObjectTag& rhs) = default;
+
+    void SetNew(){
+      raw_ = NewBit::Update(true, raw());
+    }
+
+    void ClearNew(){
+      raw_ = NewBit::Update(false, raw());
+    }
+
+    bool IsNew() const{
+      return NewBit::Decode(raw());
+    }
+
+    void SetOld(){
+      raw_ = OldBit::Update(true, raw());
+    }
+
+    void ClearOld(){
+      raw_ = OldBit::Update(false, raw());
+    }
+
+    bool IsOld() const{
+      return OldBit::Decode(raw());
+    }
+
+    void SetMarked(){
+      raw_ = MarkedBit::Update(true, raw());
+    }
+
+    void ClearMarked(){
+      raw_ = MarkedBit::Update(false, raw());
+    }
+
+    bool IsMarked() const{
+      return MarkedBit::Decode(raw());
+    }
+
+    void SetRemembered(){
+      raw_ = RememberedBit::Update(true, raw());
+    }
+
+    void ClearRemembered(){
+      raw_ = RememberedBit::Update(false, raw());
+    }
+
+    bool IsRemembered() const{
+      return RememberedBit::Decode(raw());
+    }
+
+    void SetSize(int64_t size){
+      raw_ = SizeTag::Update(size, raw());
+    }
+
+    int64_t GetSize() const{
+      return SizeTag::Decode(raw());
+    }
+
+    explicit operator RawObjectTag() const{
+      return raw();
+    }
+
+    ObjectTag& operator=(const RawObjectTag& rhs){
+      if(raw_ == rhs)
+        return *this;
+      raw_ = rhs;
+      return *this;
+    }
+
+    friend std::ostream& operator<<(std::ostream& stream, const ObjectTag& val){
+      stream << "ObjectTag(";
+      stream << "new=" << val.IsNew() << ", ";
+      stream << "old=" << val.IsOld() << ", ";
+      stream << "marked=" << val.IsMarked() << ", ";
+      stream << "remembered=" << val.IsRemembered() << ", ";
+      stream << "size=" << val.GetSize();
+      stream << ")";
+      return stream;
+    }
+   public:
+    static inline ObjectTag
+    New(){
+      auto raw = NewBit::Encode(true)
+           | OldBit::Encode(false)
+           | MarkedBit::Encode(false)
+           | RememberedBit::Encode(false)
+           | SizeTag::Encode(0);
+      return ObjectTag(raw);
+    }
+
+    static inline ObjectTag
+    NewWithSize(int64_t size){
+      auto raw = NewBit::Encode(true)
+               | OldBit::Encode(false)
+               | MarkedBit::Encode(false)
+               | RememberedBit::Encode(false)
+               | SizeTag::Encode(size);
+      return ObjectTag(raw);
+    }
+
+    static inline ObjectTag
+    NewMarkedWithSize(int64_t size){
+      auto raw = NewBit::Encode(true)
+          | OldBit::Encode(false)
+          | MarkedBit::Encode(true)
+          | RememberedBit::Encode(false)
+          | SizeTag::Encode(size);
+      return ObjectTag(raw);
+    }
+
+    static inline ObjectTag
+    NewRememberedWithSize(int64_t size){
+      auto raw = NewBit::Encode(true)
+          | OldBit::Encode(false)
+          | MarkedBit::Encode(false)
+          | RememberedBit::Encode(true)
+          | SizeTag::Encode(size);
+      return ObjectTag(raw);
+    }
+
+    static inline ObjectTag
+    Old(){
+      auto raw = NewBit::Encode(false)
+          | OldBit::Encode(true)
+          | MarkedBit::Encode(false)
+          | RememberedBit::Encode(false)
+          | SizeTag::Encode(0);
+      return ObjectTag(raw);
+    }
+
+    static inline ObjectTag
+    OldWithSize(int64_t size){
+      auto raw = NewBit::Encode(false)
+          | OldBit::Encode(true)
+          | MarkedBit::Encode(false)
+          | RememberedBit::Encode(false)
+          | SizeTag::Encode(size);
+      return ObjectTag(raw);
+    }
+
+    static inline ObjectTag
+    OldMarkedWithSize(int64_t size){
+      auto raw = NewBit::Encode(false)
+          | OldBit::Encode(true)
+          | MarkedBit::Encode(true)
+          | RememberedBit::Encode(false)
+          | SizeTag::Encode(size);
+      return ObjectTag(raw);
+    }
+
+    static inline ObjectTag
+    OldRememberedWithSize(int64_t size){
+      auto raw = NewBit::Encode(false)
+          | OldBit::Encode(true)
+          | MarkedBit::Encode(false)
+          | RememberedBit::Encode(true)
+          | SizeTag::Encode(size);
+      return ObjectTag(raw);
+    }
+  };
+
+  class RawObject{
+    friend class RawObjectTest;
+
+    friend class Semispace;
+    friend class Zone;
+    friend class NewZone;
+    friend class OldPage;
+    friend class Compactor;
+   private:
+    RelaxedAtomic<RawObjectTag> tag_;
     RelaxedAtomic<uword> forwarding_;
 
     explicit RawObject(int64_t size):
       RawObject(){
       SetPointerSize(size);
     }
-
-    inline ObjectTag
-    tag() const{
-      return (ObjectTag)tag_;
-    }
    public:
     RawObject()://TODO: make private
-      tag_(0),
+      tag_(),
       forwarding_(0){
     }
     virtual ~RawObject() = default;
@@ -125,60 +299,72 @@ namespace poseidon{
       return forwarding_ != 0;
     }
 
+    RawObjectTag raw_tag() const{
+      return (RawObjectTag)tag_;
+    }
+
+    ObjectTag tag() const{
+      return (ObjectTag)raw_tag();
+    }
+
+    void set_tag(const ObjectTag& val){
+      tag_ = (RawObjectTag)val;
+    }
+
     bool IsNew() const{
-      return NewBit::Decode(tag());
+      return ObjectTag::NewBit::Decode(raw_tag());
     }
 
     void SetNewBit(){
-      tag_ = NewBit::Update(true, tag());
+      tag_ = ObjectTag::NewBit::Update(true, raw_tag());
     }
 
     void ClearNewBit(){
-      tag_ = NewBit::Update(false, tag());
+      tag_ = ObjectTag::NewBit::Update(false, raw_tag());
     }
 
     bool IsOld() const{
-      return OldBit::Decode(tag());
+      return ObjectTag::OldBit::Decode(raw_tag());
     }
 
     void SetOldBit(){
-      tag_ = OldBit::Update(true, tag());
+      tag_ = ObjectTag::OldBit::Update(true, raw_tag());
     }
 
     void ClearOldBit(){
-      tag_ = OldBit::Update(false, tag());
+      tag_ = ObjectTag::OldBit::Update(false, raw_tag());
     }
 
     bool IsMarked() const{
-      return MarkedBit::Decode(tag());
+      return ObjectTag::MarkedBit::Decode(raw_tag());
     }
 
     void SetMarkedBit(){
-      tag_ = MarkedBit::Update(true, tag());
+      tag_ = ObjectTag::MarkedBit::Update(true, raw_tag());
     }
 
     void ClearMarkedBit(){
-      tag_ = MarkedBit::Update(false, tag());
+      tag_ = ObjectTag::MarkedBit::Update(false, raw_tag());
     }
 
     bool IsRemembered() const{
-      return RememberedBit::Decode(tag());
+      return ObjectTag::RememberedBit::Decode(raw_tag());
     }
 
     void SetRememberedBit(){
-      tag_ = RememberedBit::Update(true, tag());
+      tag_ = ObjectTag::RememberedBit::Update(true, raw_tag());
     }
 
     void ClearRememberedBit(){
-      tag_ = RememberedBit::Update(false, tag());
+      tag_ = ObjectTag::RememberedBit::Update(false, raw_tag());
     }
 
     uint32_t GetPointerSize() const{
-      return SizeTag::Decode(tag());
+      return ObjectTag::SizeTag::Decode(raw_tag());
     }
 
     void SetPointerSize(const uint32_t& val){
-      tag_ = SizeTag::Update(val, tag());
+      tag_ = ObjectTag::SizeTag::Update(val, raw_tag());
     }
 
     uint64_t GetTotalSize() const{
@@ -188,11 +374,11 @@ namespace poseidon{
     std::string ToString() const{
       std::stringstream ss;
       ss << "RawObject(";
-      ss << "new=" << NewBit::Decode(tag()) << ", ";
-      ss << "old=" << OldBit::Decode(tag()) << ", ";
-      ss << "marked=" << MarkedBit::Decode(tag()) << ", ";
-      ss << "remembered=" << RememberedBit::Decode(tag()) << ", ";
-      ss << "size=" << GetPointerSize() << ", ";
+      ss << "new=" << IsNew() << ", ";
+      ss << "old=" << IsOld() << ", ";
+      ss << "marked=" << IsMarked() << ", ";
+      ss << "remembered=" << IsRemembered() << ", ";
+      ss << "size=" << Bytes(GetPointerSize()) << ", ";
       ss << "address=" << this << ", ";
       ss << "pointer=" << GetPointer() << ", ";
       ss << "forwarding=" << GetForwardingPointer();

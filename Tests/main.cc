@@ -2,6 +2,7 @@
 #include <glog/logging.h>
 
 #include "poseidon/local.h"
+#include "poseidon/marker.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
 #include "poseidon/scavenger.h"
@@ -48,11 +49,17 @@ int main(int argc, char** argv){
   auto h2 = AllocateWord(1000);
   auto h3 = AllocateWord(10);
 
-  auto l1 = AllocateLargeObject(128 * kKB);
+  auto l1 = AllocateLargeObject(2 * kMB);
   (*((uword*)l1.Get())) = 10;
 
-  auto l2 = AllocateLargeObject(128 * kKB);
+  auto l2 = AllocateLargeObject(2 * kMB);
   (*((uword*)l2.Get())) = 1000;
+
+  auto l3 = (RawObject*)Allocator::Allocate(2 * kMB);
+  (*((uword*)l3->GetPointer())) = 11111;
+
+  auto l4 = (RawObject*)Allocator::Allocate(2 * kMB);
+  (*((uword*)l4->GetPointer())) = 22222;
 
   DLOG(INFO) << "h1 (before): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (before): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";
@@ -61,6 +68,11 @@ int main(int argc, char** argv){
   DLOG(INFO) << "v2 (before): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
   DLOG(INFO) << "l1 (before): " << (*l1.Get()) << " (" << l1.raw()->ToString() << ").";
   DLOG(INFO) << "l2 (before): " << (*l2.Get()) << " (" << l2.raw()->ToString() << ").";
+  DLOG(INFO) << "l3 (before): " << (*((uword*)l3->GetPointer())) << " (" << l3->ToString() << ").";
+  DLOG(INFO) << "l4 (before): " << (*((uword*)l4->GetPointer())) << " (" << l4->ToString() << ").";
+
+  DLOG(INFO) << "old_zone free list (before): ";
+  Heap::GetCurrentThreadHeap()->old_zone()->free_list()->PrintFreeList();
 
   static constexpr const int64_t kNumberOfRoots = 32;
   static constexpr const int64_t kNumberOfGarbage = 65546;
@@ -76,6 +88,11 @@ int main(int argc, char** argv){
   }
 
   Allocator::MinorCollection();
+  Allocator::MinorCollection();
+  Allocator::MajorCollection();
+
+  DLOG(INFO) << "old_zone free list (after): ";
+  Heap::GetCurrentThreadHeap()->old_zone()->free_list()->PrintFreeList();
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (after): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";
@@ -84,6 +101,8 @@ int main(int argc, char** argv){
   DLOG(INFO) << "v2 (after): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
   DLOG(INFO) << "l1 (after): " << (*l1.Get()) << " (" << l1.raw()->ToString() << ").";
   DLOG(INFO) << "l2 (after): " << (*l2.Get()) << " (" << l2.raw()->ToString() << ").";
+  DLOG(INFO) << "l3 (after): " << (*((word*)l3->GetPointer())) << " (" << l3->ToString() << ").";
+  DLOG(INFO) << "l4 (after): " << (*((word*)l4->GetPointer())) << " (" << l4->ToString() << ").";
 
 //  auto raw_ptr = (RawObject*)Allocator::Allocate(sizeof(uword));
 //  (*((uword*)raw_ptr->GetPointer())) = 100;

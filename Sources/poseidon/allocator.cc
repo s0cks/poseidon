@@ -7,6 +7,20 @@
 #include "poseidon/scavenger.h"
 
 namespace poseidon{
+ static RelaxedAtomic<bool> major_collection_(false);
+
+ void Allocator::SetMajorCollection(){
+   major_collection_ = true;
+ }
+
+ void Allocator::ClearMajorCollection(){
+   major_collection_ = false;
+ }
+
+ bool Allocator::IsMajorCollectionActive(){
+   return (bool)major_collection_;
+ }
+
  void Allocator::Initialize(){
    Heap::Initialize();
    LocalPage::Initialize();
@@ -24,8 +38,6 @@ namespace poseidon{
  }
 
  void Allocator::MajorCollection(){
-   //TODO: collection check.
-
    TIMED_SECTION("MajorCollection", {
      Marker::MarkAllLiveObjects();
      Sweeper::Sweep();

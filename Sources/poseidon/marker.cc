@@ -64,18 +64,18 @@ namespace poseidon{
  class ParallelMarkerTask : public Task{
    friend class ParallelMarker;
   private:
-   ParallelMarker* marker_;
+   WorkStealingQueue<uword>* work_;
 
-   inline ParallelMarker* marker() const{
-     return marker_;
+   inline WorkStealingQueue<uword>* work() const{
+     return work_;
    }
 
    inline bool HasWork() const;
    inline uword GetNext();
   public:
-   explicit ParallelMarkerTask(ParallelMarker* marker):
+   explicit ParallelMarkerTask(WorkStealingQueue<uword>* work):
     Task(),
-    marker_(marker){
+    work_(work){
    }
    ~ParallelMarkerTask() override = default;
 
@@ -89,6 +89,7 @@ namespace poseidon{
          uword next;
          if((next = GetNext()) != 0){
            auto ptr = (RawObject*)next;
+           DLOG(INFO) << "marking " << ptr->ToString();
            ptr->SetMarkedBit();
          }
        } while(HasWork());
@@ -99,28 +100,38 @@ namespace poseidon{
  class ParallelMarker : public MarkerVisitorBase<true>{
    friend class ParallelMarkerTask;
   private:
-   WorkStealingQueue<uword> work_;
+   WorkStealingQueue<uword>* work_;
 
-   inline WorkStealingQueue<uword>& work(){
-     return work_;
+   void MarkLocals(){
+     TIMED_SECTION("MarkLocals", {
+       auto page = LocalPage::GetLocalPageForCurrentThread();
+       while(page != nullptr){
+         page->VisitPointers(this);
+         page = page->GetNext();
+       }
+     });
    }
 
    void MarkRoots(){
-     auto locals = LocalPage::GetLocalPageForCurrentThread();
-     while(locals != nullptr){
-       locals->VisitPointers(this);
-       locals = locals->GetNext();
-     }
+     TIMED_SECTION("MarkRoots", {
+       MarkLocals();
+
+       // wait for work to finish.
+       while(!work_->empty());//spin
+     });
    }
   public:
-   ParallelMarker() = default;
+   explicit ParallelMarker(WorkStealingQueue<uword>* work):
+    MarkerVisitorBase<true>(),
+    work_(work){
+   }
    ~ParallelMarker() override = default;
 
    bool Visit(RawObject** ptr) override{
      auto old_val = (*ptr);
-     if(old_val->IsOld() && !old_val->IsMarked() && !old_val->IsForwarding()){
-       GCLOG(10) << "pushing " << old_val->ToString();
-       work_.Push(old_val->GetAddress());
+     if(!old_val->IsMarked() && !old_val->IsForwarding()){
+       DLOG(INFO) << "pushing " << old_val->ToString();
+       work_->Push(old_val->GetAddress());
      }
      return true;
    }
@@ -131,11 +142,11 @@ namespace poseidon{
  };
 
  uword ParallelMarkerTask::GetNext(){
-   return marker()->work().Steal();
+   return work()->Steal();
  }
 
  bool ParallelMarkerTask::HasWork() const{
-   return !marker()->work().empty();
+   return !work()->empty();
  }
 
  void Marker::SerialMark(){
@@ -146,8 +157,9 @@ namespace poseidon{
  }
 
  void Marker::ParallelMark(){
-   ParallelMarker marker;
-   Runtime::GetTaskPool()->SubmitToAll<ParallelMarkerTask>(&marker);
+   auto wrk = new WorkStealingQueue<uword>(2048);
+   ParallelMarker marker(wrk);
+   Runtime::GetTaskPool()->SubmitToAll<ParallelMarkerTask>(wrk);
    TIMED_SECTION("ParallelMark", {
      marker.MarkAll();
    });

@@ -51,7 +51,7 @@ namespace poseidon{
    std::atomic<Item*> items_;
    std::vector<Item*> garbage_;
   public:
-   explicit WorkStealingQueue(int64_t capacity = 4096):
+   explicit WorkStealingQueue(int64_t capacity = 1024):
      top_(),
      bottom_(),
      items_(),

@@ -66,8 +66,8 @@ namespace poseidon{
    OldZone zone_;
   public:
    OldZoneTest():
-    region_(kDefaultOldZoneSize),
-    zone_(region_){
+    region_(GetOldZoneSize()),
+    zone_(region_, 0, GetOldZoneSize(), GetOldPageSize()){
      if(!region_.Protect(MemoryRegion::kReadWrite)){
        LOG(FATAL) << "failed to protect " << region_;
        return;
@@ -75,6 +75,12 @@ namespace poseidon{
    }
    ~OldZoneTest() override = default;
  };
+
+ TEST_F(OldZoneTest, TestPages){
+   ASSERT_EQ(zone_.GetNumberOfPages(), 32);
+
+   auto p1 = zone_.GetNumberOfPages();
+ }
 
  TEST_F(OldZoneTest, TestTryAllocateWord){
    auto val = (RawObject*)zone_.TryAllocate(sizeof(word));

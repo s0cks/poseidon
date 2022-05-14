@@ -8,6 +8,9 @@
 namespace poseidon{
  class Allocator{
    friend class Scavenger;
+  private:
+   static void SetMajorCollection();
+   static void ClearMajorCollection();
   public:
    Allocator() = delete;
    Allocator(const Allocator& rhs) = delete;
@@ -47,6 +50,8 @@ namespace poseidon{
    //TODO cleanup
    static void MinorCollection();
    static void MajorCollection();
+
+   static bool IsMajorCollectionActive();//TODO: rename
 
    Allocator& operator=(const Allocator& rhs) = delete;
  };

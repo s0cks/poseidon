@@ -25,8 +25,8 @@ namespace poseidon{
    }
   private:
    MemoryRegion region_;
-   NewZone new_zone_;
-   OldZone old_zone_;
+   NewZone* new_zone_;
+   OldZone* old_zone_;
 
    uword AllocateNewObject(int64_t size);
    uword AllocateOldObject(int64_t size);
@@ -34,20 +34,23 @@ namespace poseidon{
   public:
    Heap():
     region_(GetTotalInitialHeapSize()),
-    new_zone_(region_, GetNewZoneSize()),
-    old_zone_(region_, GetNewZoneSize(), GetOldZoneSize(), GetOldPageSize()){
+    new_zone_(new NewZone(region_, GetNewZoneSize())),
+    old_zone_(new OldZone(region_, GetNewZoneSize(), GetOldZoneSize(), GetOldPageSize())){
      if(!region_.Protect(MemoryRegion::kReadWrite)){
        LOG(FATAL) << "failed to protect Heap " << region_;
      }
    }
    Heap(const Heap& rhs) = default;
-   virtual ~Heap() = default;
+   virtual ~Heap(){
+     delete new_zone_;
+     delete old_zone_;
+   }
 
-   NewZone& new_zone(){
+   NewZone* new_zone() const{
      return new_zone_;
    }
 
-   OldZone& old_zone(){
+   OldZone* old_zone() const{
      return old_zone_;
    }
 
@@ -83,8 +86,8 @@ namespace poseidon{
      auto heap = new Heap();
      SetCurrentThreadHeap(heap);//TODO: refactor.
      GCLOG(10) << "new-zone: " << (heap->new_zone());
-     GCLOG(10) << " - from: " << ((void*)heap->new_zone().fromspace()) << " (" << Bytes(heap->new_zone().semisize()) << ").";
-     GCLOG(10) << " - to: " << ((void*)heap->new_zone().tospace()) << " (" << Bytes(heap->new_zone().semisize()) << ").";
+     GCLOG(10) << " - from: " << ((void*)heap->new_zone()->fromspace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
+     GCLOG(10) << " - to: " << ((void*)heap->new_zone()->tospace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
      GCLOG(10) << "old-zone: " << (heap->old_zone());
    }
  };
