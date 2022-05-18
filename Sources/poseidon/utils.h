@@ -277,6 +277,34 @@ namespace poseidon{
 /**********************************************************************************************
  *
  **********************************************************************************************/
+
+ typedef RelaxedAtomic<int64_t> AtomicLong;
+ typedef RelaxedAtomic<Timestamp> AtomicTimestamp;
+
+ class RawObject;
+ struct AtomicPointerCounter{
+   AtomicLong count;
+   AtomicLong bytes;
+
+   AtomicPointerCounter() = default;
+   AtomicPointerCounter(const AtomicPointerCounter& rhs) = default;
+   ~AtomicPointerCounter() = default;
+
+   AtomicPointerCounter& operator=(const AtomicPointerCounter& rhs) = default;
+
+   AtomicPointerCounter& operator+=(RawObject* val);
+   AtomicPointerCounter& operator-=(RawObject* val);
+
+   AtomicPointerCounter& operator=(const int64_t& val){
+     count = val;
+     bytes = val;
+     return *this;
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const AtomicPointerCounter& val){
+     return stream << val.count << " (" << Bytes(val.bytes) << ")";
+   }
+ };
 }
 
 #endif //POSEIDON_UTILS_H

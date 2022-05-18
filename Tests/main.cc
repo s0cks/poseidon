@@ -84,15 +84,9 @@ int main(int argc, char** argv){
     *((word*)v->GetPointer()) = idx;
   }
 
-  DLOG(INFO) << "OldZone FreeList free bytes: " << Bytes(Heap::GetCurrentThreadHeap()->old_zone()->free_list()->GetTotalBytesFree()) << "/" << Bytes(GetOldZoneSize());
-  //OldZone FreeList free bytes: 504mb/512mb
-
   Allocator::MinorCollection();
   Allocator::MinorCollection();
   Allocator::MajorCollection();
-
-  //OldZone FreeList free bytes: 507.09mb/512mb
-  DLOG(INFO) << "OldZone FreeList free bytes: " << Bytes(Heap::GetCurrentThreadHeap()->old_zone()->free_list()->GetTotalBytesFree()) << "/" << Bytes(GetOldZoneSize());
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (after): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";

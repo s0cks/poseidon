@@ -11,16 +11,56 @@
 namespace poseidon{
  static RelaxedAtomic<bool> scavenging(false);
 
+ static AtomicTimestamp last_scavenge_ts;
+ static AtomicLong last_scavenge_duration_ms;
+ static AtomicPointerCounter last_scavenge_scavenged_;
+ static AtomicPointerCounter last_scavenge_promoted_;
+
  bool Scavenger::IsScavenging(){
    return (bool)scavenging;
  }
 
- void Scavenger::SetScavenging(){
-   scavenging = true;
+ void Scavenger::SetScavenging(bool active){
+   if(active){
+     last_scavenge_ts = Clock::now();
+     scavenging = true;
+     last_scavenge_promoted_ = 0;
+     last_scavenge_scavenged_ = 0;
+   } else{
+     scavenging = false;
+     last_scavenge_duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - GetLastScavengeTimestamp()).count();
+   }
  }
 
- void Scavenger::ClearScavenging(){
-   scavenging = false;
+ ScavengerStats Scavenger::GetStats(){
+   return { last_scavenge_ts,
+           last_scavenge_duration_ms,
+           last_scavenge_scavenged_,
+           last_scavenge_promoted_ };
+ }
+
+ Timestamp Scavenger::GetLastScavengeTimestamp(){
+   return (Timestamp)last_scavenge_ts;
+ }
+
+ int64_t Scavenger::GetLastScavengeDurationMillis(){
+   return (int64_t)last_scavenge_duration_ms;
+ }
+
+ int64_t Scavenger::GetNumberOfObjectsScavengedLastScavenge(){
+   return (int64_t)last_scavenge_scavenged_.count;
+ }
+
+ int64_t Scavenger::GetNumberOfBytesScavengedLastScavenge(){
+   return (int64_t)last_scavenge_scavenged_.bytes;
+ }
+
+ int64_t Scavenger::GetNumberOfObjectsPromotedLastScavenge(){
+   return (int64_t)last_scavenge_promoted_.count;
+ }
+
+ int64_t Scavenger::GetNumberOfBytesPromotedLastScavenge(){
+   return (int64_t)last_scavenge_promoted_.bytes;
  }
 
  template<bool Parallel>
@@ -66,9 +106,8 @@ namespace poseidon{
      auto new_ptr = (RawObject*)promotion_->TryAllocate(raw->GetPointerSize());
      CopyObject(raw, new_ptr);
      new_ptr->SetOldBit();
-//TODO:
-//   stats_.num_promoted_ += 1;
-//   stats_.bytes_promoted_ += obj->GetPointerSize();
+
+     last_scavenge_promoted_ += raw;
      return new_ptr->GetAddress();
    }
 
@@ -80,9 +119,7 @@ namespace poseidon{
 
      CopyObject(raw, new_ptr);
 
-//TODO:
-//   stats_.num_scavenged_ += 1;
-//   stats_.bytes_scavenged_ += obj->GetPointerSize();
+     last_scavenge_scavenged_ += raw;
      return new_ptr->GetAddress();
    }
 
@@ -367,6 +404,7 @@ namespace poseidon{
      return;
    }
 
+   DLOG(INFO) << "scavenger stats (before): " << GetStats();
    SetScavenging();
    if(ShouldUseParallelScavenge()){
      ParallelScavenge();
@@ -374,5 +412,6 @@ namespace poseidon{
      SerialScavenge();
    }
    ClearScavenging();
+   DLOG(INFO) << "scavenger stats (after): " << GetStats();
  }
 }
