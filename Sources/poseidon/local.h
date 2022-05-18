@@ -221,7 +221,7 @@ namespace poseidon{
 
      bool HasNext() const override{
        if(current_group_ && current_local_ < kMaxLocalsPerGroup)
-         return true;// has more in current group
+         return current_group_->locals_[current_local_] != 0;// has more in current group
        // no more in current group, check the next group if available
        return current_group_ && IsRecursive() && GetCurrentGroup()->HasNext();
      }

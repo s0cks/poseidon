@@ -157,7 +157,7 @@ namespace poseidon{
     }
 
     friend std::ostream& operator<<(std::ostream& stream, const MemoryRegion& region){
-      return stream << "MemoryRegion(start=" << region.GetStartingAddress() << ", size=" << region.size() << ")";
+      return stream << "MemoryRegion(start=" << region.GetStartingAddressPointer() << ", size=" << Bytes(region.size()) << ", end=" << region.GetEndingAddressPointer() << ")";
     }
   };
 }

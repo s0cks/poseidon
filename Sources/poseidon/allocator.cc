@@ -40,6 +40,7 @@ namespace poseidon{
  void Allocator::MajorCollection(){
    TIMED_SECTION("MajorCollection", {
      Marker::MarkAllLiveObjects();
+
      Sweeper::Sweep();
    });
  }

@@ -87,7 +87,7 @@ namespace poseidon{
    }
 
    inline uword ProcessObject(RawObject* raw){
-     DLOG(INFO) << "processing " << raw->ToString();
+     GCLOG(1) << "processing " << raw->ToString();
      if(!raw->IsForwarding()){
        if(raw->IsRemembered()){
          auto new_address = PromoteObject(raw);
@@ -97,6 +97,7 @@ namespace poseidon{
          ForwardObject(raw, new_address);
        }
      }
+
      PSDN_ASSERT(raw->IsForwarding());
      raw->SetRememberedBit();
      return raw->GetForwardingAddress();
@@ -200,18 +201,16 @@ namespace poseidon{
    friend class ParallelScavenger;
   private:
    ParallelScavenger* scavenger_;
+   WorkStealingQueue<uword>* work_;
 
-   inline ParallelScavenger* scavenger(){
-     return scavenger_;
+   inline WorkStealingQueue<uword>* work() const{
+     return work_;
    }
 
    uword GetNext();
    uword ProcessObject(RawObject* raw);
   public:
-   explicit ParallelScavengerTask(ParallelScavenger* scavenger):
-    Task(),
-    scavenger_(scavenger){
-   }
+   explicit ParallelScavengerTask(ParallelScavenger* scavenger);
    ~ParallelScavengerTask() override = default;
 
    const char* name() const override{
@@ -237,10 +236,10 @@ namespace poseidon{
  class ParallelScavenger : public ScavengerVisitorBase<true>{
    friend class ParallelScavengerTask;
   protected:
-   WorkStealingQueue<uword> work_;
+   WorkStealingQueue<uword>* work_;
 
-   inline WorkStealingQueue<uword>* work(){
-     return &work_;
+   inline WorkStealingQueue<uword>* work() const{
+     return work_;
    }
 
    void ProcessLocals(){
@@ -249,7 +248,7 @@ namespace poseidon{
        locals->VisitPointers([&](RawObject** ptr){
          auto old_val = (*ptr);
          if(old_val->IsNew() && !old_val->IsForwarding()){
-           work_.Push(old_val->GetAddress());
+           work_->Push(old_val->GetAddress());
          }
          return true;
        });
@@ -262,7 +261,7 @@ namespace poseidon{
        //TODO: process old to new references
 
        // wait for work to finish.
-       while(!work_.empty());//spin
+//       while(!work_->empty());//spin
      });
    }
 
@@ -282,6 +281,9 @@ namespace poseidon{
    inline void ProcessAll(){
      ProcessRoots();
      ProcessToSpace();
+
+     // wait for work to finish.
+     while(!work_->empty());//spin
    }
 
    void NotifyLocals(){
@@ -299,14 +301,16 @@ namespace poseidon{
   public:
    explicit ParallelScavenger(Heap* heap):
      ScavengerVisitorBase<true>(heap),
-     work_(4096){
+     work_(new WorkStealingQueue<uword>(4096)){
    }
-   ~ParallelScavenger() override = default;
+   ~ParallelScavenger() override{
+     delete work_;
+   }
 
    bool Visit(RawObject** ptr) override{
      auto old_val = (*ptr);
      if(old_val != nullptr)
-       work_.Push((uword) ptr);
+       work_->Push((uword) ptr);
      return true;
    }
 
@@ -322,22 +326,27 @@ namespace poseidon{
    }
  };
 
+ ParallelScavengerTask::ParallelScavengerTask(ParallelScavenger* scavenger):
+   Task(),
+   work_(scavenger->work()),
+   scavenger_(scavenger){
+ }
+
  bool ParallelScavengerTask::HasWork(){
-   return !scavenger()->work()->empty();
+   return !work()->empty();
  }
 
  uword ParallelScavengerTask::GetNext(){
-   return scavenger()->work()->Steal();
+   return work()->Steal();
  }
 
  uword ParallelScavengerTask::ProcessObject(RawObject* raw){
-   return scavenger()->ProcessObject(raw);
+   return scavenger_->ProcessObject(raw);
  }
 
  void Scavenger::SerialScavenge(){
    auto heap = Heap::GetCurrentThreadHeap();
    SerialScavenger visitor(heap);
-
    TIMED_SECTION("SerialScavenge", {
      visitor.ScavengeMemory();
    });
@@ -345,10 +354,10 @@ namespace poseidon{
 
  void Scavenger::ParallelScavenge(){
    auto heap = Heap::GetCurrentThreadHeap();
-   ParallelScavenger visitor(heap);
-   Runtime::GetTaskPool()->SubmitToAll<ParallelScavengerTask>(&visitor);
+   auto scavenger = new ParallelScavenger(heap);
+   Runtime::GetTaskPool()->SubmitToAll<ParallelScavengerTask>(scavenger);
    TIMED_SECTION("ParallelScavenge", {
-     visitor.ScavengeMemory();
+     scavenger->ScavengeMemory();
    });
  }
 

@@ -367,8 +367,8 @@ namespace poseidon{
       tag_ = ObjectTag::SizeTag::Update(val, raw_tag());
     }
 
-    uint64_t GetTotalSize() const{
-      return sizeof(RawObject) + GetPointerSize();
+    int64_t GetTotalSize() const{
+      return static_cast<int64_t>(sizeof(RawObject) + GetPointerSize());
     }
 
     std::string ToString() const{

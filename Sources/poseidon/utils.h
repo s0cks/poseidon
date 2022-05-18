@@ -46,6 +46,18 @@ namespace poseidon{
    return x + 1;
  }
 
+ template<typename T>
+ static inline bool
+ IsPow2(T x){
+   return ((x & (x - 1)) == 0) && (x != 0);
+ }
+
+ template<typename T>
+ static inline bool
+ IsAligned(T x, int64_t n){
+   return (x & (n - 1)) == 0;
+ }
+
   class BitVector{
    public:
     static const uint64_t kBitsPerByte = 8;

@@ -6,6 +6,8 @@
 #include "poseidon/utils.h"
 #include "poseidon/os_thread.h"
 #include "poseidon/memory_region.h"
+#include "poseidon/zone_new.h"
+#include "poseidon/zone_old.h"
 
 namespace poseidon{
  class Heap{
@@ -24,7 +26,7 @@ namespace poseidon{
      }
    }
   private:
-   MemoryRegion region_;
+   MemoryRegion* region_;
    NewZone* new_zone_;
    OldZone* old_zone_;
 
@@ -33,10 +35,10 @@ namespace poseidon{
    uword AllocateLargeObject(int64_t size);
   public:
    Heap():
-    region_(GetTotalInitialHeapSize()),
+    region_(new MemoryRegion(GetTotalInitialHeapSize())),
     new_zone_(new NewZone(region_, GetNewZoneSize())),
     old_zone_(new OldZone(region_, GetNewZoneSize(), GetOldZoneSize(), GetOldPageSize())){
-     if(!region_.Protect(MemoryRegion::kReadWrite)){
+     if(!region_->Protect(MemoryRegion::kReadWrite)){//TODO: remove
        LOG(FATAL) << "failed to protect Heap " << region_;
      }
    }

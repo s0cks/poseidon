@@ -71,9 +71,6 @@ int main(int argc, char** argv){
   DLOG(INFO) << "l3 (before): " << (*((uword*)l3->GetPointer())) << " (" << l3->ToString() << ").";
   DLOG(INFO) << "l4 (before): " << (*((uword*)l4->GetPointer())) << " (" << l4->ToString() << ").";
 
-  DLOG(INFO) << "old_zone free list (before): ";
-  Heap::GetCurrentThreadHeap()->old_zone()->free_list()->PrintFreeList();
-
   static constexpr const int64_t kNumberOfRoots = 32;
   static constexpr const int64_t kNumberOfGarbage = 65546;
 
@@ -87,12 +84,15 @@ int main(int argc, char** argv){
     *((word*)v->GetPointer()) = idx;
   }
 
+  DLOG(INFO) << "OldZone FreeList free bytes: " << Bytes(Heap::GetCurrentThreadHeap()->old_zone()->free_list()->GetTotalBytesFree()) << "/" << Bytes(GetOldZoneSize());
+  //OldZone FreeList free bytes: 504mb/512mb
+
   Allocator::MinorCollection();
   Allocator::MinorCollection();
   Allocator::MajorCollection();
 
-  DLOG(INFO) << "old_zone free list (after): ";
-  Heap::GetCurrentThreadHeap()->old_zone()->free_list()->PrintFreeList();
+  //OldZone FreeList free bytes: 507.09mb/512mb
+  DLOG(INFO) << "OldZone FreeList free bytes: " << Bytes(Heap::GetCurrentThreadHeap()->old_zone()->free_list()->GetTotalBytesFree()) << "/" << Bytes(GetOldZoneSize());
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (after): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";

@@ -89,7 +89,6 @@ namespace poseidon{
          uword next;
          if((next = GetNext()) != 0){
            auto ptr = (RawObject*)next;
-           DLOG(INFO) << "marking " << ptr->ToString();
            ptr->SetMarkedBit();
          }
        } while(HasWork());
@@ -129,10 +128,8 @@ namespace poseidon{
 
    bool Visit(RawObject** ptr) override{
      auto old_val = (*ptr);
-     if(!old_val->IsMarked() && !old_val->IsForwarding()){
-       DLOG(INFO) << "pushing " << old_val->ToString();
+     if(!old_val->IsMarked() && !old_val->IsForwarding())
        work_->Push(old_val->GetAddress());
-     }
      return true;
    }
 

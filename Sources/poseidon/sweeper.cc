@@ -52,7 +52,7 @@ namespace poseidon{
    explicit ParallelSweeper(OldZone* zone):
     SweeperVisitorBase<true>(),
     work_(new WorkStealingQueue<uword>(4096)),
-    free_list_(zone->free_list()){
+    free_list_(&zone->free_list_){
    }
    ~ParallelSweeper() override = default;//TODO: free work_
 
@@ -84,15 +84,15 @@ namespace poseidon{
    }
 
    void SweepObject(RawObject* ptr){
-     DLOG(INFO) << "sweeping " << ptr->ToString() << "....";
+     GCLOG(1) << "sweeping " << ptr->ToString() << "....";
      //TODO: update object tag
 #ifdef PSDN_DEBUG
      memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
 #endif//PSDN_DEBUG
-     //TODO: add to free list
+     free_list_->Add(ptr->GetAddress(), ptr->GetTotalSize());
    }
   public:
-   explicit ParallelSweeperTask(ParallelSweeper sweeper):
+   explicit ParallelSweeperTask(ParallelSweeper& sweeper):
     Task(),
     work_(sweeper.work()),
     free_list_(sweeper.free_list()){
@@ -128,11 +128,12 @@ namespace poseidon{
  void Sweeper::ParallelSweep(){
    auto heap = Heap::GetCurrentThreadHeap();
    auto old_zone = heap->old_zone();
+   GCLOG(1) << "sweeping " << (*old_zone);
 
    ParallelSweeper sweeper(old_zone);
    Runtime::GetTaskPool()->SubmitToAll<ParallelSweeperTask>(sweeper);
    TIMED_SECTION("ParallelSweep", {
-     old_zone->VisitMarkedPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
+     old_zone->VisitAllPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
        page->VisitPointers([&](RawObject* raw){
          if(!raw->IsMarked())
            sweeper.work()->Push(raw->GetAddress());
