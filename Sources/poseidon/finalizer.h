@@ -26,7 +26,9 @@ namespace poseidon{
    }
 
    void Finalize(RawObject* val){
-     VLOG(3) << "finalizing " << val->ToString() << ".";
+     DLOG(INFO) << "finalizing " << val->ToString() << ".";
+     memset(val->GetPointer(), 0, val->GetPointerSize());
+
      val->ClearMarkedBit();
      val->SetPointerSize(0);
 

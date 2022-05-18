@@ -5,6 +5,7 @@
 #include "poseidon/allocator.h"
 #include "poseidon/os_thread.h"
 #include "poseidon/scavenger.h"
+#include "poseidon/compactor.h"
 
 namespace poseidon{
  static RelaxedAtomic<bool> major_collection_(false);
@@ -37,11 +38,12 @@ namespace poseidon{
    })
  }
 
- void Allocator::MajorCollection(){
+ void Allocator::MajorCollection(){ //TODO: decide between sweeper & compactor
    TIMED_SECTION("MajorCollection", {
      Marker::MarkAllLiveObjects();
 
      Sweeper::Sweep();
+     //Compactor::SerialCompact();
    });
  }
 }

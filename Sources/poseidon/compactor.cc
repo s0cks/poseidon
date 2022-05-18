@@ -1,91 +1,185 @@
-#include "poseidon/finalizer.h"
-#include "poseidon/allocator.h"
+#include "poseidon/heap.h"
+#include "poseidon/flags.h"
 #include "poseidon/compactor.h"
+#include "poseidon/finalizer.h"
+#include "poseidon/raw_object.h"
+#include "poseidon/relaxed_atomic.h"
 
 namespace poseidon{
- void Compactor::MarkLiveObjects(){
-//   Allocator::VisitLocals([&](RawObject* val){
-//     if(Contains(val->GetAddress()) && !val->IsMarked())
-//       MarkObject(val);
-//     return true;
-//   });
+ class SerialCompactor;
+ class ParallelCompactor;
+ class ParallelCompactorTask;
+
+ static RelaxedAtomic<bool> isCompacting(false);
+
+ void Compactor::SetCompacting(bool active){
+   isCompacting = active;
  }
 
- void Compactor::ComputeForwardingAddresses(){
-// 1. Compute the forwarding location for live objects.
-//    * Keep track of a free and live pointer and initialize both to the start of heap.
-//    * If the live pointer points to a live object, update that object's forwarding pointer to the current free pointer and increment the free pointer according to the object's size.
-//    * Move the live pointer to the next object
-//    * End when the live pointer reaches the end of heap.
-   while(live_ < GetEndingAddress() && live_ptr()->GetPointerSize() > 0){
-     auto ptr = live_ptr();
-     if(ptr->IsMarked()){
-       free_ += ForwardObject(ptr);
-     }
-     live_ += ptr->GetTotalSize();
+ bool Compactor::IsCompacting(){
+   return (bool)isCompacting;
+ }
+
+ template<bool Parallel>
+ class CompactorVisitorBase : public RawObjectPointerVisitor{
+  protected:
+   CompactorVisitorBase() = default;
+  public:
+   ~CompactorVisitorBase() override = default;
+
+   bool IsParallel() const{
+     return Parallel;
    }
- }
+ };
 
- void Compactor::UpdateLiveObjects(){
-// 1. Update all pointers
-//    * For each live object, update its pointers according to the forwarding pointers of the objects they point to.
-//  Allocator::VisitLocals([&](RawObject** val){
-//     auto old_val = (*val);
-//     if(old_val->IsMarked()){
-//#ifdef PSDN_DEBUG
-//       assert(old_val->IsForwarding());
-//#endif//PSDN_DEBUG
-//       (*val) = (RawObject*)old_val->GetForwardingAddress();
-//     }
-//     return true;
-//   });
- }
+ class SerialCompactor : public CompactorVisitorBase<false>{
+  private:
+   uword start_;
+   int64_t size_;
 
- void Compactor::ForwardAndFinalizeObjects(){
-// 2. Move objects
-//    * For each live object, move its data to its forwarding location.
-   Finalizer finalizer;
+   uword live_;
+   uword free_;
 
-   auto next_address = GetStartingAddress();
-   auto current_address = GetStartingAddress();
-   while(current_address < GetEndingAddress()){
-     auto current = (RawObject*)current_address;
-     if(current->GetPointerSize() <= 0)
-       break;
+   inline uword GetStartingAddress() const{
+     return start_;
+   }
 
-     auto length = current->GetTotalSize();
+   inline int64_t GetSize() const{
+     return size_;
+   }
 
-     if(current->IsMarked()){
+   inline uword GetEndingAddress() const{
+     return GetStartingAddress() + GetSize();
+   }
+
+   inline RawObject* live_ptr() const{
+     return (RawObject*)live_;
+   }
+
+   inline RawObject* free_ptr() const{
+     return (RawObject*)free_;
+   }
+
+   inline int64_t Forward(RawObject* ptr){ //TODO: need to copy object over
+     DLOG(INFO) << "forwarding " << ptr->ToString() << " to " << free_ptr();
+     ptr->SetForwardingAddress(free_ptr()->GetAddress());
+     return ptr->GetTotalSize();
+   }
+
+   inline int64_t CopyObject(RawObject* src, RawObject* dst){
+     DLOG(INFO) << "copying " << src->ToString() << " to " << dst->ToString();
+     new (dst)RawObject();
+     dst->SetPointerSize(src->GetPointerSize());
+     dst->SetOldBit();
+
 #ifdef PSDN_DEBUG
-       assert(current->IsForwarding());
+     assert(src->GetTotalSize() == dst->GetTotalSize());
 #endif//PSDN_DEBUG
-       next_address += Copy(current);
-     } else{
-       finalizer.Finalize(current);
-     }
-
-     current_address += length;
+     memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
+     return dst->GetTotalSize();
    }
-   //TODO: SetCurrent(next_address);
 
-   DLOG(INFO) << "*** number of objects finalized: " << finalizer.GetNumberOfObjectsFinalized() << " (" << Bytes(finalizer.GetNumberOfBytesFinalized()) << ").";
+   inline int64_t Copy(RawObject* val){
+     auto next_address = val->GetForwardingAddress();
+     return CopyObject(val, (RawObject*)next_address);
+   }
+
+   void ComputeForwardingAddressAndFinalizeObjects(){
+     while(live_ < GetEndingAddress() && live_ptr()->GetPointerSize() > 0){
+       auto ptr = live_ptr();
+       if(ptr->IsMarked()){
+         free_ += Forward(ptr);
+       }
+       live_ += ptr->GetTotalSize();
+     }
+   }
+
+   void ForwardAndFinalizeObjects(){
+     Finalizer finalizer;
+
+     auto next_address = GetStartingAddress();
+     auto current_address = GetStartingAddress();
+     while(current_address < GetEndingAddress()){
+       auto current = (RawObject*)current_address;
+       if(current->GetPointerSize() <= 0)
+         break;
+
+       auto length = current->GetTotalSize();
+
+       if(current->IsMarked()){
+#ifdef PSDN_DEBUG
+         assert(current->IsForwarding());
+#endif//PSDN_DEBUG
+         next_address += Copy(current);
+       } else{
+         finalizer.Finalize(current);
+       }
+
+       current_address += length;
+     }
+     //TODO: SetCurrent(next_address);
+
+     DLOG(INFO) << "*** number of objects finalized: " << finalizer.GetNumberOfObjectsFinalized() << " (" << Bytes(finalizer.GetNumberOfBytesFinalized()) << ").";
+   }
+  public:
+   explicit SerialCompactor(OldZone* zone):
+    start_(zone->GetStartingAddress()),
+    size_(zone->GetSize()),
+    live_(zone->GetStartingAddress()),
+    free_(zone->GetStartingAddress()){
+   }
+   ~SerialCompactor() override = default;
+
+   bool Visit(RawObject** ptr) override{
+     return true;
+   }
+
+   void Compact(){
+     TIMED_SECTION("ComputeForwarding", {
+       ComputeForwardingAddressAndFinalizeObjects();
+     });
+
+     TIMED_SECTION("CopyingAndFinalizing", {
+       ForwardAndFinalizeObjects();//TODO: rename
+     })
+   }
+ };
+
+ class ParallelCompactor : public CompactorVisitorBase<true>{
+
+ };
+
+ void Compactor::SerialCompact(){
+   auto heap = Heap::GetCurrentThreadHeap();
+   auto old_zone = heap->old_zone();
+
+   SerialCompactor compactor(old_zone);
+   TIMED_SECTION("SerialCompact", {
+     compactor.Compact();
+   });
+ }
+
+ void Compactor::ParallelCompact(){
+   auto heap = Heap::GetCurrentThreadHeap();
+   auto old_zone = heap->old_zone();
+
+   TIMED_SECTION("ParallelCompact", {
+     NOT_IMPLEMENTED(ERROR);//TODO: implement
+   });
  }
 
  void Compactor::Compact(){
-   DLOG(INFO) << "compacting heap....";
-#ifdef PSDN_DEBUG
-   auto start_ts = Clock::now();
-#endif//PSDN_DEBUG
+   if(IsCompacting()){
+     DLOG(WARNING) << "already compacting.";
+     return;
+   }
 
-   MarkLiveObjects();//TODO: for testing?
-   ComputeForwardingAddresses();
-   UpdateLiveObjects();
-   ForwardAndFinalizeObjects();
-
-#ifdef PSDN_DEBUG
-   auto finish_ts = Clock::now();
-   auto duration = (finish_ts - start_ts);
-   DLOG(INFO) << "compaction finished in " << duration << ".";
-#endif//PSDN_DEBUG
+   SetCompacting();
+   if(ShouldUseParallelCompact()){
+     ParallelCompact();
+   } else{
+     SerialCompact();
+   }
+   ClearCompacting();
  }
 }

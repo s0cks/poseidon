@@ -7,16 +7,46 @@
 namespace poseidon{
  static RelaxedAtomic<bool> sweeping(false);
 
+ static RelaxedAtomic<Timestamp> last_sweep_ts;
+ static RelaxedAtomic<int64_t> last_sweep_duration_ms;
+ static RelaxedAtomic<double> last_sweep_frag_perc(0.0);
+ static RelaxedAtomic<int64_t> last_sweep_num(0);
+ static RelaxedAtomic<int64_t> last_sweep_bytes(0);
+
  bool Sweeper::IsSweeping(){
    return (bool)sweeping;
  }
 
- void Sweeper::SetSweeping(){
-   sweeping = true;
+ void Sweeper::SetSweeping(bool active){
+   if(active){
+     last_sweep_ts = Clock::now();
+     sweeping = true;
+     last_sweep_num = 0;
+     last_sweep_bytes = 0;
+   } else{
+     sweeping = false;
+     last_sweep_duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - GetLastSweepTimestamp()).count();
+   }
  }
 
- void Sweeper::ClearSweeping(){
-   sweeping = false;
+ Timestamp Sweeper::GetLastSweepTimestamp(){
+   return (Timestamp)last_sweep_ts;
+ }
+
+ int64_t Sweeper::GetLastSweepDurationMillis(){
+   return (int64_t)last_sweep_duration_ms;
+ }
+
+ double Sweeper::GetLastSweepFragmentationPercentage(){
+   return (double)last_sweep_frag_perc;
+ }
+
+ int64_t Sweeper::GetNumberOfObjectsLastSweep(){
+   return (int64_t)last_sweep_num;
+ }
+
+ int64_t Sweeper::GetNumberOfBytesLastSweep(){
+   return (int64_t)last_sweep_bytes;
  }
 
  template<bool Parallel>
@@ -84,12 +114,15 @@ namespace poseidon{
    }
 
    void SweepObject(RawObject* ptr){
-     GCLOG(1) << "sweeping " << ptr->ToString() << "....";
+     DLOG(INFO) << "sweeping " << ptr->ToString() << "....";
      //TODO: update object tag
 #ifdef PSDN_DEBUG
      memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
 #endif//PSDN_DEBUG
      free_list_->Add(ptr->GetAddress(), ptr->GetTotalSize());
+
+     last_sweep_num += 1;
+     last_sweep_bytes += ptr->GetTotalSize();//TODO: should we use total size or pointer size
    }
   public:
    explicit ParallelSweeperTask(ParallelSweeper& sweeper):
@@ -115,20 +148,20 @@ namespace poseidon{
    }
  };
 
- void Sweeper::SerialSweep(){
-   auto heap = Heap::GetCurrentThreadHeap();
-   auto old_zone = heap->old_zone();
-
+ void Sweeper::SerialSweep(OldZone* old_zone){
    SerialSweeper sweeper;
    TIMED_SECTION("SerialSweep", {
 
    });
  }
 
- void Sweeper::ParallelSweep(){
-   auto heap = Heap::GetCurrentThreadHeap();
-   auto old_zone = heap->old_zone();
-   GCLOG(1) << "sweeping " << (*old_zone);
+ static inline double
+ GetPercentageFreeInFreeList(OldZone* zone){
+   return GetPercentageOf(zone->free_list()->GetTotalBytesFree(), zone->GetSize());
+ }
+
+ void Sweeper::ParallelSweep(OldZone* old_zone){
+   double perc_free_before = GetPercentageFreeInFreeList(old_zone);
 
    ParallelSweeper sweeper(old_zone);
    Runtime::GetTaskPool()->SubmitToAll<ParallelSweeperTask>(sweeper);
@@ -142,6 +175,9 @@ namespace poseidon{
        return true;
      });
    });
+
+   double perc_free_after = GetPercentageFreeInFreeList(old_zone);
+   last_sweep_frag_perc = perc_free_after - perc_free_before;
  }
 
  void Sweeper::Sweep(){
@@ -150,12 +186,18 @@ namespace poseidon{
      return;
    }
 
+   auto heap = Heap::GetCurrentThreadHeap();
+   auto old_zone = heap->old_zone();
+   DLOG(INFO) << "sweeping " << (*old_zone);
+   DLOG(INFO) << "sweeper stats (before): " << GetStats();
+
    SetSweeping();
-   if(ShouldUseParallelMark()){
-     ParallelSweep();
+   if(ShouldUseParallelSweep()){
+     ParallelSweep(old_zone);
    } else{
-     SerialSweep();
+     SerialSweep(old_zone);
    }
    ClearSweeping();
+   DLOG(INFO) << "sweeper stats (after): " << GetStats();
  }
 }

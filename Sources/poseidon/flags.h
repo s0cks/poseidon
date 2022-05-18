@@ -60,6 +60,11 @@ namespace poseidon{
    return GetNumberOfWorkers() > 0;
  }
 
+ static inline bool
+ ShouldUseParallelCompact(){
+   return GetNumberOfWorkers() > 0;
+ }
+
  static inline int64_t
  GetTotalInitialHeapSize(){
    return GetNewZoneSize() + GetOldZoneSize();
