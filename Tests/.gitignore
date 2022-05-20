@@ -2,6 +2,9 @@
 /reports/*
 /reports/*/
 
+/logs/*
+/logs/*/
+
 # Except
 !/reports/.gitkeep
 !/logs/.gitkeep
