@@ -2,11 +2,11 @@
 #include <glog/logging.h>
 
 #include "poseidon/local.h"
-#include "poseidon/marker.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
-#include "poseidon/scavenger.h"
-#include "poseidon/allocator.h"
+
+#include "poseidon/collector/collector.h"
+#include "poseidon/allocator/allocator.h"
 
 namespace poseidon{
  static inline Local<word>
@@ -92,8 +92,8 @@ int main(int argc, char** argv){
     *((word*)v->GetPointer()) = idx;
   }
 
-  Allocator::MinorCollection();
-  Allocator::MajorCollection();
+  Collector::MinorCollection();
+  Collector::MajorCollection();
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (after): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";

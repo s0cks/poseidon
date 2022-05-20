@@ -1,7 +1,7 @@
 #include "poseidon/heap/heap.h"
 #include "poseidon/flags.h"
-#include "poseidon/compactor.h"
-#include "poseidon/finalizer.h"
+#include "poseidon/collector/compactor.h"
+#include "poseidon/collector/finalizer.h"
 #include "poseidon/raw_object.h"
 #include "poseidon/relaxed_atomic.h"
 

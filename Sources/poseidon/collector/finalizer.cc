@@ -1,4 +1,4 @@
-#include "poseidon/finalizer.h"
+#include "poseidon/collector/finalizer.h"
 
 namespace poseidon{
  static AtomicPointerCounter finalized_;

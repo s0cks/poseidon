@@ -7,6 +7,7 @@
 
 #include <random>
 #include <ostream>
+#include <glog/logging.h>
 
 #include "poseidon/wsq.h"
 #include "poseidon/common.h"

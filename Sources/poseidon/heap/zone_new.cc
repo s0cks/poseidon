@@ -1,11 +1,11 @@
-#include "poseidon/allocator.h"
 #include "poseidon/heap/zone_new.h"
+#include "poseidon/collector/collector.h"
 
 namespace poseidon{
  uword NewZone::TryAllocate(int64_t size){
    auto total_size = size + sizeof(RawObject);
    if((current_ + total_size) >= (fromspace_ + tospace_))
-     Allocator::MinorCollection();
+     Collector::MinorCollection();
 
    if((current_ + total_size) >= (fromspace_ + tospace_)){
      LOG(FATAL) << "insufficient memory.";

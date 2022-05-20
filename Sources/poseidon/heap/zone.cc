@@ -1,5 +1,4 @@
 #include "poseidon/heap/zone.h"
-#include "poseidon/allocator.h"
 
 namespace poseidon{
  void Zone::VisitObjectPointers(RawObjectVisitor* vis) const{

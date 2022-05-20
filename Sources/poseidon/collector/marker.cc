@@ -1,9 +1,9 @@
 #include "poseidon/flags.h"
 #include "poseidon/local.h"
-#include "poseidon/marker.h"
 #include "poseidon/runtime.h"
 #include "poseidon/task_pool.h"
 #include "poseidon/raw_object.h"
+#include "poseidon/collector/marker.h"
 
 namespace poseidon{
  static RelaxedAtomic<bool> marking(false);

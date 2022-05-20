@@ -1,8 +1,9 @@
 #include "poseidon/wsq.h"
-#include "poseidon/sweeper.h"
 #include "poseidon/runtime.h"
-#include "poseidon/allocator.h"
 #include "poseidon/task_pool.h"
+#include "poseidon/heap/heap.h"
+#include "poseidon/heap/zone_old.h"
+#include "poseidon/collector/sweeper.h"
 
 namespace poseidon{
  static RelaxedAtomic<bool> sweeping(false);

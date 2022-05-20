@@ -4,11 +4,10 @@
 #include "poseidon/utils.h"
 #include "poseidon/local.h"
 #include "poseidon/runtime.h"
-#include "poseidon/scavenger.h"
-#include "poseidon/allocator.h"
 #include "poseidon/task_pool.h"
-#include "poseidon/finalizer.h"
 
+#include "poseidon/collector/scavenger.h"
+#include "poseidon/collector/finalizer.h"
 #include "poseidon/heap/zone_new.h"
 #include "poseidon/heap/semispace.h"
 

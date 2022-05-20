@@ -1,6 +1,6 @@
 #include <glog/logging.h>
 #include "poseidon/heap/heap.h"
-#include "poseidon/allocator.h"
+#include "poseidon/collector/collector.h"
 
 namespace poseidon{
  pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
@@ -11,7 +11,7 @@ namespace poseidon{
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << Bytes(size) << ".";
-   Allocator::MinorCollection();
+   Collector::MinorCollection();
 
    if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
@@ -32,7 +32,7 @@ finish_allocation:
      goto finish_allocation;
 
    // 2. Try Major Collection
-   Allocator::MajorCollection();
+   Collector::MajorCollection();
 
    // 3. Try Allocation Again
    if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
