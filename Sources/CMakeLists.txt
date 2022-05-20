@@ -10,7 +10,7 @@ add_library(poseidon
     poseidon/platform/platform.h
     poseidon/common.h
     poseidon/utils.h
-    poseidon/heap.h poseidon/heap.cc
+    poseidon/heap/heap.h poseidon/heap/heap.cc
     poseidon/local.h poseidon/local.cc
     poseidon/allocator.h poseidon/allocator.cc
     poseidon/raw_object.h poseidon/raw_object.cc
@@ -18,8 +18,8 @@ add_library(poseidon
     poseidon/marker.h poseidon/marker.cc
     poseidon/finalizer.h
     poseidon/platform/memory_region.h poseidon/platform/memory_region.cc  poseidon/platform/memory_region_linux.cc poseidon/platform/memory_region_win.cc poseidon/platform/memory_region_osx.cc
-    poseidon/zone.h poseidon/zone.cc
-    poseidon/semispace.h
+    poseidon/heap/zone.h poseidon/heap/zone.cc
+    poseidon/heap/semispace.h
     poseidon/flags.h
     poseidon/relaxed_atomic.h
     poseidon/compactor.h poseidon/compactor.cc
@@ -32,8 +32,8 @@ add_library(poseidon
     poseidon/freelist.h poseidon/freelist.cc
     poseidon/sweeper.h poseidon/sweeper.cc
     poseidon/runtime.h poseidon/runtime.cc
-    poseidon/zone_new.h poseidon/zone_new.cc
-    poseidon/zone_old.cc poseidon/zone_old.h
+    poseidon/heap/zone_new.h poseidon/heap/zone_new.cc
+    poseidon/heap/zone_old.h poseidon/heap/zone_old.cc
     poseidon/utils.cc poseidon/finalizer.cc)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}

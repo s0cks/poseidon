@@ -1,4 +1,4 @@
-#include "poseidon/heap.h"
+#include "poseidon/heap/heap.h"
 #include "poseidon/flags.h"
 #include "poseidon/compactor.h"
 #include "poseidon/finalizer.h"

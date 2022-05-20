@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
 
-#include "poseidon/zone_old.h"
+#include "poseidon/flags.h"
+#include "poseidon/heap/zone_old.h"
 
 namespace poseidon{
  using namespace ::testing;

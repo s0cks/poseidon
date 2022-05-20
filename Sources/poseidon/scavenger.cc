@@ -9,6 +9,9 @@
 #include "poseidon/task_pool.h"
 #include "poseidon/finalizer.h"
 
+#include "poseidon/heap/zone_new.h"
+#include "poseidon/heap/semispace.h"
+
 namespace poseidon{
  static RelaxedAtomic<bool> scavenging(false);
 

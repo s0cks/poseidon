@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SWEEPER_H
 #define POSEIDON_SWEEPER_H
 
-#include "poseidon/zone.h"
+#include "poseidon/heap/zone.h"
 #include "poseidon/utils.h"
 #include "poseidon/common.h"
 #include "poseidon/freelist.h"

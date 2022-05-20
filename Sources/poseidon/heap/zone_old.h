@@ -1,7 +1,9 @@
 #ifndef POSEIDON_ZONE_OLD_H
 #define POSEIDON_ZONE_OLD_H
 
-#include "poseidon/zone.h"
+#include "poseidon/bitset.h"
+#include "poseidon/freelist.h"
+#include "poseidon/heap/zone.h"
 
 namespace poseidon{
  class OldPage{

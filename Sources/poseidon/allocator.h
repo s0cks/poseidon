@@ -3,7 +3,7 @@
 
 #include <glog/logging.h>
 
-#include "poseidon/heap.h"
+#include "poseidon/heap/heap.h"
 
 namespace poseidon{
  class Allocator{

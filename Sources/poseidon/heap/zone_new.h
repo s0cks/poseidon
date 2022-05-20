@@ -1,7 +1,7 @@
 #ifndef POSEIDON_NEW_ZONE_H
 #define POSEIDON_NEW_ZONE_H
 
-#include "poseidon/zone.h"
+#include "poseidon/heap/zone.h"
 
 namespace poseidon{
  class NewZone : public Zone{//TODO: pages?

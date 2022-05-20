@@ -1,11 +1,13 @@
 #ifndef POSEIDON_HEAP_H
 #define POSEIDON_HEAP_H
 
-#include "poseidon/zone.h"
 #include "poseidon/flags.h"
 #include "poseidon/utils.h"
-#include "poseidon/zone_new.h"
-#include "poseidon/zone_old.h"
+
+#include "poseidon/heap/zone.h"
+#include "poseidon/heap/zone_new.h"
+#include "poseidon/heap/zone_old.h"
+
 #include "poseidon/platform/os_thread.h"
 #include "poseidon/platform/memory_region.h"
 

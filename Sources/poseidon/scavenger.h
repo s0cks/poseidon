@@ -1,8 +1,8 @@
 #ifndef POSEIDON_SCAVENGER_H
 #define POSEIDON_SCAVENGER_H
 
-#include "poseidon/zone.h"
-#include "poseidon/heap.h"
+#include "poseidon/heap/zone.h"
+#include "poseidon/heap/heap.h"
 #include "poseidon/utils.h"
 #include "poseidon/task_pool.h"
 

@@ -1,10 +1,7 @@
 #ifndef POSEIDON_POSEIDON_ZONE_H
 #define POSEIDON_POSEIDON_ZONE_H
 
-#include "poseidon/flags.h"
-#include "poseidon/bitset.h"
-#include "poseidon/freelist.h"
-#include "poseidon/semispace.h"
+#include "poseidon/raw_object.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{

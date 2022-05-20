@@ -1,5 +1,5 @@
-#include "poseidon/zone_new.h"
 #include "poseidon/allocator.h"
+#include "poseidon/heap/zone_new.h"
 
 namespace poseidon{
  uword NewZone::TryAllocate(int64_t size){
