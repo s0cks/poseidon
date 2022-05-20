@@ -40,32 +40,40 @@ int main(int argc, char** argv){
   Runtime::Initialize();
   Allocator::Initialize();
 
+  // roots
+  auto h1 = AllocateWord(100);
+  auto h2 = AllocateWord(1000);
+  auto h3 = AllocateWord(10);
+
+  // garbage
   auto v1 = (RawObject*)Allocator::Allocate(sizeof(word));
   *((word*)v1->GetPointer()) = 1;
   auto v2 = (RawObject*)Allocator::Allocate(sizeof(word));
   *((word*)v2->GetPointer()) = 100000;
 
-  auto h1 = AllocateWord(100);
-  auto h2 = AllocateWord(1000);
-  auto h3 = AllocateWord(10);
-
+  // isn't affected by MinorCollection, doesn't persist after MajorCollection
   auto l1 = AllocateLargeObject(2 * kMB);
   (*((uword*)l1.Get())) = 10;
 
+  // isn't affected by MinorCollection, doesn't persist after MajorCollection
   auto l2 = AllocateLargeObject(2 * kMB);
   (*((uword*)l2.Get())) = 1000;
 
+  // isn't affected by MinorCollection, doesn't persist after MajorCollection
   auto l3 = (RawObject*)Allocator::Allocate(2 * kMB);
   (*((uword*)l3->GetPointer())) = 11111;
 
+  // isn't affected by MinorCollection, doesn't persist after MajorCollection
   auto l4 = (RawObject*)Allocator::Allocate(2 * kMB);
   (*((uword*)l4->GetPointer())) = 22222;
 
   DLOG(INFO) << "h1 (before): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (before): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";
   DLOG(INFO) << "h3 (before): " << (*h3.Get()) << " (" << h3.raw()->ToString() << ").";
+  DLOG(INFO) << "------------";
   DLOG(INFO) << "v1 (before): " << (*((word*)v1->GetPointer())) << " (" << v1->ToString() << ").";
   DLOG(INFO) << "v2 (before): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
+  DLOG(INFO) << "------------";
   DLOG(INFO) << "l1 (before): " << (*l1.Get()) << " (" << l1.raw()->ToString() << ").";
   DLOG(INFO) << "l2 (before): " << (*l2.Get()) << " (" << l2.raw()->ToString() << ").";
   DLOG(INFO) << "l3 (before): " << (*((uword*)l3->GetPointer())) << " (" << l3->ToString() << ").";
@@ -85,14 +93,15 @@ int main(int argc, char** argv){
   }
 
   Allocator::MinorCollection();
-  Allocator::MinorCollection();
   Allocator::MajorCollection();
 
   DLOG(INFO) << "h1 (after): " << (*h1.Get()) << " (" << h1.raw()->ToString() << ").";
   DLOG(INFO) << "h2 (after): " << (*h2.Get()) << " (" << h2.raw()->ToString() << ").";
   DLOG(INFO) << "h3 (after): " << (*h3.Get()) << " (" << h3.raw()->ToString() << ").";
+  DLOG(INFO) << "------------";
   DLOG(INFO) << "v1 (after): " << (*((word*)v1->GetPointer())) << " (" << v1->ToString() << ").";
   DLOG(INFO) << "v2 (after): " << (*((word*)v2->GetPointer())) << " (" << v2->ToString() << ").";
+  DLOG(INFO) << "------------";
   DLOG(INFO) << "l1 (after): " << (*l1.Get()) << " (" << l1.raw()->ToString() << ").";
   DLOG(INFO) << "l2 (after): " << (*l2.Get()) << " (" << l2.raw()->ToString() << ").";
   DLOG(INFO) << "l3 (after): " << (*((word*)l3->GetPointer())) << " (" << l3->ToString() << ").";

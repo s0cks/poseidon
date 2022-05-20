@@ -95,8 +95,6 @@ namespace poseidon{
    }
 
    void ForwardAndFinalizeObjects(){
-     Finalizer finalizer;
-
      auto next_address = GetStartingAddress();
      auto current_address = GetStartingAddress();
      while(current_address < GetEndingAddress()){
@@ -112,14 +110,12 @@ namespace poseidon{
 #endif//PSDN_DEBUG
          next_address += Copy(current);
        } else{
-         finalizer.Finalize(current);
+         Finalizer::Finalize(current);
        }
 
        current_address += length;
      }
      //TODO: SetCurrent(next_address);
-
-     DLOG(INFO) << "*** number of objects finalized: " << finalizer.GetNumberOfObjectsFinalized() << " (" << Bytes(finalizer.GetNumberOfBytesFinalized()) << ").";
    }
   public:
    explicit SerialCompactor(OldZone* zone):

@@ -5,165 +5,155 @@
 
 namespace poseidon{
  class OldPage{
-   friend class OldZone;
-  public:
-   class OldPageIterator : public RawObjectPointerIterator{
-    private:
-     const OldPage* page_;
-     uword current_;
-
-     inline uword current_address() const{
-       return current_;
-     }
-
-     inline RawObject* current_ptr() const{
-       return (RawObject*)current_address();
-     }
-
-     inline uword next_address() const{
-       return current_ + current_ptr()->GetPointerSize();
-     }
-
-     inline RawObject* next_ptr() const{
-       return (RawObject*)next_address();
-     }
-    public:
-     explicit OldPageIterator(const OldPage* page):
-         RawObjectPointerIterator(),
-         page_(page),
-         current_(page->GetStartingAddress()){
-     }
-     ~OldPageIterator() override = default;
-
-     const OldPage* page() const{
-       return page_;
-     }
-
-     bool HasNext() const override{
-       return current_address() < page()->GetEndingAddress();
-     }
-
-     RawObject* Next() override{
-       auto next = current_ptr();
-       current_ += next->GetTotalSize();
-       return next;
-     }
-   };
-  protected:
-   OldPage* next_;
-   OldPage* previous_;
-
+   friend class OldPageTable;
+  private:
    int64_t index_;
    uword start_;
-   uword current_;
    int64_t size_;
 
    OldPage(int64_t index, uword start, int64_t size):
-     next_(nullptr),
-     previous_(nullptr),
-     index_(index),
-     start_(start),
-     current_(start),
-     size_(size){
+    index_(index),
+    start_(start),
+    size_(size){
    }
   public:
-   OldPage() = delete;
-   OldPage(const OldPage& rhs) = delete;
-   virtual ~OldPage() = default;
+   OldPage() = default;
+   OldPage(const OldPage& rhs):
+    index_(rhs.index()),
+    start_(rhs.starting_address()),
+    size_(rhs.size()){
+   }
+   ~OldPage() = default;
 
    int64_t index() const{
      return index_;
    }
 
-   int64_t GetSize() const{
-     return size_;
-   }
-
-   uword GetStartingAddress() const{
+   uword starting_address() const{
      return start_;
    }
 
-   void* GetStartingAddressPointer() const{
-     return (void*)GetStartingAddress();
+   int64_t size() const{
+     return size_;
    }
 
-   uword GetCurrentAddress() const{
-     return current_;
-   }
-
-   void* GetCurrentAddressPointer() const{
-     return (void*)GetCurrentAddress();
-   }
-
-   uword GetEndingAddress() const{
-     return GetStartingAddress() + GetSize();
-   }
-
-   void* GetEndingAddressPointer() const{
-     return (void*)GetEndingAddress();
+   uword ending_address() const{
+     return starting_address() + size();
    }
 
    bool Contains(uword address) const{
-     return address >= GetStartingAddress()
-         && address <= GetEndingAddress();
+     return starting_address() <= address
+         && ending_address() >= address;
    }
+ };
 
-   bool HasNext() const{
-     return next_ != nullptr;
-   }
+ class OldPageTable{
+   friend class OldZone;
+  private:
+   OldPage* pages_;
+   int64_t num_pages_;
+   BitSet marked_;
 
-   OldPage* GetNext() const{
-     return next_;
-   }
+   void CreatePagesForRange(uword start, int64_t sz, int64_t page_size){
+     PSDN_ASSERT(IsPow2(sz));
+     PSDN_ASSERT(IsPow2(page_size));
+     PSDN_ASSERT((sz % page_size) == 0);
+     PSDN_ASSERT((sz / page_size) == size());
 
-   void SetNext(OldPage* page){
-     next_ = page;
-   }
-
-   bool HasPrevious() const{
-     return previous_ != nullptr;
-   }
-
-   OldPage* GetPrevious() const{
-     return previous_;
-   }
-
-   void SetPrevious(OldPage* page){
-     previous_ = page;
-   }
-
-   uword TryAllocate(int64_t size){
-     auto total_size = size + static_cast<int64_t>(sizeof(RawObject));
-
-     uword address = current_;
-     current_ += total_size;
-     if(address != 0){
-       auto raw_ptr = new ((void*)address)RawObject();
-       raw_ptr->SetPointerSize(size);
-       return address;
+     int64_t index = 0;
+     for(auto current = start; current < (start + sz); current += page_size, index++){
+       pages_[index] = OldPage(index, current, page_size);
      }
-
-     GCLOG(1) << "failed to allocate " << Bytes(total_size) << " in " << (*this);
-     return 0;
+   }
+  public:
+   OldPageTable():
+    pages_(nullptr),
+    num_pages_(0),
+    marked_(){
+   }
+   explicit OldPageTable(int64_t num_pages);
+   OldPageTable(const OldPageTable& rhs);
+   ~OldPageTable(){
+     delete[] pages_;
    }
 
-   void VisitPointers(const std::function<bool(RawObject*)>& vis) const{
-     OldPageIterator iter(this);
-     while(iter.HasNext()){
-       auto next = iter.Next();
-       if(next->IsOld() && next->GetPointerSize() > 0 && !vis(next))
+   int64_t size() const{
+     return num_pages_;
+   }
+
+   bool IsMarked(int64_t idx) const{
+     PSDN_ASSERT(idx >= 0);
+     PSDN_ASSERT(idx <= size());
+     return marked_.Test(idx);
+   }
+
+   bool IsMarked(OldPage* page) const{
+     PSDN_ASSERT(page != nullptr);
+     return IsMarked(page->index());
+   }
+
+   void Mark(int64_t idx){
+     PSDN_ASSERT(idx >= 0);
+     PSDN_ASSERT(idx <= size());
+     return marked_.Set(idx, true);
+   }
+
+   void Mark(OldPage* page){
+     PSDN_ASSERT(page != nullptr);
+     return Mark(page->index());
+   }
+
+   void Unmark(int64_t idx){
+     PSDN_ASSERT(idx >= 0);
+     PSDN_ASSERT(idx <= size());
+     return marked_.Set(idx, false);
+   }
+
+   void Unmark(OldPage* page){
+     PSDN_ASSERT(page != nullptr);
+     return Unmark(page->index());
+   }
+
+   OldPage* page(int64_t idx) const{
+     PSDN_ASSERT(idx >= 0);
+     PSDN_ASSERT(idx <= size());
+     return &pages_[idx];
+   }
+
+   OldPage* begin() const{
+     return &pages_[0];
+   }
+
+   OldPage* pages(int64_t idx) const{
+     PSDN_ASSERT(idx >= 0);
+     PSDN_ASSERT(idx <= size());
+     return &pages_[idx];
+   }
+
+   OldPage* end() const{
+     return &pages_[size()];
+   }
+
+   void VisitAll(std::function<bool(OldPage*)>& vis) const{
+     for(auto& page : *this){
+       if(!vis(&page))
          return;
      }
    }
 
-   int64_t GetTotalBytesAllocated() const{
-     return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
+   void VisitMarked(std::function<bool(OldPage*)>& vis) const{
+     for(auto& page : *this){
+       if(!vis(&page))
+         return;
+     }
    }
 
-   OldPage& operator=(const OldPage& rhs) = delete;
+   OldPage& operator[](int64_t idx) const{
+     return pages_[idx];
+   }
 
-   friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
-     return stream << "OldPage(index=" << val.index() << ", start=" << val.GetStartingAddressPointer() << ", size=" << Bytes(val.GetSize()) << ", end=" << val.GetEndingAddressPointer() << ").";
+   friend std::ostream& operator<<(std::ostream& stream, const OldPageTable& val){
+     return stream << "OldPageTable(num_pages=" << val.size() << ", marked=" << val.marked_ << ")";
    }
  };
 
@@ -173,10 +163,8 @@ namespace poseidon{
    friend class SerialSweeper;
    friend class ParallelSweeper;
   protected:
-   int64_t num_pages_;
-   OldPage** pages_;
-   BitSet marked_;
    FreeList free_list_;
+   OldPageTable pages_;
 
    static inline int64_t
    GetNumberOfPages(int64_t size, int64_t page_size){
@@ -186,125 +174,27 @@ namespace poseidon{
      return size / page_size;
    }
 
-   static inline OldPage*
-   GetPages(const uword& start, int64_t size, int64_t page_size){
-     PSDN_ASSERT((size % page_size) == 0);
-     PSDN_ASSERT((size % kWordSize) == 0);
-
-     auto num_pages = GetNumberOfPages(size, page_size);
-     int64_t index = 0;
-
-     auto first = new OldPage(index, start, page_size);
-     index++;
-     OldPage* current = first;
-
-     do{
-       DLOG(INFO) << "creating page " << index << "/" << num_pages;
-       auto offset = index * page_size;
-       auto new_page = new OldPage(index, start + offset, page_size);
-
-       // link
-       current->SetNext(new_page);
-       new_page->SetPrevious(current);
-
-       current = new_page;
-       index++;
-     } while(index < num_pages);
-     return first;
-   }
-
-   inline bool
-   IsMarked(int64_t index) const{
-     return marked_.Test(index);
-   }
-
-   inline bool
-   IsMarked(const OldPage* page) const{
-     PSDN_ASSERT(page != nullptr);
-     return IsMarked(page->index());
-   }
-
-   inline void
-   MarkPage(const OldPage* page){
-     PSDN_ASSERT(page != nullptr);
-     DLOG(INFO) << "marking " << (*page);
-     return marked_.Set(page->index(), true);
-   }
-
-   inline void
-   UnmarkPage(const OldPage* page){
-     PSDN_ASSERT(page != nullptr);
-     DLOG(INFO) << "unmarking " << (*page);
-     return marked_.Set(page->index(), false);
-   }
-
    static inline int64_t
    CalculateTableSize(int64_t size, int64_t page_size){
      return size / page_size;
    }
-
-   inline OldPage* pages(int64_t idx){
-     return pages_[idx];
-   }
   public:
    explicit OldZone(uword start, int64_t size, int64_t page_size):
      Zone(start, size),
-     num_pages_(0),
-     pages_(nullptr),
-     marked_(CalculateTableSize(size, page_size)),
+     pages_(CalculateTableSize(size, page_size)),
      free_list_(start, size){
-     PSDN_ASSERT(IsPow2(size));
-     PSDN_ASSERT(IsPow2(page_size));
-
-     auto npages = GetNumberOfPages(size, page_size);
-     PSDN_ASSERT(npages > 0);
-     PSDN_ASSERT(IsPow2(npages));
-     DLOG(INFO) << "creating " << npages << " pages....";
-
-     if((pages_ = new OldPage*[npages]) == nullptr){
-       LOG(FATAL) << "failed to allocate OldPages list.";
-       return;
-     }
-
-     for(auto idx = 0; idx < npages; idx++){
-       auto page_offset = start + (idx * page_size);
-       pages_[idx] = new OldPage(idx, page_offset, page_size);
-     }
-     num_pages_ = npages;
+     pages_.CreatePagesForRange(start, size, page_size);
    }
    explicit OldZone(MemoryRegion* region, int64_t offset, int64_t size, int64_t page_size):
      OldZone(region->GetStartingAddress() + offset, size, page_size){
    }
-   ~OldZone() override{
-     if(pages_)
-       free(pages_);
-   }
+   ~OldZone() override = default;
 
    FreeList* free_list(){//TODO: visible for testing
      return &free_list_;
    }
 
    uword TryAllocate(int64_t size) override;
-
-   int64_t GetNumberOfPages() const{
-     return num_pages_;
-   }
-
-   void VisitAllPages(const std::function<bool(OldPage*)>& vis){
-     for(auto idx = 0; idx < num_pages_; idx++){
-       auto page = pages_[idx];
-       if(!vis(page))
-         return;
-     }
-   }
-
-   void VisitMarkedPages(const std::function<bool(OldPage*)>& vis){
-     for(auto idx = 0; idx < num_pages_; idx++){
-       auto page = pages_[idx];
-       if(IsMarked(page) && !vis(page))
-         return;
-     }
-   }
 
    OldZone& operator=(const OldZone& rhs){
      if(this == &rhs)

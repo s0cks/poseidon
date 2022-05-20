@@ -38,6 +38,12 @@ namespace poseidon{
      words_ = (uword*)realloc(words_, sizeof(uword) * nwords);
      num_words_ = nwords;
    }
+
+   inline void
+   CopyFrom(const BitSet& val){
+     PSDN_ASSERT(size() == val.size());
+     memcpy(words_, val.words_, sizeof(uword) * size());
+   }
   public:
    BitSet():
     words_(nullptr),
@@ -47,6 +53,14 @@ namespace poseidon{
     words_(nullptr),
     num_words_(0){
      Resize(size);
+   }
+   BitSet(const BitSet& rhs):
+    words_(nullptr),
+    num_words_(0){
+     if(rhs.size() > 0){
+       Resize(rhs.size());
+       CopyFrom(rhs);
+     }
    }
    ~BitSet() = default;
 

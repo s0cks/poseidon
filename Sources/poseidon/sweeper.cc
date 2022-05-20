@@ -166,14 +166,14 @@ namespace poseidon{
    ParallelSweeper sweeper(old_zone);
    Runtime::GetTaskPool()->SubmitToAll<ParallelSweeperTask>(sweeper);
    TIMED_SECTION("ParallelSweep", {
-     old_zone->VisitAllPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
-       page->VisitPointers([&](RawObject* raw){
-         if(!raw->IsMarked())
-           sweeper.work()->Push(raw->GetAddress());
-         return true;
-       });
-       return true;
-     });
+//TODO: old_zone->VisitAllPages([&](OldPage* page){//TODO: should we be visiting the marked pages, or every page?
+//       page->VisitPointers([&](RawObject* raw){
+//         if(!raw->IsMarked())
+//           sweeper.work()->Push(raw->GetAddress());
+//         return true;
+//       });
+//       return true;
+//     });
    });
 
    double perc_free_after = GetPercentageFreeInFreeList(old_zone);

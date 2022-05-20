@@ -10,15 +10,14 @@ add_library(poseidon
     poseidon/platform.h
     poseidon/common.h
     poseidon/utils.h
-    poseidon/stats.h
-    poseidon/heap.h poseidon/heap.cc
+        poseidon/heap.h poseidon/heap.cc
     poseidon/local.h poseidon/local.cc
     poseidon/allocator.h poseidon/allocator.cc
     poseidon/raw_object.h poseidon/raw_object.cc
     poseidon/scavenger.h poseidon/scavenger.cc
     poseidon/marker.h poseidon/marker.cc
     poseidon/finalizer.h
-    poseidon/memory_region.h poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc poseidon/zone.h poseidon/semispace.h poseidon/flags.h poseidon/relaxed_atomic.h poseidon/compactor.cc poseidon/compactor.h poseidon/task_pool.h poseidon/wsq.h poseidon/os_thread.h poseidon/os_thread_linux.h poseidon/os_thread_osx.h poseidon/os_thread_linux.cc poseidon/os_thread_osx.cc poseidon/task_pool.cc poseidon/bitset.h poseidon/zone.cc poseidon/freelist.h poseidon/sweeper.cc poseidon/sweeper.h poseidon/runtime.cc poseidon/runtime.h poseidon/freelist.cc poseidon/zone_new.h poseidon/zone_new.cc poseidon/zone_old.cc poseidon/zone_old.h poseidon/utils.cc)
+    poseidon/memory_region.h poseidon/memory_region_linux.cc poseidon/memory_region_win.cc poseidon/memory_region_osx.cc poseidon/zone.h poseidon/semispace.h poseidon/flags.h poseidon/relaxed_atomic.h poseidon/compactor.cc poseidon/compactor.h poseidon/task_pool.h poseidon/wsq.h poseidon/os_thread.h poseidon/os_thread_linux.h poseidon/os_thread_osx.h poseidon/os_thread_linux.cc poseidon/os_thread_osx.cc poseidon/task_pool.cc poseidon/bitset.h poseidon/zone.cc poseidon/freelist.h poseidon/sweeper.cc poseidon/sweeper.h poseidon/runtime.cc poseidon/runtime.h poseidon/freelist.cc poseidon/zone_new.h poseidon/zone_new.cc poseidon/zone_old.cc poseidon/zone_old.h poseidon/utils.cc poseidon/finalizer.cc)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     glog::glog

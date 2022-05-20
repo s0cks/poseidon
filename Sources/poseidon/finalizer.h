@@ -7,34 +7,34 @@
 
 namespace poseidon{
  class Finalizer{
+   friend class Scavenger;
+   friend class ParallelScavenger;
+
+   friend class SerialCompactor;
+   friend class ParallelCompactorTask;
+
+   friend class SerialSweeper;
+   friend class ParallelSweeperTask;
   private:
-   uint64_t num_finalized_;
-   uint64_t bytes_finalized_;
+   static void Reset();
+   static void Finalize(RawObject* ptr);
+   static AtomicPointerCounter& finalized();
   public:
-   Finalizer():
-    num_finalized_(0),
-    bytes_finalized_(0){
-   }
-   ~Finalizer() = default;
+   Finalizer() = delete;
+   Finalizer(const Finalizer& rhs) = delete;
+   ~Finalizer() = delete;
 
-   uint64_t GetNumberOfObjectsFinalized() const{
-     return num_finalized_;
-   }
-
-   uint64_t GetNumberOfBytesFinalized() const{
-     return bytes_finalized_;
+   static inline int64_t
+   GetNumberOfObjectsFinalized(){
+     return (int64_t)finalized().count;
    }
 
-   void Finalize(RawObject* val){
-     DLOG(INFO) << "finalizing " << val->ToString() << ".";
-     memset(val->GetPointer(), 0, val->GetPointerSize());
-
-     val->ClearMarkedBit();
-     val->SetPointerSize(0);
-
-     num_finalized_ += 1;
-     bytes_finalized_ += val->GetTotalSize();
+   static inline int64_t
+   GetNumberOfBytesFinalized(){
+     return (int64_t)finalized().bytes;
    }
+
+   Finalizer& operator=(const Finalizer& rhs) = delete;
  };
 }
 

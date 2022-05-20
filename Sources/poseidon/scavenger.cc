@@ -7,6 +7,7 @@
 #include "poseidon/scavenger.h"
 #include "poseidon/allocator.h"
 #include "poseidon/task_pool.h"
+#include "poseidon/finalizer.h"
 
 namespace poseidon{
  static RelaxedAtomic<bool> scavenging(false);
@@ -36,7 +37,8 @@ namespace poseidon{
    return { last_scavenge_ts,
            last_scavenge_duration_ms,
            last_scavenge_scavenged_,
-           last_scavenge_promoted_ };
+           last_scavenge_promoted_,
+           Finalizer::finalized() };
  }
 
  Timestamp Scavenger::GetLastScavengeTimestamp(){
@@ -102,7 +104,7 @@ namespace poseidon{
    }
 
    inline uword PromoteObject(RawObject* raw){
-     GCLOG(1) << "promoting " << raw->ToString() << " to new zone.";
+     DLOG(INFO) << "promoting " << raw->ToString() << " to new zone.";
      auto new_ptr = (RawObject*)promotion_->TryAllocate(raw->GetPointerSize());
      CopyObject(raw, new_ptr);
      new_ptr->SetOldBit();
@@ -112,7 +114,7 @@ namespace poseidon{
    }
 
    inline uword ScavengeObject(RawObject* raw){
-     GCLOG(1) << "scavenging " << raw->ToString() << " in old zone.";
+     DLOG(INFO) << "scavenging " << raw->ToString() << " in old zone.";
      auto new_ptr = (RawObject*)to_.TryAllocate(raw->GetPointerSize());
      new_ptr->SetPointerSize(raw->GetPointerSize());
      new_ptr->SetNewBit();
@@ -124,7 +126,7 @@ namespace poseidon{
    }
 
    inline uword ProcessObject(RawObject* raw){
-     GCLOG(1) << "processing " << raw->ToString();
+     DLOG(INFO) << "processing " << raw->ToString();
      if(!raw->IsForwarding()){
        if(raw->IsRemembered()){
          auto new_address = PromoteObject(raw);
@@ -298,20 +300,23 @@ namespace poseidon{
        //TODO: process old to new references
 
        // wait for work to finish.
-//       while(!work_->empty());//spin
+       while(!work_->empty());//spin
      });
    }
 
    void ProcessToSpace() override{
      TIMED_SECTION("ProcessToSpace", {
-       auto address = to_.GetStartingAddress();
-       while(address < to_.GetEndingAddress() && ((RawObject*)address)->GetPointerSize() > 0){
+       auto address = zone_->GetStartingAddress();
+       while(address < zone_->GetEndingAddress() && ((RawObject*)address)->IsNew()){
          auto ptr = (RawObject*)address;
          if(ptr->IsForwarding()){
-           DLOG(INFO) << "processing " << ptr->ToString();
+
          }
          address += ptr->GetTotalSize();
        }
+
+       // wait for work to finish.
+       while(!work_->empty());//spin
      });
    }
 

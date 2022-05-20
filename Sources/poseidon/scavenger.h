@@ -3,7 +3,6 @@
 
 #include "poseidon/zone.h"
 #include "poseidon/heap.h"
-#include "poseidon/stats.h"
 #include "poseidon/utils.h"
 #include "poseidon/task_pool.h"
 
@@ -15,19 +14,26 @@ namespace poseidon{
    AtomicLong duration_ms_;
    AtomicPointerCounter scavenged_;
    AtomicPointerCounter promoted_;
+   AtomicPointerCounter finalized_;
 
-   ScavengerStats(AtomicTimestamp& timestamp, AtomicLong& duration_ms, AtomicPointerCounter& scavenged, AtomicPointerCounter& promoted):
+   ScavengerStats(AtomicTimestamp& timestamp,
+                  AtomicLong& duration_ms,
+                  AtomicPointerCounter& scavenged,
+                  AtomicPointerCounter& promoted,
+                  AtomicPointerCounter& finalized):
     timestamp_(timestamp),
     duration_ms_(duration_ms),
     scavenged_(scavenged),
-    promoted_(promoted){
+    promoted_(promoted),
+    finalized_(finalized){
    }
   public:
    ScavengerStats():
     timestamp_(),
     duration_ms_(),
     scavenged_(),
-    promoted_(){
+    promoted_(),
+    finalized_(){
    }
    ScavengerStats(const ScavengerStats& rhs) = default;
    ~ScavengerStats() = default;
@@ -48,6 +54,10 @@ namespace poseidon{
      return promoted_;
    }
 
+   AtomicPointerCounter finalized() const{
+     return finalized_;
+   }
+
    ScavengerStats& operator=(const ScavengerStats& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const ScavengerStats& val){
@@ -55,7 +65,8 @@ namespace poseidon{
      stream << "start=" << ", ";
      stream << "duration=" << val.duration_ms() << "ms, ";
      stream << "scavenged=" << val.scavenged() << ", ";
-     stream << "promoted=" << val.promoted();
+     stream << "promoted=" << val.promoted() << ", ";
+     stream << "finalized=" << val.finalized();
      stream << ")";
      return stream;
    }
