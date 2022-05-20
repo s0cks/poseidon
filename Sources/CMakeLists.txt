@@ -18,7 +18,8 @@ add_library(poseidon
     poseidon/collector/sweeper.h poseidon/collector/sweeper.cc
     # heap
     poseidon/heap/heap.h poseidon/heap/heap.cc
-    poseidon/heap/semispace.h
+    poseidon/heap/section.h
+    poseidon/heap/semispace.h poseidon/heap/semispace.cc
     poseidon/heap/zone.h poseidon/heap/zone.cc
     poseidon/heap/zone_new.h poseidon/heap/zone_new.cc
     poseidon/heap/zone_old.h poseidon/heap/zone_old.cc

@@ -46,7 +46,17 @@ namespace poseidon{
  }
 
  static inline bool
+ HasWorkers(){
+   return GetNumberOfWorkers() > 0;
+ }
+
+ static inline bool
  ShouldUseParallelScavenge(){
+   return GetNumberOfWorkers() > 0;
+ }
+
+ static inline bool
+ ShouldUseParallelNotify(){
    return GetNumberOfWorkers() > 0;
  }
 

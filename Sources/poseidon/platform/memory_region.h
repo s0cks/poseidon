@@ -121,6 +121,8 @@ namespace poseidon{
           && GetEndingAddress() >= address;
     }
 
+    virtual void ClearRegion();
+
     /**
      * Set the protection mode for the {@link MemoryRegion}
      *

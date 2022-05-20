@@ -22,4 +22,9 @@ namespace poseidon{
    start_ = start;
    size_ = size;
  }
+
+ void MemoryRegion::ClearRegion(){
+   DLOG(INFO) << "clearing " << (*this) << ".";
+   memset(GetStartingAddressPointer(), 0, size());
+ }
 }

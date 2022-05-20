@@ -13,6 +13,7 @@
 
 namespace poseidon{
  static RelaxedAtomic<bool> scavenging(false);
+ static RelaxedAtomic<int64_t> processing(0);
 
  static AtomicTimestamp last_scavenge_ts;
  static AtomicLong last_scavenge_duration_ms;
@@ -81,6 +82,8 @@ namespace poseidon{
     from_(heap->new_zone()->fromspace(), heap->new_zone()->semisize()),
     to_(heap->new_zone()->tospace(), heap->new_zone()->semisize()),
     promotion_(heap->old_zone()){
+     DLOG(INFO) << "from space: " << from_;
+     DLOG(INFO) << "to space: " << to_;
    }
 
    inline void SwapSpaces(){
@@ -94,7 +97,7 @@ namespace poseidon{
 
    static inline void
    ForwardObject(RawObject* obj, uword forwarding_address){
-     GCLOG(10) << "forwarding " << obj->ToString() << " to " << ((RawObject*) forwarding_address)->ToString();
+     DLOG(INFO) << "forwarding " << obj->ToString() << " to " << ((RawObject*) forwarding_address)->ToString();
      obj->SetForwardingAddress(forwarding_address);
      PSDN_ASSERT(obj->GetForwardingAddress() == forwarding_address);
    }
@@ -187,7 +190,7 @@ namespace poseidon{
 
    void ProcessToSpace() override{
      TIMED_SECTION("ProcessToSpace", {
-       zone_->VisitObjectPointers([&](RawObject* val){
+       to_.VisitRawObjects([&](RawObject* val){
          if(val->IsForwarding()){
            DLOG(INFO) << "scavenged " << val->ToString();
          } else{
@@ -265,9 +268,11 @@ namespace poseidon{
        do{
          uword next;
          if((next = GetNext()) != 0){
+           processing += 1;
            auto old_val = (RawObject*)next;
            auto new_val = (RawObject*)ProcessObject(old_val);
            new_val->SetRememberedBit();
+           processing -= 1;
          }
        } while(HasWork());
      } while(Scavenger::IsScavenging());
@@ -283,58 +288,60 @@ namespace poseidon{
      return work_;
    }
 
+   inline bool HasWork() const{
+     return !work_->empty() || processing > 0;
+   }
+
    void ProcessLocals(){
-     TIMED_SECTION("ProcessLocals", {
+     DTIMED_SECTION("ProcessLocals", {
        auto locals = LocalPage::GetLocalPageForCurrentThread();
        locals->VisitPointers([&](RawObject** ptr){
          auto old_val = (*ptr);
-         if(old_val->IsNew() && !old_val->IsForwarding()){
+         if(old_val->IsNew() && !old_val->IsForwarding())
            work_->Push(old_val->GetAddress());
-         }
          return true;
        });
      });
    }
 
    void ProcessRoots() override{
-     TIMED_SECTION("ProcessRoots", {
+     DTIMED_SECTION("ProcessRoots", {
        ProcessLocals();
        //TODO: process old to new references
 
        // wait for work to finish.
-       while(!work_->empty());//spin
+       while(HasWork());//spin
      });
    }
 
    void ProcessToSpace() override{
-     TIMED_SECTION("ProcessToSpace", {
-       auto address = zone_->GetStartingAddress();
-       while(address < zone_->GetEndingAddress() && ((RawObject*)address)->IsNew()){
+     DTIMED_SECTION("ProcessToSpace", {
+       auto address = to_.GetStartingAddress();
+       while(address < to_.GetEndingAddress() && ((RawObject*)address)->IsNew()){
          auto ptr = (RawObject*)address;
-         if(ptr->IsForwarding()){
-
+         if(ptr->IsRemembered()){
+           DLOG(INFO) << "processing " << ptr->ToString();
+           //TODO: process references from ptr
          }
          address += ptr->GetTotalSize();
        }
 
        // wait for work to finish.
-       while(!work_->empty());//spin
+       while(HasWork());//spin
      });
    }
 
    inline void ProcessAll(){
      ProcessRoots();
      ProcessToSpace();
-
-     // wait for work to finish.
-     while(!work_->empty());//spin
    }
 
-   void NotifyLocals(){
+   void NotifyLocals(){//TODO: serialize
      DTIMED_SECTION("NotifyLocals", {
        auto locals = LocalPage::GetLocalPageForCurrentThread();
        locals->VisitPointers([&](RawObject** ptr){
          auto old_val = (*ptr);
+         DLOG(INFO) << "checking " << old_val->ToString();
          if(old_val->IsNew() && old_val->IsForwarding()){
            (*ptr) = (RawObject*)old_val->GetForwardingAddress();
          }
@@ -345,7 +352,7 @@ namespace poseidon{
   public:
    explicit ParallelScavenger(Heap* heap):
      ScavengerVisitorBase<true>(heap),
-     work_(new WorkStealingQueue<uword>(4096)){
+     work_(new WorkStealingQueue<uword>(1024)){
    }
    ~ParallelScavenger() override{
      delete work_;
@@ -400,7 +407,7 @@ namespace poseidon{
    auto heap = Heap::GetCurrentThreadHeap();
    auto scavenger = new ParallelScavenger(heap);
    Runtime::GetTaskPool()->SubmitToAll<ParallelScavengerTask>(scavenger);
-   TIMED_SECTION("ParallelScavenge", {
+   DTIMED_SECTION("ParallelScavenge", {
      scavenger->ScavengeMemory();
    });
  }

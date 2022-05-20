@@ -1,0 +1,5 @@
+Log file created at: 2022/05/20 17:18:25
+Running on machine: tazzbook-pro.local
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+E20220520 17:18:25.385676 41026944 os_thread_osx.cc:161] couldn't get  ThreadLocal.

@@ -4,3 +4,7 @@
 
 # Except
 !/reports/.gitkeep
+!/logs/.gitkeep
+!/**/*.cc
+!/**/*.h
+!/CMakeLists.txt

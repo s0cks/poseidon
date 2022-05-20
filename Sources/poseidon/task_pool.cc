@@ -6,7 +6,7 @@
 namespace poseidon{
  void TaskPool::Worker::HandleThread(uword parameter){
    auto worker = (TaskPool::Worker*)parameter;
-   GCLOG(3) << "starting worker #" << worker->worker_id() << "....";
+   DLOG(INFO) << "starting worker #" << worker->worker_id() << "....";
    worker->SetState(State::kStarting);
    // do something?
    worker->SetState(State::kIdle);
@@ -24,7 +24,7 @@ namespace poseidon{
        });
      } while(worker->HasWork());
    } while(worker->IsRunning());
-   GCLOG(3) << "worker #" << worker->worker_id() << " is stopping....";
+   DLOG(INFO) << "worker #" << worker->worker_id() << " is stopping....";
    worker->SetState(State::kStopped);
    pthread_exit((void*)"Hello World");//TODO: exit properly
  }

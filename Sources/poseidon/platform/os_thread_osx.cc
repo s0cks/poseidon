@@ -158,7 +158,6 @@ namespace poseidon{
    void* ptr;
    if((ptr = pthread_getspecific(key)) != nullptr)
      return ptr;
-   LOG(ERROR) << "couldn't get " << GetCurrentThreadName() << " ThreadLocal.";
    return nullptr;
  }
 }

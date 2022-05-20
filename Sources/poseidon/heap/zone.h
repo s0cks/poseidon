@@ -2,10 +2,11 @@
 #define POSEIDON_POSEIDON_ZONE_H
 
 #include "poseidon/raw_object.h"
+#include "poseidon/heap/section.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- class Zone{
+ class Zone : public Section{
    friend class ZoneTest;
    friend class RawObject;
    friend class Scavenger;
@@ -73,14 +74,11 @@ namespace poseidon{
      }
    };
   protected:
-   uword start_;
    uword current_;
-   int64_t size_;
   public:
    Zone():
-    start_(0),
-    current_(0),
-    size_(0){
+    Section(),
+    current_(0){
    }
 
    /**
@@ -90,39 +88,24 @@ namespace poseidon{
     * @param size The size of the {@link Zone}
     */
    Zone(uword start, int64_t size)://TODO: cleanup?
-    start_(start),
-    current_(start),
-    size_(size){
+    Section(start, size),
+    current_(start){
    }
 
-   Zone(const MemoryRegion& region, int64_t offset, int64_t size):
-    start_(region.GetStartingAddress()),
-    current_(region.GetStartingAddress() + offset),
-    size_(size){
+   Zone(MemoryRegion* region, int64_t offset, int64_t size):
+    Zone(region->GetStartingAddress() + offset, size){
    }
 
-   Zone(const MemoryRegion& region, int64_t size):
+   Zone(MemoryRegion* region, int64_t size):
     Zone(region, 0, size){
    }
 
-   Zone(const MemoryRegion& region):
-    Zone(region, region.size()){
+   explicit Zone(MemoryRegion* region):
+    Zone(region, region->size()){
    }
 
    Zone(const Zone& rhs) = default;
-   virtual ~Zone() = default;
-
-   uword GetStartingAddress() const{
-     return start_;
-   }
-
-   void* GetStartingAddressPointer() const{
-     return (void*)GetStartingAddress();
-   }
-
-   int64_t GetSize() const{
-     return size_;
-   }
+   ~Zone() override = default;
 
    uword GetCurrentAddress() const{
      return current_;
@@ -132,23 +115,7 @@ namespace poseidon{
      return (void*)GetCurrentAddress();
    }
 
-   uword GetEndingAddress() const{
-     return GetStartingAddress() + GetSize();
-   }
-
-   void* GetEndingAddressPointer() const{
-     return (void*)GetEndingAddress();
-   }
-
-   bool Contains(uword address) const{
-     return GetStartingAddress() <= address
-         && GetEndingAddress() >= address;
-   }
-
-   virtual uword TryAllocate(int64_t size){
-     return RawObject::TryAllocateIn<Zone>(this, size);
-   }
-
+   virtual uword TryAllocate(int64_t size);
    void VisitObjectPointers(RawObjectVisitor* vis) const;
    void VisitObjectPointers(const std::function<bool(RawObject*)>& vis) const;
    void VisitMarkedObjectPointers(RawObjectVisitor* vis) const;

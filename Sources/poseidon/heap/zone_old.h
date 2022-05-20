@@ -6,46 +6,28 @@
 #include "poseidon/heap/zone.h"
 
 namespace poseidon{
- class OldPage{
+ class OldPage : public Section{
    friend class OldPageTable;
   private:
    int64_t index_;
-   uword start_;
-   int64_t size_;
 
    OldPage(int64_t index, uword start, int64_t size):
-    index_(index),
-    start_(start),
-    size_(size){
+    Section(start, size),
+    index_(index){
    }
   public:
-   OldPage() = default;
-   OldPage(const OldPage& rhs):
-    index_(rhs.index()),
-    start_(rhs.starting_address()),
-    size_(rhs.size()){
+   OldPage():
+    Section(),
+    index_(0){
    }
-   ~OldPage() = default;
+   OldPage(const OldPage& rhs):
+    Section(rhs),
+    index_(rhs.index()){
+   }
+   ~OldPage() override = default;
 
    int64_t index() const{
      return index_;
-   }
-
-   uword starting_address() const{
-     return start_;
-   }
-
-   int64_t size() const{
-     return size_;
-   }
-
-   uword ending_address() const{
-     return starting_address() + size();
-   }
-
-   bool Contains(uword address) const{
-     return starting_address() <= address
-         && ending_address() >= address;
    }
  };
 

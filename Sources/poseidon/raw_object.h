@@ -8,6 +8,8 @@
 #include "common.h"
 
 namespace poseidon{
+ typedef const std::function<bool(RawObject*)>& RawObjectVisitorFunction;
+
   class RawObject;
   class RawObjectVisitor{
    protected:
@@ -283,7 +285,7 @@ namespace poseidon{
       return reinterpret_cast<uword>(this) + sizeof(RawObject);
     }
 
-    void SetForwardingAddress(const uword& address){
+    void SetForwardingAddress(uword address){
       forwarding_ = address;
     }
 

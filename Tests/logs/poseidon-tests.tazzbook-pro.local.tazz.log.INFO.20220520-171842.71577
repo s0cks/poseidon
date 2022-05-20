@@ -1,0 +1,110 @@
+Log file created at: 2022/05/20 17:18:42
+Running on machine: tazzbook-pro.local
+Running duration (h:mm:ss): 0:00:00
+Log line format: [IWEF]yyyymmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I20220520 17:18:42.139510 78710144 main.cc:13] Running unit tests for poseidon v0.0.0....
+I20220520 17:18:42.140092 1802252288 task_pool.cc:9] starting worker #0....
+I20220520 17:18:42.140094 1802825728 task_pool.cc:9] starting worker #1....
+I20220520 17:18:42.140381 78710144 test_collector.cc:90] r1 (before): 100 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000000, pointer=0x138000018, forwarding=0x0)).
+I20220520 17:18:42.140399 78710144 test_collector.cc:91] r2 (before): 1000 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000020, pointer=0x138000038, forwarding=0x0)).
+I20220520 17:18:42.140403 78710144 test_collector.cc:92] r3 (before): 10 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000040, pointer=0x138000058, forwarding=0x0)).
+I20220520 17:18:42.140408 78710144 test_collector.cc:93] g1 (before): 10 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000060, pointer=0x138000078, forwarding=0x0)).
+I20220520 17:18:42.140410 78710144 test_collector.cc:94] g2 (before): 1000000 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000080, pointer=0x138000098, forwarding=0x0)).
+I20220520 17:18:42.140414 78710144 scavenger.cc:421] scavenger stats (before): ScavengerStats(start=, duration=0ms, scavenged=0 (0b), promoted=0 (0b), finalized=0 (0b))
+I20220520 17:18:42.140444 78710144 scavenger.cc:85] from space: Semispace(start=0x138000000, allocated=0b (0.00%), total_size=8mb)
+I20220520 17:18:42.140450 78710144 scavenger.cc:86] to space: Semispace(start=0x138800000, allocated=0b (0.00%), total_size=8mb)
+I20220520 17:18:42.140473 78710144 scavenger.cc:304] ProcessLocals finished in 15us.
+I20220520 17:18:42.140478 1802825728 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000000, pointer=0x138000018, forwarding=0x0)
+I20220520 17:18:42.140487 1802825728 scavenger.cc:122] scavenging RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000000, pointer=0x138000018, forwarding=0x0) in old zone.
+I20220520 17:18:42.140496 1802825728 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000000, pointer=0x138000018, forwarding=0x0) to RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138800000, pointer=0x138800018, forwarding=0x0)
+I20220520 17:18:42.140502 1802825728 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000040, pointer=0x138000058, forwarding=0x0)
+I20220520 17:18:42.140506 1802825728 scavenger.cc:122] scavenging RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000040, pointer=0x138000058, forwarding=0x0) in old zone.
+I20220520 17:18:42.140509 1802825728 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000040, pointer=0x138000058, forwarding=0x0) to RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138800020, pointer=0x138800038, forwarding=0x0)
+I20220520 17:18:42.140529 1802252288 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000020, pointer=0x138000038, forwarding=0x0)
+I20220520 17:18:42.140587 1802252288 scavenger.cc:122] scavenging RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000020, pointer=0x138000038, forwarding=0x0) in old zone.
+I20220520 17:18:42.140599 1802252288 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138000020, pointer=0x138000038, forwarding=0x0) to RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x138800040, pointer=0x138800058, forwarding=0x0)
+I20220520 17:18:42.140606 78710144 scavenger.cc:314] ProcessRoots finished in 148us.
+I20220520 17:18:42.140609 78710144 scavenger.cc:323] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138800000, pointer=0x138800018, forwarding=0x0)
+I20220520 17:18:42.140612 78710144 scavenger.cc:323] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138800020, pointer=0x138800038, forwarding=0x0)
+I20220520 17:18:42.140615 78710144 scavenger.cc:323] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138800040, pointer=0x138800058, forwarding=0x0)
+I20220520 17:18:42.140666 78710144 scavenger.cc:331] ProcessToSpace finished in 57us.
+I20220520 17:18:42.140668 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138000000, pointer=0x138000018, forwarding=0x138800000)
+I20220520 17:18:42.140671 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138000020, pointer=0x138000038, forwarding=0x138800040)
+I20220520 17:18:42.140676 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138000040, pointer=0x138000058, forwarding=0x138800020)
+I20220520 17:18:42.140678 78710144 scavenger.cc:350] NotifyLocals finished in 11us.
+I20220520 17:18:42.141518 78710144 scavenger.cc:412] ParallelScavenge finished in 1ms 61us.
+I20220520 17:18:42.141521 1802252288 task_pool.cc:24] ParallelScavengerTask finished in 1ms 63us.
+I20220520 17:18:42.141521 78710144 scavenger.cc:429] scavenger stats (after): ScavengerStats(start=, duration=1ms, scavenged=3 (96b), promoted=0 (0b), finalized=0 (0b))
+I20220520 17:18:42.141525 78710144 collector.cc:37] MinorCollection finished in 1ms 111us.
+I20220520 17:18:42.141527 78710144 test_collector.cc:98] r1 (after): 100 (RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138800000, pointer=0x138800018, forwarding=0x0)).
+I20220520 17:18:42.141532 78710144 test_collector.cc:99] r2 (after): 1000 (RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138800040, pointer=0x138800058, forwarding=0x0)).
+I20220520 17:18:42.141530 1802825728 task_pool.cc:24] ParallelScavengerTask finished in 1ms 63us.
+I20220520 17:18:42.141541 78710144 test_collector.cc:100] r3 (after): 10 (RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x138800020, pointer=0x138800038, forwarding=0x0)).
+I20220520 17:18:42.141546 78710144 test_collector.cc:101] g1 (after): 0 (RawObject(new=0, old=0, marked=0, remembered=0, size=0b, address=0x138000060, pointer=0x138000078, forwarding=0x0)).
+I20220520 17:18:42.141551 78710144 test_collector.cc:102] g2 (after): 0 (RawObject(new=0, old=0, marked=0, remembered=0, size=0b, address=0x138000080, pointer=0x138000098, forwarding=0x0)).
+I20220520 17:18:42.141598 78710144 test_collector.cc:180] r1 (before): 100 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000000, pointer=0x280000018, forwarding=0x0)).
+I20220520 17:18:42.141603 78710144 test_collector.cc:181] r2 (before): 1000 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000020, pointer=0x280000038, forwarding=0x0)).
+I20220520 17:18:42.141606 78710144 test_collector.cc:182] r3 (before): 10 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000040, pointer=0x280000058, forwarding=0x0)).
+I20220520 17:18:42.141610 78710144 test_collector.cc:183] g1 (before): 10 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000060, pointer=0x280000078, forwarding=0x0)).
+I20220520 17:18:42.141613 78710144 test_collector.cc:184] g2 (before): 1000000 (RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000080, pointer=0x280000098, forwarding=0x0)).
+I20220520 17:18:42.141618 78710144 scavenger.cc:421] scavenger stats (before): ScavengerStats(start=, duration=1ms, scavenged=3 (96b), promoted=0 (0b), finalized=0 (0b))
+I20220520 17:18:42.141620 78710144 scavenger.cc:85] from space: Semispace(start=0x280000000, allocated=0b (0.00%), total_size=8mb)
+I20220520 17:18:42.141623 78710144 scavenger.cc:86] to space: Semispace(start=0x280800000, allocated=0b (0.00%), total_size=8mb)
+I20220520 17:18:42.141629 78710144 scavenger.cc:304] ProcessLocals finished in 2us.
+I20220520 17:18:42.141629 1802252288 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000020, pointer=0x280000038, forwarding=0x0)
+I20220520 17:18:42.141639 1802252288 scavenger.cc:122] scavenging RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000020, pointer=0x280000038, forwarding=0x0) in old zone.
+I20220520 17:18:42.141674 1802252288 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000020, pointer=0x280000038, forwarding=0x0) to RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280800000, pointer=0x280800018, forwarding=0x0)
+I20220520 17:18:42.141629 1802825728 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000000, pointer=0x280000018, forwarding=0x0)
+I20220520 17:18:42.141680 1802252288 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000040, pointer=0x280000058, forwarding=0x0)
+I20220520 17:18:42.141685 1802252288 scavenger.cc:122] scavenging RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000040, pointer=0x280000058, forwarding=0x0) in old zone.
+I20220520 17:18:42.141685 1802825728 scavenger.cc:122] scavenging RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000000, pointer=0x280000018, forwarding=0x0) in old zone.
+I20220520 17:18:42.141695 1802252288 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000040, pointer=0x280000058, forwarding=0x0) to RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280800020, pointer=0x280800038, forwarding=0x0)
+I20220520 17:18:42.141698 1802825728 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280000000, pointer=0x280000018, forwarding=0x0) to RawObject(new=1, old=0, marked=0, remembered=0, size=8b, address=0x280800040, pointer=0x280800058, forwarding=0x0)
+I20220520 17:18:42.141710 78710144 scavenger.cc:314] ProcessRoots finished in 83us.
+I20220520 17:18:42.141713 78710144 scavenger.cc:323] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800000, pointer=0x280800018, forwarding=0x0)
+I20220520 17:18:42.141717 78710144 scavenger.cc:323] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800020, pointer=0x280800038, forwarding=0x0)
+I20220520 17:18:42.141721 78710144 scavenger.cc:323] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800040, pointer=0x280800058, forwarding=0x0)
+I20220520 17:18:42.141724 78710144 scavenger.cc:331] ProcessToSpace finished in 11us.
+I20220520 17:18:42.141726 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280000000, pointer=0x280000018, forwarding=0x280800040)
+I20220520 17:18:42.141729 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280000020, pointer=0x280000038, forwarding=0x280800000)
+I20220520 17:18:42.141732 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280000040, pointer=0x280000058, forwarding=0x280800020)
+I20220520 17:18:42.141736 78710144 scavenger.cc:350] NotifyLocals finished in 10us.
+I20220520 17:18:42.142298 78710144 scavenger.cc:412] ParallelScavenge finished in 671us.
+I20220520 17:18:42.142300 78710144 scavenger.cc:429] scavenger stats (after): ScavengerStats(start=, duration=0ms, scavenged=3 (96b), promoted=0 (0b), finalized=0 (0b))
+I20220520 17:18:42.142302 1802252288 task_pool.cc:24] ParallelScavengerTask finished in 673us.
+I20220520 17:18:42.142302 1802825728 task_pool.cc:24] ParallelScavengerTask finished in 673us.
+I20220520 17:18:42.142305 78710144 collector.cc:37] MinorCollection finished in 688us.
+I20220520 17:18:42.142315 78710144 test_collector.cc:187] r1 (inter): 100 (RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800040, pointer=0x280800058, forwarding=0x0)).
+I20220520 17:18:42.142319 78710144 test_collector.cc:188] r2 (inter): 1000 (RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800000, pointer=0x280800018, forwarding=0x0)).
+I20220520 17:18:42.142323 78710144 test_collector.cc:189] r3 (inter): 10 (RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800020, pointer=0x280800038, forwarding=0x0)).
+I20220520 17:18:42.142339 78710144 test_collector.cc:190] g1 (inter): 0 (RawObject(new=0, old=0, marked=0, remembered=0, size=0b, address=0x280000060, pointer=0x280000078, forwarding=0x0)).
+I20220520 17:18:42.142343 78710144 test_collector.cc:191] g2 (inter): 0 (RawObject(new=0, old=0, marked=0, remembered=0, size=0b, address=0x280000080, pointer=0x280000098, forwarding=0x0)).
+I20220520 17:18:42.142349 78710144 scavenger.cc:421] scavenger stats (before): ScavengerStats(start=, duration=0ms, scavenged=3 (96b), promoted=0 (0b), finalized=0 (0b))
+I20220520 17:18:42.142351 78710144 scavenger.cc:85] from space: Semispace(start=0x280800000, allocated=0b (0.00%), total_size=8mb)
+I20220520 17:18:42.142354 78710144 scavenger.cc:86] to space: Semispace(start=0x280000000, allocated=0b (0.00%), total_size=8mb)
+I20220520 17:18:42.142360 78710144 scavenger.cc:304] ProcessLocals finished in 3us.
+I20220520 17:18:42.142360 1802252288 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800040, pointer=0x280800058, forwarding=0x0)
+I20220520 17:18:42.142361 1802825728 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800000, pointer=0x280800018, forwarding=0x0)
+I20220520 17:18:42.142371 1802252288 scavenger.cc:112] promoting RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800040, pointer=0x280800058, forwarding=0x0) to new zone.
+I20220520 17:18:42.142375 1802825728 scavenger.cc:112] promoting RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800000, pointer=0x280800018, forwarding=0x0) to new zone.
+I20220520 17:18:42.228121 1802252288 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800040, pointer=0x280800058, forwarding=0x0) to RawObject(new=0, old=1, marked=0, remembered=0, size=8b, address=0x281000000, pointer=0x281000018, forwarding=0x0)
+I20220520 17:18:42.228158 1802252288 scavenger.cc:134] processing RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800020, pointer=0x280800038, forwarding=0x0)
+I20220520 17:18:42.228164 1802252288 scavenger.cc:112] promoting RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800020, pointer=0x280800038, forwarding=0x0) to new zone.
+I20220520 17:18:42.228130 1802825728 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800000, pointer=0x280800018, forwarding=0x0) to RawObject(new=0, old=1, marked=0, remembered=0, size=8b, address=0x281000020, pointer=0x281000038, forwarding=0x0)
+I20220520 17:18:42.262216 1802252288 scavenger.cc:100] forwarding RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800020, pointer=0x280800038, forwarding=0x0) to RawObject(new=0, old=1, marked=0, remembered=0, size=8b, address=0x281000040, pointer=0x281000058, forwarding=0x0)
+I20220520 17:18:42.262245 78710144 scavenger.cc:314] ProcessRoots finished in 119ms 886us.
+I20220520 17:18:42.262261 78710144 scavenger.cc:331] ProcessToSpace finished in 1us.
+I20220520 17:18:42.262267 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800040, pointer=0x280800058, forwarding=0x281000000)
+I20220520 17:18:42.262275 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800000, pointer=0x280800018, forwarding=0x281000020)
+I20220520 17:18:42.262279 78710144 scavenger.cc:344] checking RawObject(new=1, old=0, marked=0, remembered=1, size=8b, address=0x280800020, pointer=0x280800038, forwarding=0x281000040)
+I20220520 17:18:42.262284 78710144 scavenger.cc:350] NotifyLocals finished in 19us.
+I20220520 17:18:42.263008 78710144 scavenger.cc:412] ParallelScavenge finished in 120ms 651us.
+I20220520 17:18:42.263011 78710144 scavenger.cc:429] scavenger stats (after): ScavengerStats(start=, duration=120ms, scavenged=0 (0b), promoted=3 (96b), finalized=0 (0b))
+I20220520 17:18:42.263021 1802825728 task_pool.cc:24] ParallelScavengerTask finished in 120ms 653us.
+I20220520 17:18:42.263031 1802252288 task_pool.cc:24] ParallelScavengerTask finished in 120ms 655us.
+I20220520 17:18:42.263070 78710144 collector.cc:37] MinorCollection finished in 120ms 723us.
+I20220520 17:18:42.263116 78710144 test_collector.cc:218] r1 (after): 100 (RawObject(new=0, old=1, marked=0, remembered=1, size=8b, address=0x281000000, pointer=0x281000018, forwarding=0x0)).
+I20220520 17:18:42.263124 78710144 test_collector.cc:219] r2 (after): 1000 (RawObject(new=0, old=1, marked=0, remembered=1, size=8b, address=0x281000020, pointer=0x281000038, forwarding=0x0)).
+I20220520 17:18:42.263128 78710144 test_collector.cc:220] r3 (after): 10 (RawObject(new=0, old=1, marked=0, remembered=1, size=8b, address=0x281000040, pointer=0x281000058, forwarding=0x0)).
+I20220520 17:18:42.263131 78710144 test_collector.cc:221] g1 (after): 0 (RawObject(new=0, old=0, marked=0, remembered=0, size=0b, address=0x280000060, pointer=0x280000078, forwarding=0x0)).
+I20220520 17:18:42.263135 78710144 test_collector.cc:222] g2 (after): 0 (RawObject(new=0, old=0, marked=0, remembered=0, size=0b, address=0x280000080, pointer=0x280000098, forwarding=0x0)).

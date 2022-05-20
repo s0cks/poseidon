@@ -1,35 +1,23 @@
 #include "poseidon/heap/zone.h"
 
 namespace poseidon{
+ uword Zone::TryAllocate(int64_t size){
+   return RawObject::TryAllocateIn(this, size);
+ }
+
  void Zone::VisitObjectPointers(RawObjectVisitor* vis) const{
-   ZoneIterator it(this);
-   while(it.HasNext()){
-     if(!vis->Visit(it.Next()))
-       return;
-   }
+   return IteratePointers<Zone, ZoneIterator>(this, vis);
+ }
+
+ void Zone::VisitObjectPointers(RawObjectVisitorFunction vis) const{
+   return IteratePointers<Zone, ZoneIterator>(this, vis);
  }
 
  void Zone::VisitMarkedObjectPointers(RawObjectVisitor* vis) const{
-   ZoneIterator it(this);
-   while(it.HasNext()){
-     if(!vis->Visit(it.Next()))
-       return;
-   }
+   return IterateMarkedPointers<Zone, ZoneIterator>(this, vis);
  }
 
- void Zone::VisitObjectPointers(const std::function<bool(RawObject*)>& vis) const{
-   ZoneIterator it(this);
-   while(it.HasNext()){
-     if(!vis(it.Next()))
-       return;
-   }
- }
-
- void Zone::VisitMarkedObjectPointers(const std::function<bool(RawObject*)>& vis) const{
-   ZoneIterator it(this);
-   while(it.HasNext()){
-     if(!vis(it.Next()))
-       return;
-   }
+ void Zone::VisitMarkedObjectPointers(RawObjectVisitorFunction vis) const{
+   return IterateMarkedPointers<Zone, ZoneIterator>(this, vis);
  }
 }

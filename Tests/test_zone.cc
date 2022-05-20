@@ -12,14 +12,18 @@ namespace poseidon{
   protected:
    MemoryRegion region_;
    Zone zone_;
+
+   inline MemoryRegion* region(){
+     return &region_;
+   }
+
+   void SetUp() override{
+     ASSERT_TRUE(region()->Protect(MemoryRegion::kReadWrite)) << "cannot set " << region_ << " to " << MemoryRegion::kReadWrite;
+   }
   public:
    ZoneTest():
     region_(kDefaultRegionSize),
-    zone_(region_){
-     if(!region_.Protect(MemoryRegion::kReadWrite)){
-       LOG(FATAL) << "failed to protect " << region_;
-       return;
-     }
+    zone_(&region_){
    }
    ~ZoneTest() override = default;
  };

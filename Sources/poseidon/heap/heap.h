@@ -50,6 +50,10 @@ namespace poseidon{
      delete old_zone_;
    }
 
+   MemoryRegion* region() const{
+     return region_;
+   }
+
    NewZone* new_zone() const{
      return new_zone_;
    }
@@ -87,6 +91,22 @@ namespace poseidon{
        LOG(ERROR) << "failed to create Heap ThreadLocal: " << strerror(err);
        return;
      }
+     ResetCurrentThreadHeap();
+   }
+
+   static inline bool
+   CurrentThreadHasHeap(){
+     return pthread_getspecific(kThreadKey) != nullptr;
+   }
+
+   static inline void
+   ResetCurrentThreadHeap(){
+     if(CurrentThreadHasHeap()){
+       auto heap = GetCurrentThreadHeap();
+       delete heap;
+       SetCurrentThreadHeap(nullptr);
+     }
+
      auto heap = new Heap();
      SetCurrentThreadHeap(heap);//TODO: refactor.
      GCLOG(10) << "new-zone: " << (heap->new_zone());

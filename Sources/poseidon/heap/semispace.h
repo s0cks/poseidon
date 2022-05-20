@@ -5,9 +5,11 @@
 #include <glog/logging.h>
 
 #include "poseidon/raw_object.h"
+#include "poseidon/heap/section.h"
+#include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- class Semispace{
+ class Semispace : public Section{
   private:
    class SemispaceIterator : public RawObjectPointerIterator{
     private:
@@ -43,14 +45,6 @@ namespace poseidon{
      GetEndingAddress() const{
        return semispace()->GetEndingAddress();
      }
-
-#ifdef PSDN_DEBUG
-     inline bool
-     valid() const{
-       return GetStartingAddress() <= current_address()
-           && current_address() <= GetEndingAddress();
-     }
-#endif//PSDN_DEBUG
     public:
      explicit SemispaceIterator(const Semispace* semispace):
        semispace_(semispace),
@@ -63,10 +57,7 @@ namespace poseidon{
      }
 
      bool HasNext() const override{
-       PSDN_ASSERT(valid());
-       if(next_address() > GetEndingAddress())
-         return false;
-       return next_ptr()->GetPointerSize() > 0;
+       return current_ptr()->GetPointerSize() > 0;
      }
 
      RawObject* Next() override{
@@ -76,17 +67,14 @@ namespace poseidon{
      }
    };
   private:
-   uword start_;
-   uword current_;
-   int64_t size_;
+   RelaxedAtomic<uword> current_;
   public:
    /**
     * Create an empty {@link Semispace}.
     */
    Semispace():
-    start_(0),
-    current_(0),
-    size_(0){
+    Section(),
+    current_(0){
    }
 
    /**
@@ -96,54 +84,39 @@ namespace poseidon{
     * @param size The size of the {@link Semispace}
     */
    Semispace(uword start, int64_t size):
-     start_(start),
-     current_(start),
-     size_(size){
+    Section(start, size),
+    current_(start){
    }
 
-   /**
-    * Copy-Constructor.
-    *
-    * @param rhs The {@link Semispace} to copy
-    */
+   Semispace(MemoryRegion* region, int64_t offset, int64_t size):
+    Semispace(region->GetStartingAddress() + offset, size){
+   }
+
+   Semispace(MemoryRegion* region, int64_t size):
+    Semispace(region, 0, size){
+   }
+
+   explicit Semispace(MemoryRegion* region):
+    Semispace(region, region->size()){
+   }
+
    Semispace(const Semispace& rhs) = default;
-   virtual ~Semispace() = default;
-
-   uword GetStartingAddress() const{
-     return start_;
-   }
-
-   void* GetStartingAddressPointer() const{
-     return (void*)GetStartingAddress();
-   }
+   ~Semispace() override = default;
 
    uword GetCurrentAddress() const{
-     return current_;
+     return (uword)current_;
    }
 
    void* GetCurrentAddressPointer() const{
      return (void*)GetCurrentAddress();
    }
 
-   int64_t GetSize() const{
-     return size_;
-   }
-
-   uword GetEndingAddress() const{
-     return GetStartingAddress() + GetSize();
-   }
-
-   void* GetEndingAddressPointer() const{
-     return (void*)GetEndingAddress();
-   }
-
    bool IsEmpty() const{
      return GetStartingAddress() == GetCurrentAddress();
    }
 
-   bool Contains(uword address) const{
-     return GetStartingAddress() <= address
-         && GetEndingAddress() >= address;
+   bool IsFull() const{
+     return GetCurrentAddress() == GetEndingAddress();
    }
 
    void Clear(){
@@ -151,49 +124,22 @@ namespace poseidon{
      current_ = start_;
    }
 
-   uword TryAllocate(int64_t size){
-     auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
-     if((current_ + total_size) > GetEndingAddress()){
-       DLOG(ERROR) << "cannot allocate object of " << Bytes(total_size) << " in Semispace.";
-       return 0;
-     }
-
-     auto address = current_;
-     current_ += total_size;
-     return address;
-   }
+   uword TryAllocate(int64_t size);
 
    void VisitRawObjects(RawObjectVisitor* vis) const{
-     SemispaceIterator iter(this);
-     while(iter.HasNext()){
-       if(!vis->Visit(iter.Next()))
-         return;
-     }
+     return IteratePointers<Semispace, SemispaceIterator>(this, vis);
    }
 
-   void VisitRawObjects(const ::std::function<bool(RawObject*)>& vis) const{
-     SemispaceIterator iter(this);
-     while(iter.HasNext()){
-       if(!vis(iter.Next()))
-         return;
-     }
+   void VisitRawObjects(RawObjectVisitorFunction vis) const{
+     return IteratePointers<Semispace, SemispaceIterator>(this, vis);
    }
 
-   void VisitMarkedRawObjects(RawObjectVisitor* vis) const{
-     SemispaceIterator iter(this);
-     while(iter.HasNext()){
-       if(!vis->Visit(iter.Next()))
-         return;
-     }
+   void VisitMarkedObjects(RawObjectVisitor* vis) const{
+     return IterateMarkedPointers<Semispace, SemispaceIterator>(this, vis);
    }
 
-   void VisitMarkedRawObjects(const ::std::function<bool(RawObject*)>& vis) const{
-     SemispaceIterator iter(this);
-     while(iter.HasNext()){
-       auto next = iter.Next();
-       if(next->IsMarked() && !vis(next))
-         return;
-     }
+   void VisitMarkedObjects(RawObjectVisitorFunction vis) const{
+     return IterateMarkedPointers<Semispace, SemispaceIterator>(this, vis);
    }
 
    int64_t GetNumberOfBytesAllocated() const{
@@ -209,13 +155,13 @@ namespace poseidon{
    friend bool operator==(const Semispace& lhs, const Semispace& rhs){
      return lhs.size_ == rhs.size_
          && lhs.start_ == rhs.start_
-         && lhs.current_ == rhs.current_;
+         && ((uword)lhs.current_) == ((uword)rhs.current_);
    }
 
    friend bool operator!=(const Semispace& lhs, const Semispace& rhs){
      return lhs.size_ != rhs.size_
          || lhs.start_ != rhs.start_
-         || lhs.current_ != rhs.current_;
+         || ((uword)lhs.current_) != ((uword)rhs.current_);
    }
 
    friend ::std::ostream& operator<<(::std::ostream& stream, const Semispace& space){
