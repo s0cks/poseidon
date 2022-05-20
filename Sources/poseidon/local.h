@@ -6,8 +6,8 @@
 #include <glog/logging.h>
 
 #include "poseidon/bitset.h"
-#include "poseidon/os_thread.h"
 #include "poseidon/raw_object.h"
+#include "poseidon/platform/os_thread.h"
 
 namespace poseidon{
  class RawObject;

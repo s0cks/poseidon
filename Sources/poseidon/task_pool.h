@@ -10,8 +10,8 @@
 
 #include "poseidon/wsq.h"
 #include "poseidon/common.h"
-#include "poseidon/os_thread.h"
 #include "poseidon/relaxed_atomic.h"
+#include "poseidon/platform/os_thread.h"
 
 namespace poseidon{
 #define FOR_EACH_TASK_STATE(V) \

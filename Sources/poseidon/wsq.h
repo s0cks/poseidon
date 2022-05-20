@@ -6,7 +6,7 @@
 #include <optional>
 
 #include "poseidon/utils.h"
-#include "poseidon/platform.h"
+#include "poseidon/platform/platform.h"
 
 namespace poseidon{
  template<class T>

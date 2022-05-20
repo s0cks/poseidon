@@ -1,9 +1,11 @@
-#include "poseidon/os_thread.h"
+#include "poseidon/platform/os_thread.h"
 #ifdef OS_IS_OSX
 
 #include <glog/logging.h>
 
-#include "common.h"
+#include <utility>
+
+#include "poseidon/common.h"
 
 namespace poseidon{
  class ThreadStartData{
@@ -12,13 +14,12 @@ namespace poseidon{
    ThreadHandler handler_;
    uword parameter_;
   public:
-   ThreadStartData(const std::string& name, const ThreadHandler& function, uword parameter):
-     name_(name),
+   ThreadStartData(std::string name, const ThreadHandler& function, uword parameter):
+     name_(std::move(name)),
      handler_(function),
      parameter_(parameter){
    }
-   ~ThreadStartData(){
-   }
+   ~ThreadStartData() = default;
 
    std::string GetName() const{
      return name_;

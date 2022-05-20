@@ -9,7 +9,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "poseidon/platform.h"
+#include "poseidon/platform/platform.h"
 #include "poseidon/relaxed_atomic.h"
 
 namespace poseidon{

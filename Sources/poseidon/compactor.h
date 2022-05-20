@@ -1,7 +1,7 @@
 #ifndef POSEIDON_COMPACTOR_H
 #define POSEIDON_COMPACTOR_H
 
-#include "poseidon/platform.h"
+#include "poseidon/platform/platform.h"
 
 namespace poseidon{
  class Compactor{

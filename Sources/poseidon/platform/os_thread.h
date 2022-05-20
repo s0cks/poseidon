@@ -1,14 +1,14 @@
 #ifndef POSEIDON_OS_THREAD_H
 #define POSEIDON_OS_THREAD_H
 
-#include "poseidon/platform.h"
+#include "poseidon/platform/platform.h"
 
 #ifdef OS_IS_LINUX
-#include "poseidon/os_thread_linux.h"
+#include "poseidon/platform/os_thread_linux.h"
 #elif OS_IS_OSX
-#include "poseidon/os_thread_osx.h"
+#include "poseidon/platform/os_thread_osx.h"
 #elif OS_IS_WINDOWS
-#include "poseidon/os_thread_windows.h"
+#include "poseidon/platform/os_thread_windows.h"
 #endif
 
 #include <string>

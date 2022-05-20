@@ -4,26 +4,10 @@
 #include <cstdint>
 #include <iostream>
 
-#include "platform.h"
-
 #define NOT_IMPLEMENTED(Level) \
   LOG(Level) << __FUNCTION__ << " is not implemented!"
 
 namespace poseidon{
- static inline uword
- RoundUpPow2(uword x){
-   x = x - 1;
-   x = x | (x >> 1);
-   x = x | (x >> 2);
-   x = x | (x >> 4);
-   x = x | (x >> 8);
-   x = x | (x >> 16);
-#ifdef ARCHITECTURE_IS_X64
-   x = x | (x >> 32);
-#endif
-   return x + 1;
- }
-
 #ifdef PSDN_DEBUG
 #define PSDN_ASSERT(x) assert(x)
 #else

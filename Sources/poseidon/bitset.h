@@ -2,8 +2,8 @@
 #define POSEIDON_BITSET_H
 
 #include <iostream>
-#include "poseidon/common.h"
-#include "poseidon/platform.h"
+#include "common.h"
+#include "platform/platform.h"
 
 namespace poseidon{
  class BitSet{

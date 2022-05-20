@@ -3,7 +3,6 @@
 #include "poseidon/marker.h"
 #include "poseidon/sweeper.h"
 #include "poseidon/allocator.h"
-#include "poseidon/os_thread.h"
 #include "poseidon/scavenger.h"
 #include "poseidon/compactor.h"
 

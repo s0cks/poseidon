@@ -5,7 +5,7 @@
 #include "poseidon/bitset.h"
 #include "poseidon/freelist.h"
 #include "poseidon/semispace.h"
-#include "poseidon/memory_region.h"
+#include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
  class Zone{

@@ -4,10 +4,10 @@
 #include "poseidon/zone.h"
 #include "poseidon/flags.h"
 #include "poseidon/utils.h"
-#include "poseidon/os_thread.h"
-#include "poseidon/memory_region.h"
 #include "poseidon/zone_new.h"
 #include "poseidon/zone_old.h"
+#include "poseidon/platform/os_thread.h"
+#include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
  class Heap{

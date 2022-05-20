@@ -7,8 +7,8 @@
 
 #include "poseidon/utils.h"
 #include "poseidon/bitset.h"
-#include "poseidon/platform.h"
 #include "poseidon/raw_object.h"
+#include "poseidon/platform/platform.h"
 
 namespace poseidon{ //TODO: atomic support?
  class FreeList{

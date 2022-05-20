@@ -6,7 +6,6 @@
 #endif//POSEIDON_OS_THREAD_H
 
 #include <pthread.h>
-#include "poseidon/platform.h"
 
 namespace poseidon{
  static const int kThreadNameMaxLength = 16;

@@ -1,4 +1,4 @@
-#include "poseidon/os_thread.h"
+#include "poseidon/platform/os_thread.h"
 #ifdef OS_IS_LINUX
 
 namespace poseidon{
