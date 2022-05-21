@@ -190,7 +190,7 @@ namespace poseidon{
 
    void ProcessToSpace() override{
      TIMED_SECTION("ProcessToSpace", {
-       to_.VisitRawObjects([&](RawObject* val){
+       to_.VisitPointers([&](RawObject* val){
          if(val->IsForwarding()){
            DLOG(INFO) << "scavenged " << val->ToString();
          } else{

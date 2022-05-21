@@ -45,6 +45,11 @@ namespace poseidon{
      GetEndingAddress() const{
        return semispace()->GetEndingAddress();
      }
+
+     inline uword
+     GetCurrentAddress() const{
+       return semispace()->GetCurrentAddress();
+     }
     public:
      explicit SemispaceIterator(const Semispace* semispace):
        semispace_(semispace),
@@ -57,7 +62,7 @@ namespace poseidon{
      }
 
      bool HasNext() const override{
-       return current_ptr()->GetPointerSize() > 0;
+       return current_address() < GetCurrentAddress();
      }
 
      RawObject* Next() override{
@@ -126,11 +131,11 @@ namespace poseidon{
 
    uword TryAllocate(int64_t size);
 
-   void VisitRawObjects(RawObjectVisitor* vis) const{
+   void VisitPointers(RawObjectVisitor* vis) const{
      return IteratePointers<Semispace, SemispaceIterator>(this, vis);
    }
 
-   void VisitRawObjects(RawObjectVisitorFunction vis) const{
+   void VisitPointers(RawObjectVisitorFunction vis) const{
      return IteratePointers<Semispace, SemispaceIterator>(this, vis);
    }
 

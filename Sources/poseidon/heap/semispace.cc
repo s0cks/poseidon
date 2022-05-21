@@ -11,7 +11,7 @@ namespace poseidon{
    auto ptr = new ((void*)((uword)current_))RawObject();
    current_ += total_size;
 
-   ptr->ClearNewBit();
+   ptr->SetNewBit();
    ptr->ClearOldBit();
    ptr->ClearMarkedBit();
    ptr->ClearRememberedBit();

@@ -1,96 +1,57 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-#include <glog/logging.h>
-
-#include "poseidon/heap/new_zone.h"
-#include "poseidon/heap/semispace.h"
-#include "poseidon/platform/memory_region.h"
+#include "helpers.h"
+#include "heap/test_semispace.h"
 
 namespace poseidon{
  using namespace ::testing;
 
- class SemispaceTest : public Test{
-  public:
-   static const constexpr int64_t kDefaultSemispaceSize = 2 * kMB;
-  protected:
-   MemoryRegion region_;
-   Semispace semispace_;
-
-   inline MemoryRegion* region(){
-     return &region_;
-   }
-
-   void SetUp() override{
-     ASSERT_TRUE(region()->Protect(MemoryRegion::kReadWrite)) << "cannot set " << region_ << " to " << MemoryRegion::kReadWrite;
-   }
-  public:
-   SemispaceTest():
-    region_(kDefaultSemispaceSize),
-    semispace_(region()){
-   }
-   ~SemispaceTest() override = default;
- };
-
  TEST_F(SemispaceTest, TestTryAllocate){
-   auto address = semispace_.TryAllocate(sizeof(uword));
-   ASSERT_NE(address, 0);
-
-   auto ptr = (RawObject*)address;
-   ASSERT_FALSE(ptr->IsNew());
-   ASSERT_FALSE(ptr->IsOld());
-   ASSERT_FALSE(ptr->IsMarked());
-   ASSERT_FALSE(ptr->IsRemembered());
-   ASSERT_FALSE(ptr->IsForwarding());
-   ASSERT_EQ(ptr->GetPointerSize(), sizeof(uword));
+   static const constexpr word kDefaultWordValue = 42;
+   auto ptr = TryAllocateNewWord(&semispace_, kDefaultWordValue);
+   ASSERT_TRUE(IsAllocated(ptr));
+   ASSERT_TRUE(IsNew(ptr));
+   ASSERT_FALSE(IsOld(ptr));
+   ASSERT_FALSE(IsMarked(ptr));
+   ASSERT_FALSE(IsRemembered(ptr));
+   ASSERT_FALSE(IsForwarding(ptr));
+   ASSERT_EQ(ptr->GetPointerSize(), kWordSize);
  }
 
- class MockSemispaceVisitor : public RawObjectVisitor{
-  public:
-   MockSemispaceVisitor():
-    RawObjectVisitor(){
-     ON_CALL(*this, Visit)
-      .WillByDefault([](RawObject* val){
-        return true;
-      });
-   }
-   ~MockSemispaceVisitor() override = default;
-   MOCK_METHOD(bool, Visit, (RawObject*), (override));
- };
-
  TEST_F(SemispaceTest, TestVisitPointers){
-   auto p1 = (RawObject*)semispace_.TryAllocate(sizeof(uword));
-   ASSERT_NE(p1, nullptr);
-   auto p2 = (RawObject*)semispace_.TryAllocate(sizeof(uword));
-   ASSERT_NE(p2, nullptr);
-   auto p3 = (RawObject*)semispace_.TryAllocate(sizeof(uword));
-   ASSERT_NE(p3, nullptr);
+   static const constexpr int64_t kNumberOfPointers = 3;
+   for(auto idx = 0; idx < kNumberOfPointers; idx++){
+     auto ptr = TryAllocateNewWord(&semispace_, idx);
+     ASSERT_TRUE(IsAllocated(ptr));
+   }
 
    MockSemispaceVisitor visitor;
    EXPECT_CALL(visitor, Visit)
-    .Times(3);
-
-   ASSERT_NO_FATAL_FAILURE(semispace_.VisitRawObjects(&visitor));
+    .Times(kNumberOfPointers);
+   ASSERT_NO_FATAL_FAILURE(semispace_.VisitPointers(&visitor));
  }
 
  TEST_F(SemispaceTest, TestVisitMarkedPointers){
-   auto p1 = (RawObject*)semispace_.TryAllocate(sizeof(uword));
-   ASSERT_NE(p1, nullptr);
+   static const constexpr int64_t kNumberOfUnmarkedPointers = 1;
+   static const constexpr int64_t kNumberOfMarkedPointers = 3;
 
-   auto p2 = (RawObject*)semispace_.TryAllocate(sizeof(uword));
-   ASSERT_NE(p2, nullptr);
-   p2->SetMarkedBit();
+   for(auto idx = 0; idx < kNumberOfUnmarkedPointers; idx++){
+     auto ptr = TryAllocateNewWord(&semispace_, idx);
+     ASSERT_TRUE(IsAllocated(ptr));
+     ASSERT_TRUE(semispace_.Contains(ptr->GetAddress()));
+     ASSERT_TRUE(WordIs(ptr, idx));
+     ASSERT_FALSE(IsMarked(ptr));
+   }
 
-   auto p3 = (RawObject*)semispace_.TryAllocate(sizeof(uword));
-   ASSERT_NE(p3, nullptr);
-   p3->SetMarkedBit();
+   for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
+     auto ptr = TryAllocateNewMarkedWord(&semispace_, idx);
+     ASSERT_TRUE(IsAllocated(ptr));
+     ASSERT_TRUE(semispace_.Contains(ptr->GetAddress()));
+     ASSERT_TRUE(WordIs(ptr, idx));
+     ASSERT_TRUE(IsMarked(ptr));
+   }
 
    MockSemispaceVisitor visitor;
    EXPECT_CALL(visitor, Visit)
-    .Times(3);
-   ASSERT_NO_FATAL_FAILURE(semispace_.VisitRawObjects(&visitor));
-
-   EXPECT_CALL(visitor, Visit)
-    .Times(2);
+    .Times(kNumberOfMarkedPointers);
    ASSERT_NO_FATAL_FAILURE(semispace_.VisitMarkedObjects(&visitor));
  }
 }

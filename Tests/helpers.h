@@ -37,6 +37,13 @@ namespace poseidon{
  }
 
  static inline AssertionResult
+ IsAllocated(RawObject* val){
+   if(!val)
+     return AssertionFailure() << "Expected to be allocated.";
+   return AssertionSuccess();
+ }
+
+ static inline AssertionResult
  IsNew(RawObject* val){
    if(!val->IsNew())
      return AssertionFailure() << "Expected " << val->ToString() << " to be new.";
@@ -99,6 +106,49 @@ namespace poseidon{
  static inline AssertionResult
  IsForwarding(const Local<T>& val){
    return IsForwarding(val.raw());
+ }
+
+ template<class S>
+ static inline RawObject*
+ TryAllocateNewWord(S* section){
+   return (RawObject*)section->TryAllocate(kWordSize);
+ }
+
+ template<class S>
+ static inline RawObject*
+ TryAllocateNewWord(S* section, word value){
+   auto val = TryAllocateNewWord(section);
+   if(val != nullptr)
+     *((word*)val->GetPointer()) = value;
+   return val;
+ }
+
+ template<class S>
+ static inline RawObject*
+ TryAllocateNewMarkedWord(S* section, word value = 0){
+   auto val = TryAllocateNewWord(section, value);
+   if(val != nullptr)
+     val->SetMarkedBit();
+   return val;
+ }
+
+ template<class S>
+ static inline RawObject*
+ TryAllocateNewRememberedWord(S* section, word value = 0){
+   auto val = TryAllocateNewWord(section, value);
+   if(val != nullptr)
+     val->SetRememberedBit();
+   return val;
+ }
+
+ static inline AssertionResult
+ WordIs(RawObject* ptr, word value){
+   if(ptr->GetPointerSize() != kWordSize)
+     return AssertionFailure() << ptr->ToString() << " is not a word.";
+   auto lhs = *((word*)ptr->GetPointer());
+   if(lhs != value)
+     return AssertionFailure() << ptr->ToString() << " (" << lhs << ") does not equal: " << value;
+   return AssertionSuccess();
  }
 }
 

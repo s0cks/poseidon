@@ -13,7 +13,7 @@ add_executable(poseidon-tests
     test_zone_new.cc
     test_zone_old.cc
     heap/test_semispace.cc
-    collector/test_collector.cc)
+    collector/test_collector.cc heap/test_semispace.h)
 target_link_libraries(poseidon-tests
     poseidon
     ${CMAKE_THREAD_LIBS_INIT}
