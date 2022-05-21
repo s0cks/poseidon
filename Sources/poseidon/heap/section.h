@@ -116,6 +116,110 @@ namespace poseidon{
      return !operator==(lhs, rhs);
    }
  };
+
+ class AllocationSection : public Section{
+   friend class RawObject;
+  public:
+   class Iterator : public RawObjectPointerIterator{
+    protected:
+     const AllocationSection* section_;
+     uword current_;
+
+     inline uword current_address() const{
+       return current_;
+     }
+
+     inline RawObject* current_ptr() const{
+       return (RawObject*)current_address();
+     }
+
+     inline const AllocationSection* section() const{
+       return section_;
+     }
+    public:
+     explicit Iterator(const AllocationSection* section):
+      section_(section),
+      current_(section->GetStartingAddress()){
+     }
+     ~Iterator() override = default;
+
+     bool HasNext() const override{
+       return current_address() < section()->GetCurrentAddress();
+     }
+
+     RawObject* Next() override{
+       auto next = current_ptr();
+       current_ += next->GetTotalSize();
+       return next;
+     }
+   };
+  protected:
+   uword current_;
+
+   AllocationSection():
+    Section(),
+    current_(0){
+   }
+
+   AllocationSection(uword start, int64_t size):
+    Section(start, size),
+    current_(start){
+   }
+  public:
+   AllocationSection(const AllocationSection& rhs):
+    Section(rhs),
+    current_(rhs.GetCurrentAddress()){
+   }
+   ~AllocationSection() override = default;
+
+   uword GetCurrentAddress() const{
+     return current_;
+   }
+
+   void* GetCurrentAddressPointer() const{
+     return (void*)GetCurrentAddress();
+   }
+
+   virtual uword TryAllocate(int64_t size);
+   virtual void VisitPointers(RawObjectVisitor* vis) const;
+   virtual void VisitPointers(const std::function<bool(RawObject*)>& vis) const;
+   virtual void VisitMarkedPointers(RawObjectVisitor* vis) const;
+   virtual void VisitMarkedPointers(const std::function<bool(RawObject*)>& vis) const;
+
+   int64_t GetNumberOfBytesAllocated() const{
+     return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
+   }
+
+   double GetAllocatedPercentage() const{
+     return GetPercentageOf(GetNumberOfBytesAllocated(), GetSize());
+   }
+
+   int64_t GetNumberOfBytesRemaining() const{
+     return static_cast<int64_t>(GetSize() - GetNumberOfBytesAllocated());
+   }
+
+   double GetRemainingPercentage() const{
+     return GetPercentageOf(GetNumberOfBytesRemaining(), GetSize());
+   }
+
+   AllocationSection& operator=(const AllocationSection& rhs){
+     if(*this == rhs)
+       return *this;
+     Section::operator=(rhs);
+     current_ = rhs.GetCurrentAddress();
+     return *this;
+   }
+
+   friend bool operator==(const AllocationSection& lhs, const AllocationSection& rhs){
+     return lhs.GetStartingAddress() == rhs.GetStartingAddress()
+         && lhs.GetSize() == rhs.GetSize()
+         && lhs.GetCurrentAddress() == rhs.GetCurrentAddress();
+   }
+
+   friend bool operator!=(const AllocationSection& lhs, const AllocationSection& rhs){
+     return !operator==(lhs, rhs);
+   }
+ };
 }
 
 #endif//POSEIDON_SECTION_H

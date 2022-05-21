@@ -2,6 +2,7 @@
 #define POSEIDON_HELPERS_H
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <glog/logging.h>
 
 #include "poseidon/local.h"
@@ -9,6 +10,20 @@
 
 namespace poseidon{
  using namespace ::testing;
+
+ class MockRawObjectVisitor : public RawObjectVisitor{
+  public:
+   MockRawObjectVisitor():
+    RawObjectVisitor(){
+     ON_CALL(*this, Visit)
+      .WillByDefault([](RawObject* val){
+        return true;
+      });
+   }
+   ~MockRawObjectVisitor() override = default;
+
+   MOCK_METHOD(bool, Visit, (RawObject*), (override));
+ };
 
  static inline uword
  FailAllocation(int64_t size){
@@ -142,7 +157,7 @@ namespace poseidon{
  }
 
  static inline AssertionResult
- WordIs(RawObject* ptr, word value){
+ IsWord(RawObject* ptr, word value){
    if(ptr->GetPointerSize() != kWordSize)
      return AssertionFailure() << ptr->ToString() << " is not a word.";
    auto lhs = *((word*)ptr->GetPointer());

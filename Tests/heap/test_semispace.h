@@ -30,20 +30,6 @@ namespace poseidon{
    }
    ~SemispaceTest() override = default;
  };
-
- class MockSemispaceVisitor : public RawObjectVisitor{
-  public:
-   MockSemispaceVisitor():
-     RawObjectVisitor(){
-     ON_CALL(*this, Visit)
-       .WillByDefault([](RawObject* val){
-         return true;
-       });
-   }
-   ~MockSemispaceVisitor() override = default;
-
-   MOCK_METHOD(bool, Visit, (RawObject*), (override));
- };
 }
 
 

@@ -4,17 +4,18 @@
 namespace poseidon{
  uword NewZone::TryAllocate(int64_t size){
    auto total_size = size + sizeof(RawObject);
-   if((current_ + total_size) >= (fromspace_ + tospace_))
+   if((GetCurrentAddress() + total_size) >= (fromspace() + tospace()))
      Collector::MinorCollection();
 
-   if((current_ + total_size) >= (fromspace_ + tospace_)){
+   if((GetCurrentAddress() + total_size) >= (fromspace() + tospace())){
      LOG(FATAL) << "insufficient memory.";
      return 0;
    }
 
-   auto ptr = current_;
+   auto ptr = new (GetCurrentAddressPointer())RawObject();
    current_ = current_ + total_size;
-   new ((void*)ptr)RawObject(size);
-   return ptr;
+   ptr->SetNewBit();
+   ptr->SetPointerSize(size);
+   return ptr->GetAddress();
  }
 }
