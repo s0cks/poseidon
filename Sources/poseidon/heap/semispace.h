@@ -31,11 +31,6 @@ namespace poseidon{
        return current_ + current_ptr()->GetTotalSize();
      }
 
-     inline RawObject*
-     next_ptr() const{
-       return (RawObject*)next_address();
-     }
-
      inline uword
      GetStartingAddress() const{
        return semispace()->GetStartingAddress();
@@ -74,9 +69,6 @@ namespace poseidon{
   private:
    RelaxedAtomic<uword> current_;
   public:
-   /**
-    * Create an empty {@link Semispace}.
-    */
    Semispace():
     Section(),
     current_(0){
@@ -155,21 +147,25 @@ namespace poseidon{
      return GetSize() - GetNumberOfBytesAllocated();
    }
 
-   Semispace& operator=(const Semispace& rhs)= default;
+   Semispace& operator=(const Semispace& rhs){
+     if(this == &rhs)
+       return *this;
+     Section::operator=(rhs);
+     current_ = rhs.GetCurrentAddress();
+     return *this;
+   }
 
    friend bool operator==(const Semispace& lhs, const Semispace& rhs){
-     return lhs.size_ == rhs.size_
-         && lhs.start_ == rhs.start_
-         && ((uword)lhs.current_) == ((uword)rhs.current_);
+     return lhs.GetStartingAddress() == rhs.GetStartingAddress()
+         && lhs.GetSize() == rhs.GetSize()
+         && lhs.GetCurrentAddress() == rhs.GetCurrentAddress();
    }
 
    friend bool operator!=(const Semispace& lhs, const Semispace& rhs){
-     return lhs.size_ != rhs.size_
-         || lhs.start_ != rhs.start_
-         || ((uword)lhs.current_) != ((uword)rhs.current_);
+     return !operator==(lhs, rhs);
    }
 
-   friend ::std::ostream& operator<<(::std::ostream& stream, const Semispace& space){
+   friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
      stream << "Semispace(";
      stream << "start=" << ((void*)space.GetStartingAddress()) << ", ";
      stream << "allocated=" << Bytes(space.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(space.GetNumberOfBytesAllocated(), space.GetSize()) << "), ";
