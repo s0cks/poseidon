@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
 
-#include "poseidon/heap/zone_new.h"
+#include "poseidon/heap/new_zone.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{

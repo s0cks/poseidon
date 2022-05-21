@@ -2,7 +2,7 @@
 #include "poseidon/runtime.h"
 #include "poseidon/task_pool.h"
 #include "poseidon/heap/heap.h"
-#include "poseidon/heap/zone_old.h"
+#include "poseidon/heap/old_zone.h"
 #include "poseidon/collector/sweeper.h"
 
 namespace poseidon{

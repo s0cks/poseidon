@@ -1,4 +1,4 @@
-#include "poseidon/heap/zone_new.h"
+#include "poseidon/heap/new_zone.h"
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{

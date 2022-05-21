@@ -145,7 +145,7 @@ namespace poseidon{
    }
 
    template<typename U>
-   Local& operator=(const Local<U>& rhs){
+   Local& operator=(const Local<U>& rhs) {
      return operator=(rhs.Get());
    }
 
@@ -186,6 +186,12 @@ namespace poseidon{
    }
  };
 
+ /**
+  * l1      -> heap@0x1
+  *
+  * l1'     -> l1
+  * l1''    -> l1
+  */
  class LocalPage{
    friend class Allocator;
    friend class LocalPageIterator;

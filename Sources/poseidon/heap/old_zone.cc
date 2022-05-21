@@ -1,4 +1,4 @@
-#include "poseidon/heap/zone_old.h"
+#include "poseidon/heap/old_zone.h"
 
 namespace poseidon{
  OldPageTable::OldPageTable(int64_t num_pages):

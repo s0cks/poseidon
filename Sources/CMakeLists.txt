@@ -21,8 +21,8 @@ add_library(poseidon
     poseidon/heap/section.h
     poseidon/heap/semispace.h poseidon/heap/semispace.cc
     poseidon/heap/zone.h poseidon/heap/zone.cc
-    poseidon/heap/zone_new.h poseidon/heap/zone_new.cc
-    poseidon/heap/zone_old.h poseidon/heap/zone_old.cc
+        poseidon/heap/new_zone.h poseidon/heap/new_zone.cc
+        poseidon/heap/old_zone.h poseidon/heap/old_zone.cc
     # platform
     poseidon/platform/memory_region.h poseidon/platform/memory_region.cc
     poseidon/platform/memory_region_linux.cc
@@ -43,7 +43,7 @@ add_library(poseidon
     poseidon/runtime.h poseidon/runtime.cc
     poseidon/task_pool.h poseidon/task_pool.cc
     poseidon/utils.h poseidon/utils.cc
-    poseidon/wsq.h)
+    poseidon/wsq.h poseidon/heap/old_page.h)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     glog::glog

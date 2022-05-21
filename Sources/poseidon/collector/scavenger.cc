@@ -8,7 +8,7 @@
 
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/collector/finalizer.h"
-#include "poseidon/heap/zone_new.h"
+#include "poseidon/heap/new_zone.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
