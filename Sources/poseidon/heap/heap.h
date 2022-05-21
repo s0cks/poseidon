@@ -40,9 +40,6 @@ namespace poseidon{
     region_(new MemoryRegion(GetTotalInitialHeapSize())),
     new_zone_(new NewZone(region_, GetNewZoneSize())),
     old_zone_(new OldZone(region_, GetNewZoneSize(), GetOldZoneSize(), GetOldPageSize())){
-     if(!region_->Protect(MemoryRegion::kReadWrite)){//TODO: remove
-       LOG(FATAL) << "failed to protect Heap " << region_;
-     }
    }
    Heap(const Heap& rhs) = default;
    virtual ~Heap(){

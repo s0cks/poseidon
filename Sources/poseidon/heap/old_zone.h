@@ -18,23 +18,15 @@ namespace poseidon{
    OldPageTable pages_;
 
    static inline int64_t
-   GetNumberOfPages(int64_t size, int64_t page_size){
-     PSDN_ASSERT(IsPow2(size));
-     PSDN_ASSERT(IsPow2(page_size));
-     PSDN_ASSERT(size % page_size == 0);
-     return size / page_size;
-   }
-
-   static inline int64_t
    CalculateTableSize(int64_t size, int64_t page_size){
      return size / page_size;
    }
   public:
    explicit OldZone(uword start, int64_t size, int64_t page_size):
      Zone(start, size),
-     pages_(CalculateTableSize(size, page_size)),
+     pages_(start, size, page_size),
      free_list_(start, size){
-     pages_.CreatePagesForRange(start, size, page_size);
+     SetWriteable();
    }
    explicit OldZone(MemoryRegion* region, int64_t offset, int64_t size, int64_t page_size):
      OldZone(region->GetStartingAddress() + offset, size, page_size){

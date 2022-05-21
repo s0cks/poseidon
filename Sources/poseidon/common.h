@@ -62,6 +62,8 @@ namespace poseidon{
 
 #endif
 
+#define PSDN_CANT_ALLOCATE(Level, TotalSize, Section) \
+  LOG(Level) << "cannot allocate " << Bytes((TotalSize)) << " in " << (Section) << ".";
 }
 
 #endif //POSEIDON_COMMON_H

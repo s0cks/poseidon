@@ -94,7 +94,7 @@ namespace poseidon{
       start_(rhs.GetStartingAddress()),
       size_(rhs.size()){
     }
-    virtual ~MemoryRegion();
+    virtual ~MemoryRegion() = default;
 
     int64_t size() const{
       return size_;
@@ -121,6 +121,7 @@ namespace poseidon{
           && GetEndingAddress() >= address;
     }
 
+    virtual void FreeRegion();
     virtual void ClearRegion();
 
     /**

@@ -115,6 +115,14 @@ namespace poseidon{
      }
      return stream;
    }
+
+   BitSet& operator=(const BitSet& rhs){
+     if(this == &rhs)
+       return *this;
+     Resize(rhs.size());
+     CopyFrom(rhs);
+     return *this;
+   }
  };
 }
 

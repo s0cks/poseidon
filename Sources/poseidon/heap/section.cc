@@ -2,10 +2,6 @@
 #include "poseidon/heap/section.h"
 
 namespace poseidon{
- uword AllocationSection::TryAllocate(int64_t size){
-   return RawObject::TryAllocateIn(this, size);
- }
-
  void AllocationSection::VisitPointers(RawObjectVisitor* vis) const{
    return IteratePointers<AllocationSection, Iterator>(this, vis);
  }

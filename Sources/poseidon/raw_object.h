@@ -262,13 +262,13 @@ namespace poseidon{
     RelaxedAtomic<RawObjectTag> tag_;
     RelaxedAtomic<uword> forwarding_;
 
-    explicit RawObject(int64_t size):
-      RawObject(){
-      SetPointerSize(size);
+    explicit RawObject(ObjectTag tag):
+      tag_((RawObjectTag)tag),
+      forwarding_(0){
     }
    public:
     RawObject()://TODO: make private
-      tag_(),
+      tag_(0),
       forwarding_(0){
     }
     virtual ~RawObject() = default;
@@ -361,6 +361,10 @@ namespace poseidon{
       tag_ = ObjectTag::RememberedBit::Update(false, raw_tag());
     }
 
+    void ClearTag(){
+      tag_ = kInvalidObjectTag;
+    }
+
     uint32_t GetPointerSize() const{
       return ObjectTag::SizeTag::Decode(raw_tag());
     }
@@ -392,15 +396,40 @@ namespace poseidon{
     static inline uword
     TryAllocateIn(T* area, int64_t size){
       auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
-      if((area->current_ + total_size) > area->GetEndingAddress()){
-        DLOG(ERROR) << "cannot allocate object of " << Bytes(total_size) << " in Semispace.";
-        return 0;
+      if((area->GetCurrentAddress() + total_size) > area->GetEndingAddress()){
+        PSDN_CANT_ALLOCATE(ERROR, total_size, (*area));
       }
 
-      auto address = area->current_;
+      auto ptr = new (area->GetCurrentAddressPointer())RawObject();
       area->current_ += total_size;
-      new ((void*)address)RawObject(size);
-      return address;
+      ptr->SetPointerSize(size);
+      return ptr->GetAddress();
+    }
+
+    template<class T>
+    static inline uword
+    TryAllocateNewIn(T* area, int64_t size){
+      auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+      if((area->GetCurrentAddress() + total_size) > area->GetEndingAddress()){
+        PSDN_CANT_ALLOCATE(ERROR, total_size, (*area));
+      }
+
+      auto ptr = new (area->GetCurrentAddressPointer())RawObject(ObjectTag::NewWithSize(size));
+      area->current_ += total_size;
+      return ptr->GetAddress();
+    }
+
+    template<class T>
+    static inline uword
+    TryAllocateOldIn(T* area, int64_t size){
+      auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+      if((area->GetCurrentAddress() + total_size) > area->GetEndingAddress()){
+        PSDN_CANT_ALLOCATE(ERROR, total_size, (*area));
+      }
+
+      auto ptr = new (area->GetCurrentAddressPointer())RawObject(ObjectTag::OldWithSize(size));
+      area->current_ += total_size;
+      return ptr->GetAddress();
     }
   };
 }

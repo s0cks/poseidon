@@ -22,11 +22,11 @@ namespace poseidon{
     size_ = size;
   }
 
-  MemoryRegion::~MemoryRegion(){
+  void MemoryRegion::FreeRegion(){
     if(size_ > 0){
       int err;
       if((err = munmap((void*)start_, size_)) != 0)
-        LOG(ERROR) << "failed to munmap memory region of " << Bytes(size_) << " bytes: " << strerror(err);
+        LOG(FATAL) << "failed to munmap memory region of " << Bytes(size_) << " bytes: " << strerror(err);
       DLOG(INFO) << "freed MemoryRegion (" << Bytes(size_) << ")";
     }
   }

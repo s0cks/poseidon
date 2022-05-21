@@ -125,14 +125,14 @@ namespace poseidon{
 
  template<class S>
  static inline RawObject*
- TryAllocateNewWord(S* section){
+ TryAllocateNewWordInSection(S* section){
    return (RawObject*)section->TryAllocate(kWordSize);
  }
 
  template<class S>
  static inline RawObject*
  TryAllocateNewWord(S* section, word value){
-   auto val = TryAllocateNewWord(section);
+   auto val = TryAllocateNewWordInSection(section);
    if(val != nullptr)
      *((word*)val->GetPointer()) = value;
    return val;

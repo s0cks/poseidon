@@ -5,30 +5,77 @@
 #include "poseidon/bitset.h"
 #include "poseidon/common.h"
 #include "poseidon/heap/section.h"
+#include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- class OldPage : public Section{
+ class OldPage : public AllocationSection{
+   friend class OldPageTest;
    friend class OldPageTable;
   private:
    int64_t index_;
 
    OldPage(int64_t index, uword start, int64_t size):
-     Section(start, size),
+     AllocationSection(start, size),
      index_(index){
+   }
+
+   OldPage(int64_t index, MemoryRegion* region, int64_t offset, int64_t size):
+    OldPage(index, region->GetStartingAddress() + offset, size){
+   }
+
+   OldPage(int64_t index, MemoryRegion* region, int64_t size):
+    OldPage(index, region, 0, size){
+   }
+
+   OldPage(int64_t index, MemoryRegion* region):
+    OldPage(index, region, region->size()){
+   }
+
+   explicit OldPage(MemoryRegion* region):
+    OldPage(0, region){
    }
   public:
    OldPage():
-     Section(),
-     index_(0){
+    AllocationSection(),
+    index_(0){
    }
    OldPage(const OldPage& rhs):
-     Section(rhs),
-     index_(rhs.index()){
+    AllocationSection(rhs),
+    index_(rhs.GetIndex()){
    }
    ~OldPage() override = default;
 
-   int64_t index() const{
+   int64_t GetIndex() const{
      return index_;
+   }
+
+   uword TryAllocate(int64_t size) override{
+     return RawObject::TryAllocateOldIn(this, size);
+   }
+
+   OldPage& operator=(const OldPage& rhs) = default;
+
+   friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
+     stream << "OldPage(";
+     stream << "index=" << val.GetIndex() << ", ";
+     stream << "start=" << val.GetStartingAddress() << ", ";
+     stream << "size=" << Bytes(val.GetSize());
+     stream << ")";
+     return stream;
+   }
+
+   friend bool operator==(const OldPage& lhs, const OldPage& rhs){
+     return lhs.GetIndex() == rhs.GetIndex()
+         && lhs.GetStartingAddress() == rhs.GetStartingAddress()
+         && lhs.GetSize() == rhs.GetSize();
+   }
+
+   friend bool operator!=(const OldPage& lhs, const OldPage& rhs){
+     return !operator==(lhs, rhs);
+   }
+
+   friend bool operator<(const OldPage& lhs, const OldPage& rhs){
+     return lhs.GetIndex() < rhs.GetIndex();
    }
  };
 
@@ -52,12 +99,35 @@ namespace poseidon{
    }
   public:
    OldPageTable():
-       pages_(nullptr),
-       num_pages_(0),
-       marked_(){
+     pages_(nullptr),
+     num_pages_(0),
+     marked_(){
    }
-   explicit OldPageTable(int64_t num_pages);
-   OldPageTable(const OldPageTable& rhs);
+   OldPageTable(uword start, int64_t sz, int64_t page_size):
+    pages_(nullptr),
+    num_pages_(0),
+    marked_(){
+     PSDN_ASSERT(start > 0);
+     PSDN_ASSERT(sz > 0);
+     PSDN_ASSERT(IsPow2(sz));
+     PSDN_ASSERT(page_size > 0);
+     PSDN_ASSERT(IsPow2(page_size));
+     PSDN_ASSERT((sz % page_size) == 0);
+     num_pages_ = (sz / page_size);
+     marked_ = BitSet(num_pages_);
+     pages_ = new OldPage[num_pages_];
+
+     auto current_address = start;
+     for(auto idx = 0; idx < num_pages_; idx++, current_address += page_size){
+       pages_[idx] = OldPage(idx, current_address, page_size);
+     }
+   }
+   OldPageTable(const OldPageTable& rhs):
+     pages_(new OldPage[rhs.size()]),
+     num_pages_(rhs.size()),
+     marked_(rhs.marked_){
+     std::copy(begin(), end(), rhs.begin());
+   }
    ~OldPageTable(){
      delete[] pages_;
    }
@@ -74,7 +144,7 @@ namespace poseidon{
 
    bool IsMarked(OldPage* page) const{
      PSDN_ASSERT(page != nullptr);
-     return IsMarked(page->index());
+     return IsMarked(page->GetIndex());
    }
 
    void Mark(int64_t idx){
@@ -85,7 +155,7 @@ namespace poseidon{
 
    void Mark(OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     return Mark(page->index());
+     return Mark(page->GetIndex());
    }
 
    void Unmark(int64_t idx){
@@ -96,7 +166,7 @@ namespace poseidon{
 
    void Unmark(OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     return Unmark(page->index());
+     return Unmark(page->GetIndex());
    }
 
    OldPage* page(int64_t idx) const{
@@ -106,7 +176,7 @@ namespace poseidon{
    }
 
    OldPage* begin() const{
-     return &pages_[0];
+     return pages(0);
    }
 
    OldPage* pages(int64_t idx) const{
@@ -116,7 +186,7 @@ namespace poseidon{
    }
 
    OldPage* end() const{
-     return &pages_[size()];
+     return pages(size());
    }
 
    void VisitAll(std::function<bool(OldPage*)>& vis) const{

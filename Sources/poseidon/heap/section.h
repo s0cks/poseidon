@@ -180,7 +180,7 @@ namespace poseidon{
      return (void*)GetCurrentAddress();
    }
 
-   virtual uword TryAllocate(int64_t size);
+   virtual uword TryAllocate(int64_t size) = 0;
    virtual void VisitPointers(RawObjectVisitor* vis) const;
    virtual void VisitPointers(const std::function<bool(RawObject*)>& vis) const;
    virtual void VisitMarkedPointers(RawObjectVisitor* vis) const;

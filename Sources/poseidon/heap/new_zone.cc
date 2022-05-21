@@ -3,19 +3,18 @@
 
 namespace poseidon{
  uword NewZone::TryAllocate(int64_t size){
-   auto total_size = size + sizeof(RawObject);
-   if((GetCurrentAddress() + total_size) >= (fromspace() + tospace()))
-     Collector::MinorCollection();
-
+   auto total_size = static_cast<int64_t>(sizeof(RawObject)) + size;
    if((GetCurrentAddress() + total_size) >= (fromspace() + tospace())){
-     LOG(FATAL) << "insufficient memory.";
-     return 0;
+     PSDN_CANT_ALLOCATE(ERROR, total_size, (*this));
+     Collector::MinorCollection();
    }
 
-   auto ptr = new (GetCurrentAddressPointer())RawObject();
-   current_ = current_ + total_size;
-   ptr->SetNewBit();
-   ptr->SetPointerSize(size);
+   if((GetCurrentAddress() + total_size) >= (fromspace() + tospace())){
+     PSDN_CANT_ALLOCATE(FATAL, total_size, (*this));
+   }
+
+   auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::NewWithSize(size));
+   current_ += total_size;
    return ptr->GetAddress();
  }
 }

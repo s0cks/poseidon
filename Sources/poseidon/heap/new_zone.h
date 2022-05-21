@@ -1,6 +1,7 @@
 #ifndef POSEIDON_NEW_ZONE_H
 #define POSEIDON_NEW_ZONE_H
 
+#include "poseidon/flags.h"
 #include "poseidon/heap/zone.h"
 
 namespace poseidon{
@@ -11,6 +12,11 @@ namespace poseidon{
    static inline int64_t
    CalculateSemispaceSize(int64_t zone_size){
      return zone_size / 2;
+   }
+
+   static inline int64_t
+   GetDefaultSemispaceSize(){
+     return CalculateSemispaceSize(GetNewZoneSize());
    }
   private:
    uword fromspace_;
@@ -39,6 +45,7 @@ namespace poseidon{
      fromspace_(start),
      tospace_(start + CalculateSemispaceSize(size)),
      semisize_(CalculateSemispaceSize(size)){
+     SetWriteable();
    }
 
    NewZone(MemoryRegion* region, int64_t offset, int64_t size):

@@ -5,26 +5,18 @@
 #include <gmock/gmock.h>
 
 #include "poseidon/flags.h"
+#include "memory_region_test.h"
 #include "poseidon/heap/new_zone.h"
 
 namespace poseidon{
  using namespace ::testing;
 
- class NewZoneTest : public Test{
+ class NewZoneTest : public MemoryRegionTest{
   protected:
-   MemoryRegion region_;
    NewZone zone_;
-
-   inline MemoryRegion* region(){
-     return &region_;
-   }
-
-   void SetUp() override{
-     ASSERT_TRUE(region()->Protect(MemoryRegion::kReadWrite)) << "cannot set " << region_ << " to " << MemoryRegion::kReadWrite;
-   }
   public:
    NewZoneTest():
-    region_(GetNewZoneSize()),
+    MemoryRegionTest(GetNewZoneSize()),
     zone_(region()){
    }
    ~NewZoneTest() override = default;
