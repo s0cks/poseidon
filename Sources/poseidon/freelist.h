@@ -13,7 +13,7 @@
 namespace poseidon{ //TODO: atomic support?
  class FreeList{
   public:
-   friend class ParallelSweeperTask;//TODO: remove
+   friend class Sweeper;
   public:
    struct Node{
      Node* previous;
@@ -44,8 +44,8 @@ namespace poseidon{ //TODO: atomic support?
    RelaxedAtomic<int64_t> free_bytes_;
 
    Node* FindBestFit(int64_t size);
-   void Remove(Node* node);
-   void Add(uword address, int64_t size);
+   virtual void Remove(Node* node);
+   virtual void Add(uword address, int64_t size);
   public:
    FreeList() = delete;
    FreeList(uword start, int64_t size):
@@ -54,7 +54,7 @@ namespace poseidon{ //TODO: atomic support?
     free_bytes_(size){
    }
    FreeList(const FreeList& rhs) = delete;
-   ~FreeList(){
+   virtual ~FreeList(){
      delete list_;
    }
 
@@ -62,7 +62,7 @@ namespace poseidon{ //TODO: atomic support?
      return (int64_t)free_bytes_;
    }
 
-   uword TryAllocate(int64_t size);
+   virtual uword TryAllocate(int64_t size);
    void VisitFreeList(const std::function<bool(Node*)>& vis) const;
  };
 

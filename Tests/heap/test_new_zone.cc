@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "helpers/assertions.h"
 #include "heap/test_new_zone.h"
 
 namespace poseidon{

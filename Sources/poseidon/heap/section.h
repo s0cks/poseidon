@@ -133,6 +133,14 @@ namespace poseidon{
        return (RawObject*)current_address();
      }
 
+     inline uword next_address() const{
+       return current_address() + current_ptr()->GetTotalSize();
+     }
+
+     inline RawObject* next_ptr() const{
+       return (RawObject*)next_address();
+     }
+
      inline const AllocationSection* section() const{
        return section_;
      }
@@ -144,7 +152,8 @@ namespace poseidon{
      ~Iterator() override = default;
 
      bool HasNext() const override{
-       return current_address() < section()->GetCurrentAddress();
+       return current_address() < section()->GetEndingAddress()
+           && next_ptr()->GetPointerSize() > 0;
      }
 
      RawObject* Next() override{
