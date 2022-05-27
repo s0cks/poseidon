@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include "poseidon/heap/heap.h"
 #include "poseidon/heap/new_zone.h"
 #include "poseidon/heap/old_zone.h"
 #include "poseidon/platform/memory_region.h"

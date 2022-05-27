@@ -87,11 +87,6 @@ namespace poseidon{
    ASSERT_FALSE(IsRemembered(g2));
    ASSERT_FALSE(IsForwarding(g2));
 
-   DLOG(INFO) << "p1: " << p1->ToString();
-   DLOG(INFO) << "p2: " << p2->ToString();
-   DLOG(INFO) << "g1: " << g1->ToString();
-   DLOG(INFO) << "g2: " << g2->ToString();
-
    ASSERT_NO_FATAL_FAILURE(SerialSweep());
 
    // p1 should be:
