@@ -59,7 +59,7 @@ namespace poseidon{
      goto exit;
 
    func(parameter);
-   exit:
+ exit:
    delete data;
    pthread_exit(nullptr);
  }

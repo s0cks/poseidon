@@ -16,6 +16,12 @@ namespace poseidon{
    return AssertionSuccess();
  }
 
+ template<class T>
+ static inline AssertionResult
+ IsAllocated(const Local<T>& val){
+   return IsAllocated(val.raw());
+ }
+
  static inline AssertionResult
  IsUnallocated(RawObject* val){
    if(!val)
@@ -24,6 +30,12 @@ namespace poseidon{
      return AssertionFailure() << val->ToString() << " is allocated.";
 
    return AssertionSuccess();
+ }
+
+ template<typename T>
+ static inline AssertionResult
+ IsUnallocated(const Local<T>& val){
+   return IsUnallocated(val.raw());
  }
 
  static inline AssertionResult
@@ -85,6 +97,20 @@ namespace poseidon{
    return AssertionSuccess();
  }
 
+ static inline AssertionResult
+ IsForwardingTo(RawObject* val, uword address){
+   if(!val->IsForwarding())
+     return AssertionFailure() << "Expected " << val->ToString() << " to be forwarding.";
+   if(val->GetForwardingAddress() != address)
+     return AssertionFailure() << "Expected " << val->ToString() << " to be forwarding to: " << ((void*)address);
+   return AssertionSuccess();
+ }
+
+ static inline AssertionResult
+ IsForwardingTo(RawObject* val, RawObject* dst){
+   return IsForwardingTo(val, dst->GetAddress());
+ }
+
  template<typename T>
  static inline AssertionResult
  IsForwarding(const Local<T>& val){
@@ -99,6 +125,12 @@ namespace poseidon{
    if(lhs != value)
      return AssertionFailure() << ptr->ToString() << " (" << lhs << ") does not equal: " << value;
    return AssertionSuccess();
+ }
+
+ template<class T>
+ static inline AssertionResult
+ IsWord(const Local<T>& val, word value){
+   return IsWord(val.raw(), value);
  }
 }
 

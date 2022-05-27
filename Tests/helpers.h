@@ -8,6 +8,8 @@
 #include "poseidon/local.h"
 #include "poseidon/heap/heap.h"
 
+#include "helpers/assertions.h"
+
 namespace poseidon{
  using namespace ::testing;
 

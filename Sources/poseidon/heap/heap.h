@@ -16,6 +16,8 @@ namespace poseidon{
    friend class Scavenger;
    friend class Compactor;
    friend class Allocator;
+
+   friend class HeapTest;
   private:
    static pthread_key_t kThreadKey;
 
@@ -32,15 +34,26 @@ namespace poseidon{
    NewZone* new_zone_;
    OldZone* old_zone_;
 
+   Heap(MemoryRegion* region, NewZone* new_zone, OldZone* old_zone):
+    region_(region),
+    new_zone_(new_zone),
+    old_zone_(old_zone){
+   }
+
+   explicit Heap(MemoryRegion* region, int64_t new_zone_size = GetNewZoneSize(), int64_t old_zone_size = GetOldZoneSize(), int64_t old_page_size = GetOldPageSize()):
+    region_(region),
+    new_zone_(new NewZone(region, new_zone_size)),
+    old_zone_(new OldZone(region, new_zone_size, old_zone_size, old_page_size)){
+   }
+
+   Heap():
+    Heap(new MemoryRegion(GetTotalInitialHeapSize())){
+   }
+
    uword AllocateNewObject(int64_t size);
    uword AllocateOldObject(int64_t size);
    uword AllocateLargeObject(int64_t size);
   public:
-   Heap():
-    region_(new MemoryRegion(GetTotalInitialHeapSize())),
-    new_zone_(new NewZone(region_, GetNewZoneSize())),
-    old_zone_(new OldZone(region_, GetNewZoneSize(), GetOldZoneSize(), GetOldPageSize())){
-   }
    Heap(const Heap& rhs) = default;
    virtual ~Heap(){
      delete new_zone_;

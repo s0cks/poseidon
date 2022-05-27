@@ -18,7 +18,7 @@ namespace poseidon{
 
  TEST_F(NewZoneTest, TestVisitPointers){
    static const constexpr int64_t kNumberOfPointers = 3;
-   for(auto idx = 0; idx < kNumberOfPointers; idx++){
+   for(auto idx = 1; idx <= kNumberOfPointers; idx++){
      auto ptr = TryAllocateNewWord(zone(), idx);
      ASSERT_TRUE(IsAllocated(ptr));
    }

@@ -8,6 +8,8 @@
 int main(int argc, char** argv){
   using namespace poseidon;
   ::google::InitGoogleLogging(argv[0]);
+  ::google::LogToStderr();
+
   ::testing::InitGoogleTest(&argc, argv);
   ::google::ParseCommandLineFlags(&argc, &argv, false);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";

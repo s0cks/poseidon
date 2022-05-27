@@ -4,6 +4,8 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include "poseidon/heap/new_zone.h"
+#include "poseidon/heap/old_zone.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
@@ -40,6 +42,58 @@ namespace poseidon{
    }
   public:
    ~MemoryRegionTest() override = default;
+ };
+
+ class BaseNewZoneTest : public MemoryRegionTest{
+  protected:
+   NewZone zone_;
+
+   explicit BaseNewZoneTest(int64_t size = GetNewZoneSize()):
+     MemoryRegionTest(size),
+     zone_(region()){
+   }
+
+   inline NewZone* zone(){
+     return &zone_;
+   }
+  public:
+   ~BaseNewZoneTest() override = default;
+ };
+
+ class BaseOldZoneTest : public MemoryRegionTest{
+  protected:
+   OldZone zone_;
+
+   explicit BaseOldZoneTest(int64_t size = GetOldZoneSize(), int64_t page_size = GetOldPageSize()):
+     MemoryRegionTest(size),
+     zone_(region(), size, page_size){
+   }
+  public:
+   ~BaseOldZoneTest() override = default;
+ };
+
+ class HeapTest : public MemoryRegionTest{
+  protected:
+   Heap heap_;
+
+   explicit HeapTest(int64_t size = GetTotalInitialHeapSize()):
+     MemoryRegionTest(size),
+     heap_(region()){
+   }
+
+   inline Heap* heap(){
+     return &heap_;
+   }
+
+   inline NewZone* new_zone(){
+     return heap()->new_zone();
+   }
+
+   inline OldZone* old_zone(){
+     return heap()->old_zone();
+   }
+  public:
+   ~HeapTest() override = default;
  };
 }
 

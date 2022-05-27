@@ -68,6 +68,52 @@ namespace poseidon{
    return (int64_t)last_scavenge_promoted_.bytes;
  }
 
+ uword Scavenger::ScavengeObject(Semispace* tospace, RawObject* ptr){
+   DLOG(INFO) << "scavenging " << ptr->ToString();
+   auto new_ptr = (RawObject*)tospace->TryAllocate(ptr->GetPointerSize());
+   new_ptr->SetPointerSize(ptr->GetPointerSize());
+   CopyObject(ptr, new_ptr);
+   last_scavenge_scavenged_ += ptr;
+   return new_ptr->GetAddress();
+ }
+
+ uword Scavenger::PromoteObject(OldZone* zone, RawObject* ptr){
+   DLOG(INFO) << "promoting " << ptr->ToString() << " to new zone.";
+   auto new_ptr = (RawObject*)zone->TryAllocate(ptr->GetPointerSize());
+   CopyObject(ptr, new_ptr);
+   last_scavenge_promoted_ += ptr;
+   return new_ptr->GetAddress();
+ }
+
+ uword Scavenger::ProcessObject(Semispace* tospace, OldZone* old_zone, RawObject* ptr){
+   DLOG(INFO) << "processing " << ptr->ToString();
+   if(!ptr->IsForwarding()){
+     if(ptr->IsRemembered()){
+       auto new_address = PromoteObject(old_zone, ptr);
+       ForwardObject(ptr, new_address);
+     } else{
+       auto new_address = ScavengeObject(tospace, ptr);
+       ForwardObject(ptr, new_address);
+     }
+   }
+
+   PSDN_ASSERT(ptr->IsForwarding());
+   auto new_ptr = (RawObject*)ptr->GetForwardingAddress();
+   new_ptr->SetRememberedBit();
+   return new_ptr->GetAddress();
+ }
+
+ void Scavenger::ForwardObject(RawObject* obj, uword forwarding_address){
+   DLOG(INFO) << "forwarding " << obj->ToString() << " to " << ((RawObject*) forwarding_address)->ToString();
+   obj->SetForwardingAddress(forwarding_address);
+   PSDN_ASSERT(obj->GetForwardingAddress() == forwarding_address);
+ }
+
+ void Scavenger::CopyObject(RawObject* src, RawObject* dst){//TODO: create a better copy
+   //   PSDN_ASSERT(src->GetTotalSize() == dst->GetTotalSize());
+   memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
+ }
+
  template<bool Parallel>
  class ScavengerVisitorBase : public RawObjectPointerVisitor{
   protected:
@@ -82,8 +128,6 @@ namespace poseidon{
     from_(heap->new_zone()->fromspace(), heap->new_zone()->semisize()),
     to_(heap->new_zone()->tospace(), heap->new_zone()->semisize()),
     promotion_(heap->old_zone()){
-     DLOG(INFO) << "from space: " << from_;
-     DLOG(INFO) << "to space: " << to_;
    }
 
    inline void SwapSpaces(){
@@ -93,58 +137,6 @@ namespace poseidon{
 
    inline void ClearFromSpace(){
      from_.Clear();
-   }
-
-   static inline void
-   ForwardObject(RawObject* obj, uword forwarding_address){
-     DLOG(INFO) << "forwarding " << obj->ToString() << " to " << ((RawObject*) forwarding_address)->ToString();
-     obj->SetForwardingAddress(forwarding_address);
-     PSDN_ASSERT(obj->GetForwardingAddress() == forwarding_address);
-   }
-
-   static inline void
-   CopyObject(RawObject* src, RawObject* dst){//TODO: create a better copy
-     //   PSDN_ASSERT(src->GetTotalSize() == dst->GetTotalSize());
-     memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
-   }
-
-   inline uword PromoteObject(RawObject* raw){
-     DLOG(INFO) << "promoting " << raw->ToString() << " to new zone.";
-     auto new_ptr = (RawObject*)promotion_->TryAllocate(raw->GetPointerSize());
-     CopyObject(raw, new_ptr);
-     new_ptr->SetOldBit();
-
-     last_scavenge_promoted_ += raw;
-     return new_ptr->GetAddress();
-   }
-
-   inline uword ScavengeObject(RawObject* raw){
-     DLOG(INFO) << "scavenging " << raw->ToString() << " in old zone.";
-     auto new_ptr = (RawObject*)to_.TryAllocate(raw->GetPointerSize());
-     new_ptr->SetPointerSize(raw->GetPointerSize());
-     new_ptr->SetNewBit();
-
-     CopyObject(raw, new_ptr);
-
-     last_scavenge_scavenged_ += raw;
-     return new_ptr->GetAddress();
-   }
-
-   inline uword ProcessObject(RawObject* raw){
-     DLOG(INFO) << "processing " << raw->ToString();
-     if(!raw->IsForwarding()){
-       if(raw->IsRemembered()){
-         auto new_address = PromoteObject(raw);
-         ForwardObject(raw, new_address);
-       } else{
-         auto new_address = ScavengeObject(raw);
-         ForwardObject(raw, new_address);
-       }
-     }
-
-     PSDN_ASSERT(raw->IsForwarding());
-     raw->SetRememberedBit();
-     return raw->GetForwardingAddress();
    }
 
    inline void FinalizeObject(RawObject* raw){
@@ -172,8 +164,7 @@ namespace poseidon{
        locals->VisitPointers([&](RawObject** ptr){
          auto old_val = (*ptr);
          if(old_val->IsNew() && !old_val->IsForwarding()){
-           auto new_val = (RawObject*)ProcessObject(old_val);
-           new_val->SetRememberedBit();
+           auto new_val = (RawObject*)Scavenger::ProcessObject(&to_, promotion_, old_val);
            (*ptr) = new_val;
          }
          return true;
@@ -191,11 +182,8 @@ namespace poseidon{
    void ProcessToSpace() override{
      TIMED_SECTION("ProcessToSpace", {
        to_.VisitPointers([&](RawObject* val){
-         if(val->IsForwarding()){
-           DLOG(INFO) << "scavenged " << val->ToString();
-         } else{
-           DLOG(INFO) << "freeing " << val->ToString();
-         }
+         DLOG(INFO) << "scavenged: " << val->ToString();
+         //TODO: process references
          return true;
        });
      });
@@ -234,9 +222,7 @@ namespace poseidon{
      ProcessAll();
      NotifyLocals();
 
-#ifdef PSDN_DEBUG
-     ClearFromSpace();
-#endif//PSDN_DEBUG
+     ClearFromSpace();//TODO: Change to finalizer
    }
  };
 
@@ -371,9 +357,7 @@ namespace poseidon{
      ProcessAll();
      NotifyLocals();
 
-#ifdef PSDN_DEBUG
      ClearFromSpace();
-#endif//PSDN_DEBUG
    }
  };
 
@@ -391,20 +375,18 @@ namespace poseidon{
    return work()->Steal();
  }
 
- uword ParallelScavengerTask::ProcessObject(RawObject* raw){
-   return scavenger_->ProcessObject(raw);
+ uword ParallelScavengerTask::ProcessObject(RawObject* raw){//TODO: refactor ->zone_ & ->promotion_
+   return Scavenger::ProcessObject(&scavenger_->to_, scavenger_->promotion_, raw);
  }
 
- void Scavenger::SerialScavenge(){
-   auto heap = Heap::GetCurrentThreadHeap();
+ void Scavenger::SerialScavenge(Heap* heap){
    SerialScavenger visitor(heap);
    TIMED_SECTION("SerialScavenge", {
      visitor.ScavengeMemory();
    });
  }
 
- void Scavenger::ParallelScavenge(){
-   auto heap = Heap::GetCurrentThreadHeap();
+ void Scavenger::ParallelScavenge(Heap* heap){
    auto scavenger = new ParallelScavenger(heap);
    Runtime::GetTaskPool()->SubmitToAll<ParallelScavengerTask>(scavenger);
    DTIMED_SECTION("ParallelScavenge", {
@@ -418,12 +400,13 @@ namespace poseidon{
      return;
    }
 
+   auto heap = Heap::GetCurrentThreadHeap();
    DLOG(INFO) << "scavenger stats (before): " << GetStats();
    SetScavenging();
    if(ShouldUseParallelScavenge()){
-     ParallelScavenge();
+     ParallelScavenge(heap);
    } else{
-     SerialScavenge();
+     SerialScavenge(heap);
    }
    ClearScavenging();
    DLOG(INFO) << "scavenger stats (after): " << GetStats();

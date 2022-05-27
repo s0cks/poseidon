@@ -72,9 +72,12 @@ namespace poseidon{
    }
  };
 
+ class Semispace;
  class Scavenger{
    friend class ParallelScavengerTask;
    friend class SerialScavenger;
+
+   friend class ScavengerTest;
   private:
    static void SetScavenging(bool active=true);
 
@@ -82,6 +85,14 @@ namespace poseidon{
    ClearScavenging(){
      return SetScavenging(false);
    }
+
+   static void SerialScavenge(Heap* heap);
+   static void ParallelScavenge(Heap* heap);
+   static void CopyObject(RawObject* src, RawObject* dst);
+   static void ForwardObject(RawObject* ptr, uword forwarding_address);
+   static uword PromoteObject(OldZone* zone, RawObject* ptr);
+   static uword ScavengeObject(Semispace* zone, RawObject* ptr);
+   static uword ProcessObject(Semispace* tospace, OldZone* old_zone, RawObject* ptr);
   public:
    Scavenger() = delete;
    Scavenger(const Scavenger& rhs) = delete;
@@ -89,8 +100,6 @@ namespace poseidon{
 
    static void Scavenge();
    static bool IsScavenging();
-   static void SerialScavenge();
-   static void ParallelScavenge();
 
    static ScavengerStats GetStats();
    static Timestamp GetLastScavengeTimestamp();

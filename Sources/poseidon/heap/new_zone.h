@@ -18,7 +18,7 @@ namespace poseidon{
    GetDefaultSemispaceSize(){
      return CalculateSemispaceSize(GetNewZoneSize());
    }
-  private:
+  protected:
    uword fromspace_;
    uword tospace_;
    int64_t semisize_;

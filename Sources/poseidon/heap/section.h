@@ -13,6 +13,7 @@ namespace poseidon{
      I iter(section);
      while(iter.HasNext()){
        auto next = iter.Next();
+       DLOG(INFO) << "next: " << next->ToString();
        if(!vis->Visit(next))
          return;
      }
@@ -153,7 +154,7 @@ namespace poseidon{
 
      bool HasNext() const override{
        return current_address() < section()->GetEndingAddress()
-           && next_ptr()->GetPointerSize() > 0;
+           && current_ptr()->GetPointerSize() > 0;
      }
 
      RawObject* Next() override{
