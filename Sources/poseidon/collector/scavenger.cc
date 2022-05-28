@@ -327,7 +327,6 @@ namespace poseidon{
        auto locals = LocalPage::GetLocalPageForCurrentThread();
        locals->VisitPointers([&](RawObject** ptr){
          auto old_val = (*ptr);
-         DLOG(INFO) << "checking " << old_val->ToString();
          if(old_val->IsNew() && old_val->IsForwarding()){
            (*ptr) = (RawObject*)old_val->GetForwardingAddress();
          }
@@ -394,16 +393,15 @@ namespace poseidon{
    });
  }
 
- void Scavenger::Scavenge(){
+ void Scavenger::Scavenge(Heap* heap, bool parallel){
    if(IsScavenging()){
      DLOG(WARNING) << "already scavenging.";
      return;
    }
 
-   auto heap = Heap::GetCurrentThreadHeap();
    DLOG(INFO) << "scavenger stats (before): " << GetStats();
    SetScavenging();
-   if(HasWorkers()){
+   if(parallel){
      ParallelScavenge(heap);
    } else{
      SerialScavenge(heap);

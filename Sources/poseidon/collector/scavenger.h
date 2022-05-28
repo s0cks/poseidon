@@ -86,8 +86,6 @@ namespace poseidon{
      return SetScavenging(false);
    }
 
-   static void SerialScavenge(Heap* heap);
-   static void ParallelScavenge(Heap* heap);
    static void CopyObject(RawObject* src, RawObject* dst);
    static void ForwardObject(RawObject* ptr, uword forwarding_address);
    static uword PromoteObject(OldZone* zone, RawObject* ptr);
@@ -98,8 +96,12 @@ namespace poseidon{
    Scavenger(const Scavenger& rhs) = delete;
    ~Scavenger() = delete;
 
-   static void Scavenge();
+   static void Scavenge(Heap* heap = Heap::GetCurrentThreadHeap(), bool parallel = HasWorkers());
+
    static bool IsScavenging();
+
+   static void SerialScavenge(Heap* heap);
+   static void ParallelScavenge(Heap* heap);
 
    static ScavengerStats GetStats();
    static Timestamp GetLastScavengeTimestamp();

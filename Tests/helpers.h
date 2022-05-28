@@ -70,7 +70,7 @@ namespace poseidon{
 
  template<class S>
  static inline RawObject*
- TryAllocateNewMarkedWord(S* section, word value = 0){
+ TryAllocateMarkedWord(S* section, word value = 0){
    auto val = TryAllocateNewWord(section, value);
    if(val != nullptr)
      val->SetMarkedBit();

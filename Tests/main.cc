@@ -3,6 +3,7 @@
 
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
+#include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 
 int main(int argc, char** argv){

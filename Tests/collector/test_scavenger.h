@@ -42,11 +42,11 @@ namespace poseidon{
    }
 
    inline void SerialScavenge(){
-     return Scavenger::SerialScavenge(heap());
+     return Scavenger::Scavenge(heap(), false);
    }
 
    inline void ParallelScavenge(){
-     return Scavenger::ParallelScavenge(heap());
+     return Scavenger::Scavenge(heap(), true);
    }
   public:
    ~ScavengerTest() override = default;

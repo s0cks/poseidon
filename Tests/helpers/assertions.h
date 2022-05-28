@@ -132,6 +132,64 @@ namespace poseidon{
  IsWord(const Local<T>& val, word value){
    return IsWord(val.raw(), value);
  }
+
+ static inline AssertionResult
+ IsNewWord(RawObject* ptr, word value){
+   if(!IsAllocated(ptr))
+     return IsAllocated(ptr);
+   if(!ptr->IsNew())
+     return AssertionFailure() << ptr->ToString() << " is not new.";
+   return IsWord(ptr, value);
+ }
+
+ template<class T>
+ static inline AssertionResult
+ IsNewWord(const Local<T>& ptr, word value){
+   return IsNewWord(ptr.raw(), value);
+ }
+
+ static inline AssertionResult
+ IsOldWord(RawObject* ptr, word value){
+   if(!IsAllocated(ptr))
+     return IsAllocated(ptr);
+   if(!ptr->IsOld())
+     return AssertionFailure() << ptr->ToString() << " is not old.";
+   return IsWord(ptr, value);
+ }
+
+ static inline AssertionResult
+ IsMarkedWord(RawObject* ptr, word value){
+   if(!IsAllocated(ptr))
+     return IsAllocated(ptr);
+   if(!IsOld(ptr))
+     return IsOld(ptr);
+   if(!IsMarked(ptr))
+     return IsMarked(ptr);
+   return IsWord(ptr, value);
+ }
+
+ template<class T>
+ static inline AssertionResult
+ IsMarkedWord(const Local<T>& ptr, word value){
+   return IsMarkedWord(ptr.raw(), value);
+ }
+
+ static inline AssertionResult
+ IsRememberedWord(RawObject* ptr, word value){
+   if(!IsAllocated(ptr))
+     return IsAllocated(ptr);
+   if(!IsNew(ptr))
+     return IsNew(ptr);
+   if(!IsRemembered(ptr))
+     return IsRemembered(ptr);
+   return IsWord(ptr, value);
+ }
+
+ template<class T>
+ static inline AssertionResult
+ IsRememberedWord(const Local<T>& ptr, word value){
+   return IsRememberedWord(ptr.raw(), value);
+ }
 }
 
 #endif//POSEIDON_ASSERTIONS_H

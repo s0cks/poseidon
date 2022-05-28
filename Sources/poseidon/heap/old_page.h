@@ -4,23 +4,21 @@
 #include "poseidon/utils.h"
 #include "poseidon/bitset.h"
 #include "poseidon/common.h"
-#include "poseidon/heap/section.h"
+#include "poseidon/heap/page.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
  class OldZone;
  class OldPageTable;
- class OldPage : public AllocationSection{
+ class OldPage : public Page{
    friend class OldPageTest;
    friend class OldPageTable;
   protected:
    OldPageTable* table_;
-   int64_t index_;
 
    OldPage(OldPageTable* table, int64_t index, uword start, int64_t size):
-     AllocationSection(start, size),
-     table_(table),
-     index_(index){
+     Page(index, start, size),
+     table_(table){
    }
 
    OldPage(OldPageTable* table, int64_t index, MemoryRegion* region, int64_t offset, int64_t size):
@@ -44,20 +42,14 @@ namespace poseidon{
    }
   public:
    OldPage():
-     AllocationSection(),
-     table_(nullptr),
-     index_(0){
+     Page(),
+     table_(nullptr){
    }
    OldPage(const OldPage& rhs):
-     AllocationSection(rhs),
-     table_(rhs.GetTable()),
-     index_(rhs.GetIndex()){
+     Page(rhs),
+     table_(rhs.GetTable()){
    }
    ~OldPage() override = default;
-
-   int64_t GetIndex() const{
-     return index_;
-   }
 
    uword TryAllocate(int64_t size) override{
      return RawObject::TryAllocateOldIn(this, size);
@@ -161,7 +153,6 @@ namespace poseidon{
    }
 
    void Mark(int64_t idx){
-     DLOG(INFO) << "marking #" << idx;
      PSDN_ASSERT(idx >= 0);
      PSDN_ASSERT(idx <= size());
      return marked_.Set(idx, true);

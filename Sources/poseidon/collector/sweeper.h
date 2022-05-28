@@ -111,7 +111,6 @@ namespace poseidon{
    bool Visit(RawObject* ptr) override;
 
    void SweepPage(OldPage* page){
-     DLOG(INFO) << "sweeping " << (*page) << "....";
      TIMED_SECTION("SweepingPage", {
        auto current = page->GetStartingAddress();
        while(current < page->GetEndingAddress() && ((RawObject*)current)->GetPointerSize() > 0){

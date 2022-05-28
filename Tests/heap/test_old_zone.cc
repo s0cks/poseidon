@@ -63,7 +63,7 @@ namespace poseidon{
    }
 
    for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto ptr = TryAllocateNewMarkedWord(zone(), idx);
+     auto ptr = TryAllocateMarkedWord(zone(), idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(zone()->Contains(ptr->GetAddress()));
      ASSERT_TRUE(IsWord(ptr, idx));

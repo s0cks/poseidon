@@ -17,6 +17,8 @@ namespace poseidon{
  void Sweeper::SweepObject(FreeList* free_list, RawObject* ptr){
    if(ptr->IsMarked())
      return;
+
+   DLOG(INFO) << "sweeping " << ptr->ToString();
    free_list->Add(ptr->GetAddress(), ptr->GetTotalSize());
 #ifdef PSDN_DEBUG
    memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
@@ -27,7 +29,6 @@ namespace poseidon{
    last_sweep_bytes += ptr->GetTotalSize();
 
    ptr->SetPointerSize(0);
-   DLOG(INFO) << "swept " << ptr->ToString() << "....";
  }
 
  bool Sweeper::IsSweeping(){

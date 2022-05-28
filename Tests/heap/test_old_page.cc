@@ -41,7 +41,7 @@ namespace poseidon{
    }
 
    for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto ptr = TryAllocateNewMarkedWord(&page_, idx);
+     auto ptr = TryAllocateMarkedWord(&page_, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(page_.Contains(ptr->GetAddress()));
      ASSERT_TRUE(IsWord(ptr, idx));

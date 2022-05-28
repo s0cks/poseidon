@@ -4,7 +4,7 @@
 namespace poseidon{
  TEST_F(SweeperTest, TestSweepObject){
    static constexpr const int64_t kPtr1Value = 10;
-   auto p1 = TryAllocateNewMarkedWord(zone(), kPtr1Value);
+   auto p1 = TryAllocateMarkedWord(zone(), kPtr1Value);
    ASSERT_TRUE(IsAllocated(p1));
    ASSERT_FALSE(IsNew(p1));
    ASSERT_TRUE(IsOld(p1));
@@ -45,84 +45,25 @@ namespace poseidon{
  }
  
  TEST_F(SweeperTest, TestSerialSweep){
-   static constexpr const int64_t kPtr1Value = 10;
-   auto p1 = TryAllocateNewMarkedWord(zone(), kPtr1Value);
-   ASSERT_TRUE(IsAllocated(p1));
-   ASSERT_FALSE(IsNew(p1));
-   ASSERT_TRUE(IsOld(p1));
-   ASSERT_TRUE(IsMarked(p1));
-   ASSERT_FALSE(IsRemembered(p1));
-   ASSERT_FALSE(IsForwarding(p1));
-   ASSERT_TRUE(IsWord(p1, kPtr1Value));
+   static constexpr const int64_t kRoot1Value = 222;
+   auto r1 = Local<word>();
+   r1 = TryAllocateMarkedWord(zone(), kRoot1Value)->GetAddress();
+   ASSERT_TRUE(IsMarkedWord(r1, kRoot1Value));
 
-   static constexpr const int64_t kPtr2Value = 100;
-   auto p2 = TryAllocateNewMarkedWord(zone(), kPtr2Value);
-   ASSERT_TRUE(IsAllocated(p2));
-   ASSERT_FALSE(IsNew(p2));
-   ASSERT_TRUE(IsOld(p2));
-   ASSERT_TRUE(IsMarked(p2));
-   ASSERT_FALSE(IsRemembered(p2));
-   ASSERT_FALSE(IsForwarding(p2));
-   ASSERT_TRUE(IsWord(p2, kPtr2Value));
-   
-   static constexpr const int64_t kGarbage1Value = 11111;
-   auto g1 = TryAllocateNewWord(zone(), kGarbage1Value);
-   ASSERT_TRUE(IsAllocated(g1));
-   ASSERT_FALSE(IsNew(g1));
-   ASSERT_TRUE(IsOld(g1));
-   ASSERT_FALSE(IsMarked(g1));
-   ASSERT_FALSE(IsRemembered(g1));
-   ASSERT_FALSE(IsForwarding(g1));
-   ASSERT_TRUE(IsWord(g1, kGarbage1Value));
+   static constexpr const int64_t kRoot2Value = 333;
+   auto r2 = Local<word>();
+   r2 = TryAllocateMarkedWord(zone(), kRoot2Value)->GetAddress();
+   ASSERT_TRUE(IsMarkedWord(r2, kRoot2Value));
 
-   static constexpr const int64_t kGarbage2Value = 22222;
-   auto g2 = TryAllocateNewWord(zone(), kGarbage2Value);
-   // g2 should be:
-   ASSERT_TRUE(IsAllocated(g2));
-   ASSERT_TRUE(IsOld(g2));
-   ASSERT_TRUE(IsWord(g2, kGarbage2Value));
-   // g2 shouldn't be:
-   ASSERT_FALSE(IsNew(g2));
-   ASSERT_FALSE(IsMarked(g2));
-   ASSERT_FALSE(IsRemembered(g2));
-   ASSERT_FALSE(IsForwarding(g2));
+   static constexpr const int64_t kRoot3Value = 444;
+   auto r3 = Local<word>();
+   r3 = TryAllocateMarkedWord(zone(), kRoot3Value)->GetAddress();
+   ASSERT_TRUE(IsMarkedWord(r3, kRoot3Value));
 
    ASSERT_NO_FATAL_FAILURE(SerialSweep());
 
-   // p1 should be:
-   ASSERT_TRUE(IsOld(p1));
-   ASSERT_TRUE(IsMarked(p1));
-   ASSERT_TRUE(IsWord(p1, kPtr1Value));
-   // p1 shouldn't be:
-   ASSERT_FALSE(IsNew(p1));
-   ASSERT_FALSE(IsRemembered(p1));
-   ASSERT_FALSE(IsForwarding(p1));
-
-   // p2 should be:
-   ASSERT_TRUE(IsOld(p2));
-   ASSERT_TRUE(IsMarked(p2));
-   ASSERT_TRUE(IsWord(p2, kPtr2Value));
-   // p2 shouldn't be:
-   ASSERT_FALSE(IsNew(p2));
-   ASSERT_FALSE(IsRemembered(p2));
-   ASSERT_FALSE(IsForwarding(p2));
-
-   // g1 should be:
-   ASSERT_TRUE(IsOld(g1));
-   ASSERT_TRUE(IsUnallocated(g2));
-   // g1 shouldn't be:
-   ASSERT_FALSE(IsNew(g1));
-   ASSERT_FALSE(IsMarked(g1));
-   ASSERT_FALSE(IsRemembered(g1));
-   ASSERT_FALSE(IsForwarding(g1));
-
-   // g2 should be:
-   ASSERT_TRUE(IsOld(g2));
-   ASSERT_TRUE(IsUnallocated(g2));
-   // g2 shouldn't be:
-   ASSERT_FALSE(IsNew(g2));
-   ASSERT_FALSE(IsMarked(g2));
-   ASSERT_FALSE(IsRemembered(g2));
-   ASSERT_FALSE(IsForwarding(g2));
+   ASSERT_TRUE(IsMarkedWord(r1, kRoot1Value));
+   ASSERT_TRUE(IsMarkedWord(r2, kRoot2Value));
+   ASSERT_TRUE(IsMarkedWord(r3, kRoot3Value));
  }
 }
