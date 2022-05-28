@@ -17,7 +17,7 @@ namespace poseidon{
   public:
    OldPageTest():
      MemoryRegionTest(GetOldPageSize()),
-     page_(region()){
+     page_(nullptr, region()){
    }
    ~OldPageTest() override = default;
  };

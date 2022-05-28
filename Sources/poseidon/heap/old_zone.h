@@ -15,6 +15,7 @@ namespace poseidon{
    friend class SerialSweeper;
    friend class ParallelSweeper;
   protected:
+   int64_t page_size_;
    FreeList* free_list_;
    OldPageTable pages_;
 
@@ -41,16 +42,25 @@ namespace poseidon{
    OldZone(MemoryRegion* region, int64_t page_size, FreeList* free_list):
     OldZone(region, region->size(), page_size, free_list){
    }
+
+  public:
+   int64_t GetPageIndexFor(uword address){
+     PSDN_ASSERT(Contains(address));
+     int64_t index = static_cast<int64_t>(address - GetStartingAddress()) / page_size_;
+     PSDN_ASSERT(pages_[index]->Contains(address));
+     return index;
+   }
   public:
    OldZone(uword start, int64_t size, int64_t page_size):
      Zone(start, size),
+     page_size_(page_size),
      pages_(start, size, page_size),
      free_list_(new FreeList(start, size)){
      SetWriteable();
    }
 
    OldZone(MemoryRegion* region, int64_t offset, int64_t size, int64_t page_size):
-     OldZone(region->GetStartingAddress() + offset, size, page_size){
+    OldZone(region->GetStartingAddress() + offset, size, page_size){
    }
 
    OldZone(MemoryRegion* region, int64_t size, int64_t page_size):
@@ -64,6 +74,14 @@ namespace poseidon{
 
    FreeList* free_list(){//TODO: visible for testing
      return free_list_;
+   }
+
+   BitSet& marked(){
+     return pages_.marked();
+   }
+
+   OldPage* pages(int64_t index) const{
+     return pages_[index];
    }
 
    uword TryAllocate(int64_t size) override;

@@ -403,7 +403,7 @@ namespace poseidon{
    auto heap = Heap::GetCurrentThreadHeap();
    DLOG(INFO) << "scavenger stats (before): " << GetStats();
    SetScavenging();
-   if(ShouldUseParallelScavenge()){
+   if(HasWorkers()){
      ParallelScavenge(heap);
    } else{
      SerialScavenge(heap);

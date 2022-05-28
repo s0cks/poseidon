@@ -11,7 +11,30 @@ namespace poseidon{
    ASSERT_FALSE(IsMarked(ptr));
    ASSERT_FALSE(IsRemembered(ptr));
    ASSERT_FALSE(IsForwarding(ptr));
-   ASSERT_EQ(ptr->GetPointerSize(), kWordSize);
+   ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
+ }
+
+ TEST_F(OldZoneTest, TestPageTable){
+   static constexpr const int64_t kDefaultValue = 42;
+   auto p1 = TryAllocateNewWord(zone(), kDefaultValue);
+   ASSERT_TRUE(IsAllocated(p1));
+   ASSERT_TRUE(IsOld(p1));
+   ASSERT_TRUE(IsWord(p1, kDefaultValue));
+   ASSERT_FALSE(IsMarked(p1));
+   ASSERT_FALSE(IsRemembered(p1));
+   ASSERT_FALSE(IsForwarding(p1));
+
+   auto page = zone()->pages(5);
+   auto p2 = TryAllocateNewWord(page, kDefaultValue);
+   ASSERT_TRUE(IsAllocated(p2));
+   ASSERT_TRUE(IsOld(p2));
+   ASSERT_TRUE(IsWord(p2, kDefaultValue));
+   ASSERT_FALSE(IsMarked(p2));
+   ASSERT_FALSE(IsRemembered(p2));
+   ASSERT_FALSE(IsForwarding(p2));
+
+   auto table = zone()->marked();
+   DLOG(INFO) << "table: " << table;
  }
 
  TEST_F(OldZoneTest, TestVisitPointers){

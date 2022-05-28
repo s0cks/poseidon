@@ -38,8 +38,13 @@ namespace poseidon{
      return SetProtectionMode(MemoryRegion::kReadWrite);
    }
 
+   inline void ClearRegion(){
+     return region()->ClearRegion();
+   }
+
    void SetUp() override{
      SetWriteable();
+     ClearRegion();
    }
   public:
    ~MemoryRegionTest() override = default;

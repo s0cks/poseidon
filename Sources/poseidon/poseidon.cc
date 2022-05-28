@@ -12,6 +12,8 @@ DEFINE_int64(large_object_size, kDefaultLargeObjectSize, "The max size of an obj
 
 DEFINE_int64(num_workers, kDefaultNumberOfWorkers, "The number of workers to use for collections.");
 
+DEFINE_string(report_directory, kDefaultReportDirectory, "The directory used for reports.");
+
     std::string GetVersion(){
         std::stringstream ss;
         ss << POSEIDON_VERSION_MAJOR << ".";

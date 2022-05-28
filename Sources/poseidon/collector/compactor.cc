@@ -171,7 +171,7 @@ namespace poseidon{
    }
 
    SetCompacting();
-   if(ShouldUseParallelCompact()){
+   if(HasWorkers()){
      ParallelCompact();
    } else{
      SerialCompact();

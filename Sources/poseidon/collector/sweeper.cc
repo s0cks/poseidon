@@ -175,7 +175,7 @@ namespace poseidon{
 
    double perc_free_before = GetPercentageFreeInFreeList(old_zone);
    SetSweeping();
-   if(ShouldUseParallelSweep()){
+   if(HasWorkers()){
      ParallelSweep(old_zone);
    } else{
      SerialSweep(old_zone);

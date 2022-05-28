@@ -5,7 +5,10 @@ namespace poseidon{
    auto ptr = (void*)free_list()->TryAllocate(size);
    auto val = new (ptr)RawObject();
    val->SetOldBit();
-   val->SetPointerSize(size);//TODO: mark page
+   val->SetPointerSize(size);
+
+   pages_.Mark(GetPageIndexFor(val->GetAddress()));
+
    return val->GetAddress();
  }
 

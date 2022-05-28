@@ -11,7 +11,7 @@
 #include "poseidon/platform/platform.h"
 
 namespace poseidon{ //TODO: atomic support?
- class FreeList{
+ class FreeList{ //TODO: relocate
   public:
    friend class Sweeper;
   public:

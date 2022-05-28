@@ -169,7 +169,7 @@ namespace poseidon{
    }
 
    SetMarking();
-   if(ShouldUseParallelMark()){
+   if(HasWorkers()){
      ParallelMark();
    } else{
      SerialMark();
