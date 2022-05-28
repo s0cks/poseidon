@@ -1,5 +1,5 @@
-#ifndef POSEIDON_SECTION_H
-#define POSEIDON_SECTION_H
+#ifndef POSEIDON_HEAP_SECTION_H
+#define POSEIDON_HEAP_SECTION_H
 
 #include "poseidon/platform/platform.h"
 
@@ -232,4 +232,4 @@ namespace poseidon{
  };
 }
 
-#endif//POSEIDON_SECTION_H
+#endif//POSEIDON_HEAP_SECTION_H

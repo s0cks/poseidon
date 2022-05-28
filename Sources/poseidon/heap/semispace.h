@@ -1,5 +1,5 @@
-#ifndef POSEIDON_POSEIDON_SEMISPACE_H
-#define POSEIDON_POSEIDON_SEMISPACE_H
+#ifndef POSEIDON_HEAP_SEMISPACE_H
+#define POSEIDON_HEAP_SEMISPACE_H
 
 #include <ostream>
 #include <glog/logging.h>
@@ -176,4 +176,4 @@ namespace poseidon{
  };
 }
 
-#endif//POSEIDON_POSEIDON_SEMISPACE_H
+#endif//POSEIDON_HEAP_SEMISPACE_H

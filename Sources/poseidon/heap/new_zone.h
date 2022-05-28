@@ -1,5 +1,5 @@
-#ifndef POSEIDON_NEW_ZONE_H
-#define POSEIDON_NEW_ZONE_H
+#ifndef POSEIDON_HEAP_NEW_ZONE_H
+#define POSEIDON_HEAP_NEW_ZONE_H
 
 #include "poseidon/flags.h"
 #include "poseidon/heap/zone.h"
@@ -99,4 +99,4 @@ namespace poseidon{
  };
 }
 
-#endif//POSEIDON_NEW_ZONE_H
+#endif//POSEIDON_HEAP_NEW_ZONE_H

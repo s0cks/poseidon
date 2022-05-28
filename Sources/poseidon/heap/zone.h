@@ -1,5 +1,5 @@
-#ifndef POSEIDON_POSEIDON_ZONE_H
-#define POSEIDON_POSEIDON_ZONE_H
+#ifndef POSEIDON_HEAP_ZONE_H
+#define POSEIDON_HEAP_ZONE_H
 
 #include "poseidon/raw_object.h"
 #include "poseidon/heap/section.h"
@@ -107,4 +107,4 @@ namespace poseidon{
  };
 }
 
-#endif //POSEIDON_POSEIDON_ZONE_H
+#endif //POSEIDON_HEAP_ZONE_H

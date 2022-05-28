@@ -1,5 +1,5 @@
-#ifndef POSEIDON_OLD_ZONE_H
-#define POSEIDON_OLD_ZONE_H
+#ifndef POSEIDON_HEAP_OLD_ZONE_H
+#define POSEIDON_HEAP_OLD_ZONE_H
 
 #include "poseidon/bitset.h"
 #include "poseidon/freelist.h"
@@ -101,4 +101,4 @@ namespace poseidon{
  };
 }
 
-#endif//POSEIDON_OLD_ZONE_H
+#endif//POSEIDON_HEAP_OLD_ZONE_H
