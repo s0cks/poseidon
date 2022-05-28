@@ -259,7 +259,7 @@ namespace poseidon{
     friend class OldPage;
     friend class Compactor;
    private:
-    RelaxedAtomic<RawObjectTag> tag_;
+    RelaxedAtomic<RawObjectTag> tag_; // TODO: merge w/ forwarding
     RelaxedAtomic<uword> forwarding_;
 
     explicit RawObject(ObjectTag tag):

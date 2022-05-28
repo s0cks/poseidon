@@ -44,7 +44,7 @@ add_library(poseidon
     poseidon/runtime.h poseidon/runtime.cc
     poseidon/task_pool.h poseidon/task_pool.cc
     poseidon/utils.h poseidon/utils.cc
-    poseidon/wsq.h poseidon/heap/section.cc poseidon/heap/page.h)
+    poseidon/wsq.h poseidon/heap/section.cc poseidon/heap/page.h poseidon/reference.h poseidon/reference.cc)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     glog::glog
