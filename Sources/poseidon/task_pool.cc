@@ -9,11 +9,11 @@ namespace poseidon{
    DLOG(INFO) << "starting worker #" << worker->worker_id() << "....";
    worker->SetState(State::kStarting);
    // do something?
-   worker->SetState(State::kIdle);
+   worker->SetState(State::kExecuting);
    do{
      do{
-       auto next = worker->queue_->Steal();
-       if(!next)
+       auto next = (Task*)worker->queue_->Steal();
+       if (!next)
          continue;
 
        DTIMED_SECTION(next->name(), {

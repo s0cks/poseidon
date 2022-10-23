@@ -49,6 +49,10 @@ namespace poseidon{
     words_(nullptr),
     num_words_(0){
    }
+   BitSet(uword* data, int64_t size):
+    words_(data),
+    num_words_(size) {
+   }
    explicit BitSet(int64_t size):
     words_(nullptr),
     num_words_(0){

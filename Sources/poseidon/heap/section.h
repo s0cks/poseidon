@@ -1,6 +1,7 @@
 #ifndef POSEIDON_HEAP_SECTION_H
 #define POSEIDON_HEAP_SECTION_H
 
+#include "poseidon/raw_object.h"
 #include "poseidon/platform/platform.h"
 
 namespace poseidon{

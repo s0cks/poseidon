@@ -32,6 +32,7 @@ namespace poseidon{
    ASSERT_FALSE(IsMarked(p2));
    ASSERT_FALSE(IsRemembered(p2));
    ASSERT_FALSE(IsForwarding(p2));
+   ASSERT_TRUE(zone()->IsMarked(page));
 
    auto table = zone()->marked();
    DLOG(INFO) << "table: " << table;

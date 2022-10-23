@@ -59,7 +59,7 @@ namespace poseidon{
 
    friend std::ostream& operator<<(std::ostream& stream, const OldPage& val){
      stream << "OldPage(";
-     stream << "index=" << val.GetIndex() << ", ";
+     stream << "tag=" << val.tag() << ", ";
      stream << "start=" << val.GetStartingAddress() << ", ";
      stream << "size=" << Bytes(val.GetSize());
      stream << ")";
@@ -67,7 +67,7 @@ namespace poseidon{
    }
 
    friend bool operator==(const OldPage& lhs, const OldPage& rhs){
-     return lhs.GetIndex() == rhs.GetIndex()
+     return lhs.tag() == rhs.tag()
          && lhs.GetStartingAddress() == rhs.GetStartingAddress()
          && lhs.GetSize() == rhs.GetSize();
    }
@@ -77,7 +77,7 @@ namespace poseidon{
    }
 
    friend bool operator<(const OldPage& lhs, const OldPage& rhs){
-     return lhs.GetIndex() < rhs.GetIndex();
+     return lhs.tag() < rhs.tag();
    }
  };
 
@@ -88,18 +88,6 @@ namespace poseidon{
    OldPage* pages_;
    int64_t num_pages_;
    BitSet marked_;
-
-   void CreatePagesForRange(uword start, int64_t sz, int64_t page_size){
-     PSDN_ASSERT(IsPow2(sz));
-     PSDN_ASSERT(IsPow2(page_size));
-     PSDN_ASSERT((sz % page_size) == 0);
-     PSDN_ASSERT((sz / page_size) == size());
-
-     int64_t index = 0;
-     for(auto current = start; current < (start + sz); current += page_size, index++){
-       pages_[index] = OldPage(this, index, current, page_size);
-     }
-   }
   public:
    OldPageTable():
      zone_(nullptr),
@@ -149,7 +137,7 @@ namespace poseidon{
 
    bool IsMarked(OldPage* page) const{
      PSDN_ASSERT(page != nullptr);
-     return IsMarked(page->GetIndex());
+     return IsMarked(page->tag().GetIndex());
    }
 
    void Mark(int64_t idx){
@@ -160,7 +148,7 @@ namespace poseidon{
 
    void Mark(OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     return Mark(page->GetIndex());
+     return Mark(page->tag().GetIndex());
    }
 
    void Unmark(int64_t idx){
@@ -171,7 +159,7 @@ namespace poseidon{
 
    void Unmark(OldPage* page){
      PSDN_ASSERT(page != nullptr);
-     return Unmark(page->GetIndex());
+     return Unmark(page->tag().GetIndex());
    }
 
    OldPage* page(int64_t idx) const{

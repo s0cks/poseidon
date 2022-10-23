@@ -19,11 +19,6 @@ namespace poseidon{
    FreeList* free_list_;
    OldPageTable pages_;
 
-   static inline int64_t
-   CalculateTableSize(int64_t size, int64_t page_size){
-     return size / page_size;
-   }
-
    OldZone(uword start, int64_t size, int64_t page_size, FreeList* free_list):// visible for testing?
     Zone(start, size),
     pages_(start, size, page_size),
@@ -82,6 +77,10 @@ namespace poseidon{
 
    OldPage* pages(int64_t index) const{
      return pages_[index];
+   }
+
+   bool IsMarked(OldPage* page) const {
+     return pages_.marked_.Test(page->tag().GetIndex());
    }
 
    uword TryAllocate(int64_t size) override;
