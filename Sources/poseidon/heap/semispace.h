@@ -9,123 +9,86 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- class Semispace : public Section{
-  private:
-   class SemispaceIterator : public RawObjectPointerIterator{
-    private:
-     const Semispace* semispace_;
+ class Semispace : public AllocationSection {
+   friend class SemispaceTest;
+
+   friend class Scavenger;
+  public:
+   class SemispaceIterator : public RawObjectPointerIterator {
+    protected:
+     Semispace* semispace_;
      uword current_;
 
-     inline uword
-     current_address() const{
-       return current_;
-     }
-
-     inline RawObject*
-     current_ptr() const{
-       return (RawObject*)current_;
-     }
-
-     inline uword
-     next_address() const{
-       return current_ + current_ptr()->GetTotalSize();
-     }
-
-     inline uword
-     GetStartingAddress() const{
-       return semispace()->GetStartingAddress();
-     }
-
-     inline uword
-     GetEndingAddress() const{
-       return semispace()->GetEndingAddress();
-     }
-
-     inline uword
-     GetCurrentAddress() const{
-       return semispace()->GetCurrentAddress();
-     }
-    public:
-     explicit SemispaceIterator(const Semispace* semispace):
-       semispace_(semispace),
-       current_(GetStartingAddress()){
-     }
-     ~SemispaceIterator() override = default;
-
-     const Semispace* semispace() const{
+     inline Semispace* semispace() const {
        return semispace_;
      }
 
-     bool HasNext() const override{
-       return current_address() < GetCurrentAddress();
+     inline uword current_address() const {
+       return current_;
      }
 
-     RawObject* Next() override{
+     inline RawObject* current_ptr() const {
+       return (RawObject*)current_address();
+     }
+    public:
+     explicit SemispaceIterator(Semispace* semispace):
+      RawObjectPointerIterator(),
+      semispace_(semispace),
+      current_(semispace->GetStartingAddress()) {
+     }
+     ~SemispaceIterator() override = default;
+
+     bool HasNext() const override {
+       return current_address() < semispace()->GetCurrentAddress();
+     }
+
+     RawObject* Next() override {
        auto next = current_ptr();
-       current_ += next->GetTotalSize();
+       current_ += next->GetSize();
        return next;
      }
    };
-  private:
+  protected:
+   MemoryRegion region_;
    RelaxedAtomic<uword> current_;
+
+   uword TryAllocate(ObjectSize size) override;
+   void Clear() override;
   public:
    Semispace():
-    Section(),
+    AllocationSection(),
+    region_(),
     current_(0){
    }
    explicit Semispace(const MemoryRegion& region):
-    Section(region),
+    AllocationSection(),
+    region_(region),
     current_(region.GetStartingAddress()) {
+     if(!region.Protect(MemoryRegion::kReadWrite)) {
+       LOG(FATAL) << "failed to protect " << region;
+     }
    }
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
 
-   uword GetCurrentAddress() const{
+   uword GetAllocatableSize() const {
+     return GetSize();
+   }
+
+   uword GetStartingAddress() const override {
+     return region_.GetStartingAddress();
+   }
+
+   uword GetCurrentAddress() const override {
      return (uword)current_;
    }
 
-   void* GetCurrentAddressPointer() const{
-     return (void*)GetCurrentAddress();
+   int64_t GetSize() const override {
+     return region_.GetSize();
    }
 
-   bool IsEmpty() const{
-     return GetStartingAddress() == GetCurrentAddress();
-   }
-
-   bool IsFull() const{
-     return GetCurrentAddress() == GetEndingAddress();
-   }
-
-   void Clear(){
-     memset(GetStartingAddressPointer(), 0, GetSize());
-     current_ = start_;
-   }
-
-   uword TryAllocate(int64_t size);
-
-   void VisitPointers(RawObjectVisitor* vis) const{
-     return IteratePointers<Semispace, SemispaceIterator>(this, vis);
-   }
-
-   void VisitPointers(RawObjectVisitorFunction vis) const{
-     return IteratePointers<Semispace, SemispaceIterator>(this, vis);
-   }
-
-   void VisitMarkedObjects(RawObjectVisitor* vis) const{
-     return IterateMarkedPointers<Semispace, SemispaceIterator>(this, vis);
-   }
-
-   void VisitMarkedObjects(RawObjectVisitorFunction vis) const{
-     return IterateMarkedPointers<Semispace, SemispaceIterator>(this, vis);
-   }
-
-   int64_t GetNumberOfBytesAllocated() const{
-     return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
-   }
-
-   int64_t GetNumberOfBytesRemaining() const{
-     return GetSize() - GetNumberOfBytesAllocated();
-   }
+   bool VisitPointers(RawObjectVisitor* vis) override;
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
    Semispace& operator=(const Semispace& rhs){
      if(this == &rhs)

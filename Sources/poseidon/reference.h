@@ -71,7 +71,7 @@ namespace poseidon{
    }
 
    friend bool operator==(const Reference& lhs, const Reference& rhs){
-
+     return false;//TODO: implement
    }
 
    friend bool operator!=(const Reference& lhs, const Reference& rhs){

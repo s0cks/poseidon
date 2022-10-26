@@ -8,6 +8,8 @@ namespace poseidon {
  class NewPage : public Page {
    friend class NewZone;
    friend class NewPageTest;
+  protected:
+   uword TryAllocate(ObjectSize size) override; //TODO: change visibility
   public:
    NewPage() = default;
    NewPage(const PageIndex index, const MemoryRegion& region):
@@ -19,8 +21,6 @@ namespace poseidon {
    }
    NewPage(const NewPage& rhs) = default;
    ~NewPage() override = default;
-
-   uword TryAllocate(ObjectSize size) override; //TODO: change visibility
 
    NewPage& operator=(const NewPage& rhs) = default;
 

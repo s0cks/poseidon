@@ -20,6 +20,7 @@ namespace poseidon{
    MemoryRegion region_;
    RelaxedAtomic<MemoryRegion::ProtectionMode> mode_; //TODO: remove
    PageTable pages_;
+   uword current_;
 
    inline MemoryRegion::ProtectionMode
    GetMode() const{
@@ -65,11 +66,14 @@ namespace poseidon{
    inline void PutPage(Page* page) {
      pages_.pages_[page->index()] = page;
    }
+
+   void Clear() override;
   public:
    Zone():
     AllocationSection(),
     region_(),
     mode_(MemoryRegion::kReadOnly),
+    current_(0),
     pages_(0) {
      InitializePageTable(MemoryRegion(), 0, 0);
    }
@@ -81,15 +85,28 @@ namespace poseidon{
     * @param size The size of the {@link Zone}
     */
    Zone(const MemoryRegion& region, const int64_t page_size):
-    AllocationSection(region.GetStartingAddress(), region.GetSize()),
+    AllocationSection(),
     region_(region),
     mode_(MemoryRegion::kReadOnly),
+    current_(region.GetStartingAddress()),
     pages_(CalculateNumberOfPages(region, page_size)){
      InitializePageTable(region, CalculateNumberOfPages(region, page_size), page_size);
    }
 
    Zone(const Zone& rhs) = default;
    ~Zone() override = default;
+
+   uword GetStartingAddress() const override {
+     return region_.GetStartingAddress();
+   }
+
+   uword GetCurrentAddress() const override {
+     return current_;
+   }
+
+   int64_t GetSize() const override {
+     return region_.GetSize();
+   }
 
    BitSet marked_set() { //TODO: remove
      return pages().table_;
@@ -137,12 +154,16 @@ namespace poseidon{
      return pages_.VisitPages(vis);
    }
 
+   bool VisitPointers(RawObjectVisitor* vis) override;
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+
    Zone& operator=(const Zone& rhs){
      if(*this == rhs)
        return *this;
      AllocationSection::operator=(rhs);
      region_ = rhs.region_;
      mode_ = rhs.GetMode();
+     current_ = rhs.GetCurrentAddress();
      return *this;
    }
 

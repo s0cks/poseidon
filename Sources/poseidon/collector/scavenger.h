@@ -74,6 +74,9 @@ namespace poseidon{
 
  class Semispace;
  class Scavenger{
+   template<bool Parallel>
+   friend class ScavengerVisitorBase;
+
    friend class ParallelScavengerTask;
    friend class SerialScavenger;
 
@@ -84,6 +87,11 @@ namespace poseidon{
    static inline void
    ClearScavenging(){
      return SetScavenging(false);
+   }
+
+   static inline void
+   Clear(Semispace* semispace) {
+     semispace->Clear();
    }
 
    static void CopyObject(RawObject* src, RawObject* dst);

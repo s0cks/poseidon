@@ -5,11 +5,18 @@
 #include "poseidon/heap/new_zone.h"
 
 namespace poseidon{
+#define UNALLOCATED 0 //TODO: cleanup
+
  using namespace ::testing;
 
  class NewZoneTest : public Test {
   protected:
    NewZoneTest() = default;
+
+   static inline void
+   SwapSpaces(NewZone& zone) {
+     zone.SwapSpaces();
+   }
 
    static inline Semispace
    GetFromspace(const NewZone& zone) {
@@ -20,9 +27,91 @@ namespace poseidon{
    GetTospace(const NewZone& zone) {
      return zone.GetTospace();
    }
+
+   static inline uword
+   TryAllocateBytes(NewZone& zone, const ObjectSize size) {
+     return zone.TryAllocate(size);
+   }
+
+   static inline RawObject*
+   TryAllocateWord(NewZone& zone, word value) {
+     auto address = TryAllocateBytes(zone, kWordSize);
+     if (address == UNALLOCATED)
+       return nullptr;
+     auto ptr = (RawObject*)address;
+     (*((word*)ptr->GetObjectPointerAddress())) = value;
+     return ptr;
+   }
+
+   static inline RawObject*
+   TryAllocateMarkedWord(NewZone& zone, word value) {
+     auto address = TryAllocateBytes(zone, kWordSize);
+     if (address == UNALLOCATED)
+       return nullptr;
+     auto ptr = (RawObject*)address;
+     ptr->SetMarkedBit();
+     (*((word*)ptr->GetObjectPointerAddress())) = value;
+     return ptr;
+   }
   public:
    ~NewZoneTest() override = default;
  };
+
+ TEST_F(NewZoneTest, TestEquals) {
+   MemoryRegion region(GetNewZoneSize());
+
+   NewZone a(region);
+   NewZone b(region);
+   ASSERT_EQ(a, b);
+
+   SwapSpaces(b);
+   ASSERT_NE(a, b);
+ }
+
+ TEST_F(NewZoneTest, TestConstructor) {
+   MemoryRegion region(GetNewZoneSize());
+   NewZone zone(region);
+   ASSERT_EQ((const Region&)zone, (const Region&)region);
+   ASSERT_EQ(zone.GetCurrentAddress(), zone.GetStartingAddress());
+
+   const int64_t semi_size = region.GetSize() / 2;
+   ASSERT_EQ(zone.semisize(), semi_size);
+
+   const uword fromspace = region.GetStartingAddress();
+   ASSERT_EQ(zone.fromspace(), fromspace);
+
+   const uword tospace = region.GetStartingAddress() + semi_size;
+   ASSERT_EQ(zone.tospace(), tospace);
+ }
+
+ TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeLessThanZero) {
+   MemoryRegion region(GetNewZoneSize());
+   NewZone zone(region);
+   auto ptr = TryAllocateBytes(zone, -1);
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+ TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeEqualToZero) {
+   MemoryRegion region(GetNewZoneSize());
+   NewZone zone(region);
+   auto ptr = TryAllocateBytes(zone, 0);
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+ TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeEqualToZoneSize) {
+   MemoryRegion region(GetNewZoneSize());
+   NewZone zone(region);
+   auto ptr = TryAllocateBytes(zone, GetNewZoneSize());
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+
+ TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeGreaterThanZoneSize) {
+   MemoryRegion region(GetNewZoneSize());
+   NewZone zone(region);
+   auto ptr = TryAllocateBytes(zone, GetNewZoneSize() + 1);
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
 
  TEST_F(NewZoneTest, TestTryAllocate){
    MemoryRegion region(GetNewZoneSize());
@@ -30,7 +119,7 @@ namespace poseidon{
    Semispace fromspace = GetFromspace(zone);
 
    static const constexpr word kDefaultWordValue = 42;
-   auto ptr = TryAllocateNewWord(&zone, kDefaultWordValue);
+   auto ptr = TryAllocateWord(zone, kDefaultWordValue);
    ASSERT_TRUE(IsAllocated(ptr));
    ASSERT_TRUE(IsNew(ptr));
    ASSERT_FALSE(IsOld(ptr));
@@ -38,19 +127,9 @@ namespace poseidon{
    ASSERT_FALSE(IsRemembered(ptr));
    ASSERT_FALSE(IsForwarding(ptr));
    ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
-   ASSERT_TRUE(fromspace.Contains(ptr->GetStartingAddress()));
 
-   // try and allocate an object thats in 2 pages
-   auto p2 = (RawObject*)zone.TryAllocate(GetNewPageSize() * 2);
-   *((word*)p2->GetPointer()) = kDefaultWordValue;
-   ASSERT_TRUE(IsAllocated(p2));
-   ASSERT_TRUE(IsNew(p2));
-   ASSERT_FALSE(IsOld(p2));
-   ASSERT_FALSE(IsMarked(p2));
-   ASSERT_FALSE(IsRemembered(p2));
-   ASSERT_FALSE(IsForwarding(p2));
-   ASSERT_TRUE(fromspace.Contains(p2->GetStartingAddress()));
-   LOG(INFO) << "new-zone marked: " << zone.marked_set();
+   //TODO: assert fromspace contains ptr
+   //TODO: assert pages(1) is marked
  }
 
  TEST_F(NewZoneTest, TestVisitPointers) {
@@ -59,12 +138,10 @@ namespace poseidon{
    static const constexpr int64_t kNumberOfPointers = 3;
 
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
-     auto ptr = TryAllocateNewWord(&zone, idx);
-     ASSERT_TRUE(zone.Contains(ptr->GetStartingAddress()));
+     auto ptr = TryAllocateWord(zone, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(IsNew(ptr));
      ASSERT_TRUE(IsWord(ptr, idx));
-     ASSERT_FALSE(IsMarked(ptr));
    }
 
    MockRawObjectVisitor visitor;
@@ -80,21 +157,18 @@ namespace poseidon{
    static const constexpr int64_t kNumberOfMarkedPointers = 3;
 
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
-     auto ptr = TryAllocateNewWord(&zone, idx);
-     ASSERT_TRUE(zone.Contains(ptr->GetStartingAddress()));
+     auto ptr = TryAllocateWord(zone, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(IsNew(ptr));
      ASSERT_TRUE(IsWord(ptr, idx));
-     ASSERT_FALSE(IsMarked(ptr));
    }
 
    for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto ptr = TryAllocateMarkedWord(&zone, idx);
-     ASSERT_TRUE(zone.Contains(ptr->GetStartingAddress()));
+     auto ptr = TryAllocateMarkedWord(zone, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(IsNew(ptr));
-     ASSERT_TRUE(IsWord(ptr, idx));
      ASSERT_TRUE(IsMarked(ptr));
+     ASSERT_TRUE(IsWord(ptr, idx));
    }
 
    MockRawObjectVisitor visitor;

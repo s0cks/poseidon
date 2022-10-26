@@ -136,7 +136,7 @@ namespace poseidon{
    }
 
    inline void ClearFromSpace(){
-     from_.Clear();
+     Scavenger::Clear(&from_);
    }
 
    inline void FinalizeObject(RawObject* raw){
@@ -181,11 +181,7 @@ namespace poseidon{
 
    void ProcessToSpace() override{
      TIMED_SECTION("ProcessToSpace", {
-       to_.VisitPointers([&](RawObject* val){
-         DLOG(INFO) << "scavenged: " << val->ToString();
-         //TODO: process references
-         return true;
-       });
+       NOT_IMPLEMENTED(ERROR); //TODO: implement
      });
    }
 

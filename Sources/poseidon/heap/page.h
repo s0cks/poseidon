@@ -21,8 +21,11 @@ namespace poseidon{
  class Page : public AllocationSection {
    friend class PageTable;
    friend class PageTest;
+
+   friend class RawObject;//TODO: remove
   protected:
    MemoryRegion region_;
+   uword current_;
    RelaxedAtomic<RawPageTag> tag_;
 
    Page() = default;
@@ -69,12 +72,16 @@ namespace poseidon{
 
    inline int64_t
    GetAllocatableSize() {
-     return Section::GetSize();
+     return GetSize();
    }
+
+   uword TryAllocate(ObjectSize size) override;
+   void Clear() override;
   public:
    explicit Page(const PageIndex index, const MemoryRegion& region):
-    AllocationSection(region.GetStartingAddress(), region.GetSize()),
+    AllocationSection(),
     tag_(),
+    current_(0),
     region_(region) {
      ClearMarkedBit();
      ClearNewBit();
@@ -82,6 +89,18 @@ namespace poseidon{
      SetIndex(index);
    }
    ~Page() override = default;
+
+   uword GetStartingAddress() const override {
+     return region_.GetStartingAddress();
+   }
+
+   uword GetCurrentAddress() const override {
+     return current_;
+   }
+
+   int64_t GetSize() const override {
+     return region_.GetSize();
+   }
 
    RawPageTag raw_tag() const {
      return (RawPageTag)tag_;
@@ -99,7 +118,8 @@ namespace poseidon{
      return PageTag::IndexTag::Decode(raw_tag());
    }
 
-   uword TryAllocate(ObjectSize size) override; //TODO: make only accessible to page table
+   bool VisitPointers(RawObjectVisitor* vis) override;
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
    Page& operator=(const Page& rhs) {
      if(this == &rhs)
