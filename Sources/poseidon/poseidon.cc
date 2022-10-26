@@ -4,6 +4,7 @@
 
 namespace poseidon{
 DEFINE_int64(new_zone_size, kDefaultNewZoneSize, "The size of the new zone in bytes.");
+DEFINE_int64(new_page_size, kDefaultNewPageSize, "The size of the new page in bytes.");
 
 DEFINE_int64(old_zone_size, kDefaultOldZoneSize, "The size of the old zone in bytes.");
 DEFINE_int64(old_page_size, kDefaultOldPageSize, "The size of the old zone pages in bytes.");

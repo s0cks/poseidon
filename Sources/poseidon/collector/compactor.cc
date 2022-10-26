@@ -62,7 +62,7 @@ namespace poseidon{
 
    inline int64_t Forward(RawObject* ptr){ //TODO: need to copy object over
      DLOG(INFO) << "forwarding " << ptr->ToString() << " to " << free_ptr();
-     ptr->SetForwardingAddress(free_ptr()->GetAddress());
+     ptr->SetForwardingAddress(free_ptr()->GetStartingAddress());
      return ptr->GetTotalSize();
    }
 
@@ -148,8 +148,7 @@ namespace poseidon{
  void Compactor::SerialCompact(){
    auto heap = Heap::GetCurrentThreadHeap();
    auto old_zone = heap->old_zone();
-
-   SerialCompactor compactor(old_zone);
+   SerialCompactor compactor(&old_zone);
    TIMED_SECTION("SerialCompact", {
      compactor.Compact();
    });

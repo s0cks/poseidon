@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include "common.h"
+#include "poseidon/region.h"
 
 namespace poseidon{
  typedef const std::function<bool(RawObject*)>& RawObjectVisitorFunction;
@@ -250,17 +251,21 @@ namespace poseidon{
     }
   };
 
-  class RawObject{
+  class RawObject : public Region {
     friend class RawObjectTest;
 
+    //TODO: cleanup friends
     friend class Semispace;
     friend class Zone;
-    friend class NewZone;
+    friend class Page;
+    friend class NewPage;
     friend class OldPage;
+    friend class NewZone;
+    friend class OldZone;
     friend class Compactor;
    private:
-    RelaxedAtomic<RawObjectTag> tag_; // TODO: merge w/ forwarding
-    RelaxedAtomic<uword> forwarding_;
+    RelaxedAtomic<RawObjectTag> tag_;
+    RelaxedAtomic<uword> forwarding_; //TODO: merge w/ ObjectTag
 
     explicit RawObject(ObjectTag tag):
       tag_((RawObjectTag)tag),
@@ -271,10 +276,14 @@ namespace poseidon{
       tag_(0),
       forwarding_(0){
     }
-    virtual ~RawObject() = default;
+    ~RawObject() override = default;
 
-    uword GetAddress() const{
+    uword GetStartingAddress() const override {
       return (uword)this;
+    }
+
+    int64_t GetSize() const override {
+      return GetTotalSize(); //TODO: refactor
     }
 
     void* GetPointer() const{
@@ -403,7 +412,7 @@ namespace poseidon{
       auto ptr = new (area->GetCurrentAddressPointer())RawObject();
       area->current_ += total_size;
       ptr->SetPointerSize(size);
-      return ptr->GetAddress();
+      return ptr->GetStartingAddress();
     }
 
     template<class T>
@@ -416,7 +425,7 @@ namespace poseidon{
 
       auto ptr = new (area->GetCurrentAddressPointer())RawObject(ObjectTag::NewWithSize(size));
       area->current_ += total_size;
-      return ptr->GetAddress();
+      return ptr->GetStartingAddress();
     }
 
     template<class T>
@@ -429,7 +438,7 @@ namespace poseidon{
 
       auto ptr = new (area->GetCurrentAddressPointer())RawObject(ObjectTag::OldWithSize(size));
       area->current_ += total_size;
-      return ptr->GetAddress();
+      return ptr->GetStartingAddress();
     }
   };
 }

@@ -60,7 +60,7 @@ namespace poseidon{
    }
 
    inline bool SetSlotPointer(RawObject* ptr){
-     return SetSlotAddress(ptr->GetAddress());
+     return SetSlotAddress(ptr->GetStartingAddress());
    }
 
    uword GetSlotAddress() const{

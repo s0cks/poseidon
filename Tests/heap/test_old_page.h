@@ -5,20 +5,15 @@
 #include <gmock/gmock.h>
 
 #include "poseidon/flags.h"
-#include "memory_region_test.h"
 #include "poseidon/heap/old_page.h"
 
 namespace poseidon{
  using namespace ::testing;
 
- class OldPageTest : public MemoryRegionTest{
+ class OldPageTest : public Test {
   protected:
-   OldPage page_;
+   OldPageTest() = default;
   public:
-   OldPageTest():
-     MemoryRegionTest(GetOldPageSize()),
-     page_(nullptr, region()){
-   }
    ~OldPageTest() override = default;
  };
 }

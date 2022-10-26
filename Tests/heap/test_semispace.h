@@ -4,20 +4,15 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "memory_region_test.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
  using namespace ::testing;
 
- class SemispaceTest : public MemoryRegionTest{
+ class SemispaceTest : public Test {
   protected:
-   Semispace semispace_;
+   SemispaceTest() = default;
   public:
-   SemispaceTest():
-     MemoryRegionTest(NewZone::GetDefaultSemispaceSize()),
-     semispace_(region()){
-   }
    ~SemispaceTest() override = default;
  };
 }

@@ -16,8 +16,6 @@ namespace poseidon{
    friend class Scavenger;
    friend class Compactor;
    friend class Allocator;
-
-   friend class HeapTest;
   private:
    static pthread_key_t kThreadKey;
 
@@ -30,45 +28,27 @@ namespace poseidon{
      }
    }
   private:
-   MemoryRegion* region_;
-   NewZone* new_zone_;
-   OldZone* old_zone_;
-
-   Heap(MemoryRegion* region, NewZone* new_zone, OldZone* old_zone):
-    region_(region),
-    new_zone_(new_zone),
-    old_zone_(old_zone){
-   }
-
-   explicit Heap(MemoryRegion* region, int64_t new_zone_size = GetNewZoneSize(), int64_t old_zone_size = GetOldZoneSize(), int64_t old_page_size = GetOldPageSize()):
-    region_(region),
-    new_zone_(new NewZone(region, new_zone_size)),
-    old_zone_(new OldZone(region, new_zone_size, old_zone_size, old_page_size)){
-   }
-
-   Heap():
-    Heap(new MemoryRegion(GetTotalInitialHeapSize())){
-   }
+   MemoryRegion region_;
+   NewZone new_zone_;
+   OldZone old_zone_;
 
    uword AllocateNewObject(int64_t size);
    uword AllocateOldObject(int64_t size);
    uword AllocateLargeObject(int64_t size);
   public:
+   explicit Heap(const MemoryRegion& region):
+    region_(region),
+    new_zone_(MemoryRegion::Subregion(region, 0, GetNewZoneSize())),
+    old_zone_(MemoryRegion::Subregion(region, GetNewZoneSize(), GetOldZoneSize())) {
+   }
    Heap(const Heap& rhs) = default;
-   virtual ~Heap(){
-     delete new_zone_;
-     delete old_zone_;
-   }
+   virtual ~Heap() = default;
 
-   MemoryRegion* region() const{
-     return region_;
-   }
-
-   NewZone* new_zone() const{
+   NewZone& new_zone() {
      return new_zone_;
    }
 
-   OldZone* old_zone() const{
+   OldZone& old_zone() {
      return old_zone_;
    }
 
@@ -117,12 +97,11 @@ namespace poseidon{
        SetCurrentThreadHeap(nullptr);
      }
 
-     auto heap = new Heap();
+     MemoryRegion region(GetTotalInitialHeapSize());
+     auto heap = new Heap(region);
      SetCurrentThreadHeap(heap);//TODO: refactor.
-     GCLOG(10) << "new-zone: " << (heap->new_zone());
-     GCLOG(10) << " - from: " << ((void*)heap->new_zone()->fromspace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
-     GCLOG(10) << " - to: " << ((void*)heap->new_zone()->tospace()) << " (" << Bytes(heap->new_zone()->semisize()) << ").";
-     GCLOG(10) << "old-zone: " << (heap->old_zone());
+     //TODO: print NewZone
+     //TODO: print OldZone
    }
  };
 }

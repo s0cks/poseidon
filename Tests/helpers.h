@@ -27,6 +27,20 @@ namespace poseidon{
    MOCK_METHOD(bool, Visit, (RawObject*), (override));
  };
 
+ class MockPageVisitor : public PageVisitor {
+  public:
+   MockPageVisitor():
+    PageVisitor() {
+     ON_CALL(*this, Visit)
+     .WillByDefault([](Page* val) {
+       return true;
+     });
+   }
+   ~MockPageVisitor() override = default;
+
+   MOCK_METHOD(bool, Visit, (Page*), (override));
+ };
+
  static inline uword
  FailAllocation(int64_t size){
    DLOG(ERROR) << "allocating new object (" << Bytes(size) << ") failed.";
@@ -50,7 +64,7 @@ namespace poseidon{
 
    memset((void*)val, 0, total_size);
    val->SetPointerSize(size);
-   return val->GetAddress();
+   return val->GetStartingAddress();
  }
 
  template<class S>

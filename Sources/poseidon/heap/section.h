@@ -3,10 +3,11 @@
 
 #include "poseidon/raw_object.h"
 #include "poseidon/platform/platform.h"
+#include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
  // Represents a section of memory
- class Section{
+ class Section : public Region {
   protected:
    template<class S, class I>
    static inline void
@@ -14,7 +15,6 @@ namespace poseidon{
      I iter(section);
      while(iter.HasNext()){
        auto next = iter.Next();
-       DLOG(INFO) << "next: " << next->ToString();
        if(!vis->Visit(next))
          return;
      }
@@ -69,44 +69,25 @@ namespace poseidon{
     */
    Section(uword start, int64_t size):
     start_(start),
-    size_(size){
+    size_(size){ //TODO: remove?
+   }
+
+   explicit Section(const MemoryRegion& region):
+    Section(region.GetStartingAddress(), region.GetSize()) {
    }
   public:
    Section(const Section& rhs):
     start_(rhs.GetStartingAddress()),
     size_(rhs.GetSize()){
    }
-   virtual ~Section() = default;
+   ~Section() override = default;
 
-   uword GetStartingAddress() const{
+   uword GetStartingAddress() const override {
      return start_;
    }
 
-   void* GetStartingAddressPointer() const{
-     return (void*)GetStartingAddress();
-   }
-
-   int64_t GetSize() const{
+   int64_t GetSize() const override {
      return size_;
-   }
-
-   uword GetEndingAddress() const{
-     return GetStartingAddress() + GetSize();
-   }
-
-   void* GetEndingAddressPointer() const{
-     return (void*)GetEndingAddress();
-   }
-
-   /**
-    * Determines if the {@param address} is contained in this {@link Section}.
-    *
-    * @param address The address to check
-    * @return True if the address is inside of this {@link Section}; False otherwise.
-    */
-   bool Contains(uword address) const{
-     return GetStartingAddress() <= address
-         && GetEndingAddress() >= address;
    }
 
    friend bool operator==(const Section& lhs, const Section& rhs){

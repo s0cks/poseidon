@@ -19,7 +19,7 @@ namespace poseidon{
      return;
 
    DLOG(INFO) << "sweeping " << ptr->ToString();
-   free_list->Add(ptr->GetAddress(), ptr->GetTotalSize());
+   free_list->Add(ptr->GetStartingAddress(), ptr->GetTotalSize());
 #ifdef PSDN_DEBUG
    memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
 #endif//PSDN_DEBUG
@@ -67,7 +67,7 @@ namespace poseidon{
    return (int64_t)last_sweep_bytes;
  }
 
- class ParallelSweeper : public SweeperVisitorBase<true>{
+ class ParallelSweeper : public SweeperVisitorBase<true>, public PageVisitor {
    friend class ParallelSweeperTask;
   protected:
    WorkStealingQueue<uword>* work_;
@@ -90,15 +90,17 @@ namespace poseidon{
 
    bool Visit(RawObject* ptr) override{
      if(!ptr->IsMarked())
-       work()->Push(ptr->GetAddress());
+       work()->Push(ptr->GetStartingAddress());
+     return true;
+   }
+
+   bool Visit(Page* page) override {
+     page->VisitPointers(this);
      return true;
    }
 
    void Sweep() override{
-     zone()->VisitPages([&](OldPage* page){
-       page->VisitPointers(this);
-       return true;
-     });
+     zone()->VisitPages(this);
    }
  };
 
@@ -171,18 +173,18 @@ namespace poseidon{
 
    auto heap = Heap::GetCurrentThreadHeap();
    auto old_zone = heap->old_zone();
-   DLOG(INFO) << "sweeping " << (*old_zone);
+   DLOG(INFO) << "sweeping " << (old_zone);
    DLOG(INFO) << "sweeper stats (before): " << GetStats();
 
-   double perc_free_before = GetPercentageFreeInFreeList(old_zone);
+   double perc_free_before = GetPercentageFreeInFreeList(&old_zone);
    SetSweeping();
    if(HasWorkers()){
-     ParallelSweep(old_zone);
+     ParallelSweep(&old_zone);
    } else{
-     SerialSweep(old_zone);
+     SerialSweep(&old_zone);
    }
    ClearSweeping();
-   double perc_free_after = GetPercentageFreeInFreeList(old_zone);
+   double perc_free_after = GetPercentageFreeInFreeList(&old_zone);
    last_sweep_frag_perc = perc_free_after - perc_free_before;
    DLOG(INFO) << "sweeper stats (after): " << GetStats();
  }

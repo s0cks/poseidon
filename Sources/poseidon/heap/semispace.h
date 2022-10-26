@@ -73,30 +73,10 @@ namespace poseidon{
     Section(),
     current_(0){
    }
-
-   /**
-    * Create a {@link Semispace} with the specified starting address and size.
-    *
-    * @param start The starting address for the {@link Semispace}
-    * @param size The size of the {@link Semispace}
-    */
-   Semispace(uword start, int64_t size):
-    Section(start, size),
-    current_(start){
+   explicit Semispace(const MemoryRegion& region):
+    Section(region),
+    current_(region.GetStartingAddress()) {
    }
-
-   Semispace(MemoryRegion* region, int64_t offset, int64_t size):
-    Semispace(region->GetStartingAddress() + offset, size){
-   }
-
-   Semispace(MemoryRegion* region, int64_t size):
-    Semispace(region, 0, size){
-   }
-
-   explicit Semispace(MemoryRegion* region):
-    Semispace(region, region->size()){
-   }
-
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
 

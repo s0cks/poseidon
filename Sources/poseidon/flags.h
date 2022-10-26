@@ -7,10 +7,11 @@
 namespace poseidon{
  static constexpr const int64_t kDefaultNewZoneSize = 16 * kMB;
  DECLARE_int64(new_zone_size);
+ static constexpr const int64_t kDefaultNewPageSize = 2 * kMB;
+ DECLARE_int64(new_page_size);
 
  static constexpr const int64_t kDefaultOldZoneSize = 512 * kMB;
  DECLARE_int64(old_zone_size);
-
  static constexpr const int64_t kDefaultOldPageSize = 16 * kMB;
  DECLARE_int64(old_page_size);
 
@@ -19,7 +20,6 @@ namespace poseidon{
 
  static constexpr const int64_t kDefaultNumberOfWorkers = 2;
  DECLARE_int64(num_workers);
-
  static constexpr const char* kDefaultReportDirectory = "";
  DECLARE_string(report_directory);
 
@@ -36,6 +36,21 @@ namespace poseidon{
  static inline int64_t
  GetNewZoneSize(){
    return FLAGS_new_zone_size;
+ }
+
+ static inline int64_t
+ GetNewZoneSemispaceSize() {
+   return GetNewZoneSize() / 2;
+ }
+
+ static inline int64_t
+ GetNewPageSize() {
+   return FLAGS_new_page_size;
+ }
+
+ static inline int64_t
+ GetNumberOfNewPages() {
+   return GetNewZoneSize() / GetNewPageSize();
  }
 
  static inline int64_t

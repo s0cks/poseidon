@@ -6,10 +6,11 @@
 #include <glog/logging.h>
 
 #include "poseidon/utils.h"
+#include "poseidon/region.h"
 #include "poseidon/platform/platform.h"
 
 namespace poseidon{
-  class MemoryRegion{
+  class MemoryRegion : public Region {
    public:
     enum ProtectionMode{
       kNoAccess,
@@ -42,7 +43,7 @@ namespace poseidon{
 
     inline void
     CopyFrom(const MemoryRegion& rhs) const{//TODO: size check / refactor
-      memcpy(GetStartingAddressPointer(), rhs.GetStartingAddressPointer(), rhs.size());
+      memcpy(GetStartingAddressPointer(), rhs.GetStartingAddressPointer(), rhs.GetSize());
     }
    public:
     /**
@@ -92,33 +93,16 @@ namespace poseidon{
 
     MemoryRegion(const MemoryRegion& rhs):
       start_(rhs.GetStartingAddress()),
-      size_(rhs.size()){
+      size_(rhs.GetSize()){
     }
-    virtual ~MemoryRegion() = default;
+    ~MemoryRegion() override = default;
 
-    int64_t size() const{
-      return size_;
-    }
-
-    uword GetStartingAddress() const{
+    uword GetStartingAddress() const override {
       return start_;
     }
 
-    void* GetStartingAddressPointer() const{
-      return (void*)GetStartingAddress();
-    }
-
-    uword GetEndingAddress() const{
-      return GetStartingAddress() + size();
-    }
-
-    void* GetEndingAddressPointer() const{
-      return (void*)GetEndingAddress();
-    }
-
-    bool Contains(uword address) const{
-      return GetStartingAddress() <= address
-          && GetEndingAddress() >= address;
+    int64_t GetSize() const override {
+      return size_;
     }
 
     virtual void FreeRegion();
@@ -136,12 +120,21 @@ namespace poseidon{
       if(this == &rhs)
         return *this;
       start_ = rhs.GetStartingAddress();
-      size_ = rhs.size();
+      size_ = rhs.GetSize();
       return *this;
     }
 
     friend std::ostream& operator<<(std::ostream& stream, const MemoryRegion& region){
-      return stream << "MemoryRegion(start=" << region.GetStartingAddressPointer() << ", size=" << Bytes(region.size()) << ", end=" << region.GetEndingAddressPointer() << ")";
+      return stream << "MemoryRegion(start=" << region.GetStartingAddressPointer() << ", size=" << Bytes(region.GetSize()) << ", end=" << region.GetEndingAddressPointer() << ")";
+    }
+
+    static inline MemoryRegion
+    Subregion(const MemoryRegion& region, int64_t offset, int64_t size) {
+      auto starting_address = region.GetStartingAddress() + offset;
+      auto ending_address = starting_address + size;
+      if(!region.Contains(starting_address) || !region.Contains(ending_address))
+        return {};
+      return MemoryRegion(starting_address, size);
     }
   };
 }

@@ -93,7 +93,7 @@ namespace poseidon{
    virtual void Sweep() = 0;
  };
 
- class SerialSweeper : public SweeperVisitorBase<false>{
+ class SerialSweeper : public SweeperVisitorBase<false>, public PageVisitor {
    friend class SerialSweeperTest;
   protected:
    FreeList* free_list_;
@@ -110,7 +110,7 @@ namespace poseidon{
 
    bool Visit(RawObject* ptr) override;
 
-   void SweepPage(OldPage* page){
+   bool Visit(Page* page) override {
      TIMED_SECTION("SweepingPage", {
        auto current = page->GetStartingAddress();
        while(current < page->GetEndingAddress() && ((RawObject*)current)->GetPointerSize() > 0){
@@ -118,19 +118,17 @@ namespace poseidon{
          auto size = ptr->GetTotalSize();
 
          if(!Visit(ptr))
-           return;
+           return false;
 
          current += size;
        }
+       return true;
      });
    }
 
    void Sweep() override{
      TIMED_SECTION("SweepingPages", {
-       zone()->VisitPages([&](OldPage* page){
-         SweepPage(page);
-         return true;
-       });
+       zone()->VisitPages(this);
      });
    }
  };

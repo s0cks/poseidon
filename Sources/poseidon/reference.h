@@ -25,7 +25,7 @@ namespace poseidon{
    }
 
    Reference(RawObject* owner, RawObject* target):
-    Reference(owner->GetAddress(), target->GetAddress()){
+    Reference(owner->GetStartingAddress(), target->GetStartingAddress()){
    }
   public:
    Reference() = default;

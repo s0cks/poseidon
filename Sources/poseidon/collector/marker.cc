@@ -129,7 +129,7 @@ namespace poseidon{
    bool Visit(RawObject** ptr) override{
      auto old_val = (*ptr);
      if(!old_val->IsMarked() && !old_val->IsForwarding())
-       work_->Push(old_val->GetAddress());
+       work_->Push(old_val->GetStartingAddress());
      return true;
    }
 

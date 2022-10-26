@@ -7,13 +7,13 @@ namespace poseidon{
 
  uword Heap::AllocateNewObject(int64_t size){
    RawObject* val = nullptr;
-   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)new_zone().TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << Bytes(size) << ".";
    Collector::MinorCollection();
 
-   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)new_zone().TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    LOG(FATAL) << "cannot allocate new object of " << Bytes(size) << "!";
@@ -21,21 +21,21 @@ namespace poseidon{
 
 finish_allocation:
    val->SetNewBit();
-   return val->GetAddress();
+   return val->GetStartingAddress();
  }
 
  uword Heap::AllocateOldObject(int64_t size){
    RawObject* val = nullptr;
 
    // 1. Try Allocation
-   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)old_zone().TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 2. Try Major Collection
    Collector::MajorCollection();
 
    // 3. Try Allocation Again
-   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)old_zone().TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 4. Try Pages w/ Grow
@@ -49,7 +49,7 @@ finish_allocation:
 
 finish_allocation:
    val->SetOldBit();
-   return val->GetAddress();
+   return val->GetStartingAddress();
  }
 
  uword Heap::AllocateLargeObject(int64_t size){

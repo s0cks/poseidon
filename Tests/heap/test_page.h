@@ -9,16 +9,24 @@
 namespace poseidon {
  using namespace ::testing;
 
- class PageTagTest : public Test {
-  protected:
-   PageTagTest() = default;
-  public:
-   ~PageTagTest() override = default;
- };
-
  class PageTest : public Test {
   protected:
    PageTest() = default;
+
+   static inline void
+   Mark(Page* page) {
+     page->SetMarkedBit(true);
+   }
+
+   static inline void
+   Unmark(Page* page) {
+     page->ClearMarkedBit();
+   }
+
+   static inline void
+   SetIndex(Page* page, const uint32_t index) {
+     page->SetIndex(index);
+   }
   public:
    ~PageTest() override = default;
  };

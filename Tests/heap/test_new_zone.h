@@ -5,37 +5,26 @@
 #include <gmock/gmock.h>
 
 #include "poseidon/flags.h"
-#include "memory_region_test.h"
 #include "poseidon/heap/new_zone.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
  using namespace ::testing;
 
- class NewZoneTest : public MemoryRegionTest{
+ class NewZoneTest : public Test {
   protected:
-   NewZone zone_;
-   Semispace from_;
-   Semispace to_;
+   NewZoneTest() = default;
 
-   inline NewZone* zone(){
-     return &zone_;
+   static inline Semispace
+   GetFromspace(const NewZone& zone) {
+     return zone.GetFromspace();
    }
 
-   inline Semispace* from(){
-     return &from_;
-   }
-
-   inline Semispace* to(){
-     return &to_;
+   static inline Semispace
+   GetTospace(const NewZone& zone) {
+     return zone.GetTospace();
    }
   public:
-   NewZoneTest():
-    MemoryRegionTest(GetNewZoneSize()),
-    zone_(region()),
-    from_(zone()->fromspace(), zone()->semisize()),
-    to_(zone()->tospace(), zone()->semisize()){
-   }
    ~NewZoneTest() override = default;
  };
 }

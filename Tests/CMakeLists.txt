@@ -10,7 +10,7 @@ add_executable(poseidon-tests
     test_raw_object.cc
         test_free_list.cc
         heap/test_semispace.cc
-        heap/test_semispace.h heap/test_new_zone.cc heap/test_new_zone.h heap/test_old_page.cc heap/test_old_page.h memory_region_test.h collector/test_sweeper.cc collector/test_sweeper.h helpers/assertions.h collector/test_scavenger.cc collector/test_scavenger.h heap/test_old_zone.cc heap/test_old_zone.h frontend/test_instruction.h frontend/test_instruction.cc heap/test_page.h heap/test_page.cc)
+        heap/test_semispace.h heap/test_new_zone.cc heap/test_new_zone.h heap/test_old_page.cc heap/test_old_page.h helpers/assertions.h frontend/test_instruction.h frontend/test_instruction.cc heap/test_page.h heap/test_page.cc heap/test_page_tag.cc heap/test_page_tag.h heap/test_new_page.cc heap/test_new_page.h)
 target_link_libraries(poseidon-tests
     poseidon
     ${CMAKE_THREAD_LIBS_INIT}

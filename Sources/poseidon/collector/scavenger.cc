@@ -74,7 +74,7 @@ namespace poseidon{
    new_ptr->SetPointerSize(ptr->GetPointerSize());
    CopyObject(ptr, new_ptr);
    last_scavenge_scavenged_ += ptr;
-   return new_ptr->GetAddress();
+   return new_ptr->GetStartingAddress();
  }
 
  uword Scavenger::PromoteObject(OldZone* zone, RawObject* ptr){
@@ -82,7 +82,7 @@ namespace poseidon{
    auto new_ptr = (RawObject*)zone->TryAllocate(ptr->GetPointerSize());
    CopyObject(ptr, new_ptr);
    last_scavenge_promoted_ += ptr;
-   return new_ptr->GetAddress();
+   return new_ptr->GetStartingAddress();
  }
 
  uword Scavenger::ProcessObject(Semispace* tospace, OldZone* old_zone, RawObject* ptr){
@@ -100,7 +100,7 @@ namespace poseidon{
    PSDN_ASSERT(ptr->IsForwarding());
    auto new_ptr = (RawObject*)ptr->GetForwardingAddress();
    new_ptr->SetRememberedBit();
-   return new_ptr->GetAddress();
+   return new_ptr->GetStartingAddress();
  }
 
  void Scavenger::ForwardObject(RawObject* obj, uword forwarding_address){
@@ -124,10 +124,10 @@ namespace poseidon{
 
    explicit ScavengerVisitorBase(Heap* heap):
     RawObjectPointerVisitor(),
-    zone_(heap->new_zone()),
-    from_(heap->new_zone()->fromspace(), heap->new_zone()->semisize()),
-    to_(heap->new_zone()->tospace(), heap->new_zone()->semisize()),
-    promotion_(heap->old_zone()){
+    zone_(&heap->new_zone()),
+    from_(heap->new_zone().GetFromspace()),
+    to_(heap->new_zone().GetTospace()),
+    promotion_(&heap->old_zone()){
    }
 
    inline void SwapSpaces(){
@@ -284,7 +284,7 @@ namespace poseidon{
        locals->VisitPointers([&](RawObject** ptr){
          auto old_val = (*ptr);
          if(old_val->IsNew() && !old_val->IsForwarding())
-           work_->Push(old_val->GetAddress());
+           work_->Push(old_val->GetStartingAddress());
          return true;
        });
      });

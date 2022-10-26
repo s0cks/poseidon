@@ -108,7 +108,7 @@ namespace poseidon{
 
  static inline AssertionResult
  IsForwardingTo(RawObject* val, RawObject* dst){
-   return IsForwardingTo(val, dst->GetAddress());
+   return IsForwardingTo(val, dst->GetStartingAddress());
  }
 
  template<typename T>

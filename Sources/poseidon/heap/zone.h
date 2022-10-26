@@ -3,16 +3,23 @@
 
 #include "poseidon/raw_object.h"
 #include "poseidon/heap/section.h"
+#include "poseidon/heap/page_table.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- class Zone : public AllocationSection{
+ class Zone : public AllocationSection {
    friend class ZoneTest;
    friend class RawObject;
    friend class Scavenger;
   protected:
+   static inline int64_t
+   CalculateNumberOfPages(const MemoryRegion& region, const int64_t page_size) { //TODO: cleanup
+     return region.GetSize() / page_size;
+   }
+  protected:
    MemoryRegion region_;
-   RelaxedAtomic<MemoryRegion::ProtectionMode> mode_;
+   RelaxedAtomic<MemoryRegion::ProtectionMode> mode_; //TODO: remove
+   PageTable pages_;
 
    inline MemoryRegion::ProtectionMode
    GetMode() const{
@@ -46,11 +53,25 @@ namespace poseidon{
      }
      return SetMode(MemoryRegion::kReadOnly);
    }
+
+   inline PageTable& pages() {
+     return pages_;
+   }
+
+   virtual void InitializePageTable(const MemoryRegion& region, int64_t num_pages, int64_t page_size) {
+     // do nothing, TODO: clean this up
+   }
+
+   inline void PutPage(Page* page) {
+     pages_.pages_[page->index()] = page;
+   }
   public:
    Zone():
     AllocationSection(),
     region_(),
-    mode_(MemoryRegion::kReadOnly){
+    mode_(MemoryRegion::kReadOnly),
+    pages_(0) {
+     InitializePageTable(MemoryRegion(), 0, 0);
    }
 
    /**
@@ -59,26 +80,20 @@ namespace poseidon{
     * @param start The starting address for the {@link Zone}
     * @param size The size of the {@link Zone}
     */
-   Zone(uword start, int64_t size)://TODO: cleanup?
-    AllocationSection(start, size),
-    region_(start, size),
-    mode_(MemoryRegion::kReadOnly){
-   }
-
-   Zone(MemoryRegion* region, int64_t offset, int64_t size):
-    Zone(region->GetStartingAddress() + offset, size){
-   }
-
-   Zone(MemoryRegion* region, int64_t size):
-    Zone(region, 0, size){
-   }
-
-   explicit Zone(MemoryRegion* region):
-    Zone(region, region->size()){
+   Zone(const MemoryRegion& region, const int64_t page_size):
+    AllocationSection(region.GetStartingAddress(), region.GetSize()),
+    region_(region),
+    mode_(MemoryRegion::kReadOnly),
+    pages_(CalculateNumberOfPages(region, page_size)){
+     InitializePageTable(region, CalculateNumberOfPages(region, page_size), page_size);
    }
 
    Zone(const Zone& rhs) = default;
    ~Zone() override = default;
+
+   BitSet marked_set() { //TODO: remove
+     return pages().table_;
+   }
 
    bool IsReadOnly() const{
      return GetMode() == MemoryRegion::kReadOnly;
@@ -86,6 +101,40 @@ namespace poseidon{
 
    bool IsWritable() const{
      return GetMode() == MemoryRegion::kReadWrite;
+   }
+
+   inline void
+   Mark(Page* page) {
+     pages().Mark(page);
+   }
+
+   inline void
+   Mark(const PageIndex index) {
+     return Mark(pages().pages(index));
+   }
+
+   inline void
+   MarkAll(const Region& region) {
+     return pages().MarkAll(region);
+   }
+
+   inline void
+   MarkAll(const RawObject* ptr) {
+     return MarkAll((*ptr));
+   }
+
+   inline void
+   Unmark(Page* page) {
+     pages().Unmark(page);
+   }
+
+   inline void
+   Unmark(const PageIndex index) {
+     return Unmark(pages().pages(index));
+   }
+
+   virtual void VisitPages(PageVisitor* vis) const {
+     return pages_.VisitPages(vis);
    }
 
    Zone& operator=(const Zone& rhs){

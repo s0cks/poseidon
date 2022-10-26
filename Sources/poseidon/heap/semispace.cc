@@ -1,3 +1,4 @@
+#include "poseidon/heap/heap.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
@@ -9,6 +10,6 @@ namespace poseidon{
 
    auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::NewWithSize(size));
    current_ += total_size;
-   return ptr->GetAddress();
+   return ptr->GetStartingAddress();
  }
 }

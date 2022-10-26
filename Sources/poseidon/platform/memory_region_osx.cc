@@ -52,8 +52,8 @@ namespace poseidon{
     }
 
     int err;
-    if((err = mprotect(GetStartingAddressPointer(), size(), protection)) != 0){
-      LOG(ERROR) << "failed to " << mode << " protect memory region of " << size() << " bytes @" << GetStartingAddressPointer() << ": " << strerror(err);
+    if((err = mprotect(GetStartingAddressPointer(), GetSize(), protection)) != 0){
+      LOG(ERROR) << "failed to " << mode << " protect memory region of " << GetSize() << " bytes @" << GetStartingAddressPointer() << ": " << strerror(err);
       return false;
     }
     return true;
