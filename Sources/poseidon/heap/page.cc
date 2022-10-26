@@ -6,13 +6,23 @@ namespace poseidon {
  }
 
  bool Page::VisitPointers(poseidon::RawObjectVisitor* vis){
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-   return false;
+   PageIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(!vis->Visit(next))
+       return false;
+   }
+   return true;
  }
 
  bool Page::VisitMarkedPointers(poseidon::RawObjectVisitor* vis){
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-   return false;
+   PageIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(next->IsMarked() && !vis->Visit(next))
+       return false;
+   }
+   return true;
  }
 
  uword Page::TryAllocate(int64_t size){

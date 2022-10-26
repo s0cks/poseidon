@@ -43,7 +43,7 @@ namespace poseidon {
   private:
    RawPageTag raw_;
   public:
-   explicit PageTag(const RawPageTag raw = kInvalidPageTag):
+   constexpr PageTag(const RawPageTag raw = kInvalidPageTag):
      raw_(raw) {
    }
    PageTag(const PageTag& rhs) = default;
@@ -71,7 +71,7 @@ namespace poseidon {
    }
 
    void SetNewBit(const bool value = true) {
-     raw_ = OldBit::Update(value, raw());
+     raw_ = NewBit::Update(value, raw());
    }
 
    inline void
@@ -100,7 +100,19 @@ namespace poseidon {
      raw_ = IndexTag::Update(val, raw());
    }
 
-   PageTag& operator=(const PageTag& rhs) = default;
+   PageTag& operator=(const PageTag& rhs) {
+     if(this == &rhs)
+       return *this;
+     raw_ = rhs.raw();
+     return *this;
+   }
+
+   PageTag& operator=(const RawPageTag& rhs) {
+     if(raw() == rhs)
+       return *this;
+     raw_ = rhs;
+     return *this;
+   }
 
    friend std::ostream& operator<<(std::ostream& stream, const PageTag& val) {
      stream << "PageTag(";
@@ -123,6 +135,41 @@ namespace poseidon {
 
    friend bool operator>(const PageTag& lhs, const PageTag& rhs) {
      return Compare(lhs, rhs) > 0;
+   }
+
+   static inline constexpr RawPageTag
+   Index(const PageIndex index) {
+     return PageTag::IndexTag::Encode(index);
+   }
+
+   static inline constexpr RawPageTag
+   Marked(const PageIndex index) {
+     return Index(index) | PageTag::MarkedBit::Encode(true);
+   }
+
+   static inline constexpr RawPageTag
+   Unmarked(const PageIndex index) {
+     return Index(index) | PageTag::MarkedBit::Encode(false);
+   }
+
+   static inline constexpr RawPageTag
+   NewMarked(const PageIndex index) {
+     return Marked(index) | PageTag::NewBit::Encode(true);
+   }
+
+   static inline constexpr RawPageTag
+   NewUnmarked(const PageIndex index) {
+     return Unmarked(index) | PageTag::NewBit::Encode(true);
+   }
+
+   static inline constexpr RawPageTag
+   OldMarked(const PageIndex index) {
+     return Marked(index) | PageTag::OldBit::Encode(true);
+   }
+
+   static inline constexpr RawPageTag
+   OldUnmarked(const PageIndex index) {
+     return Unmarked(index) | PageTag::OldBit::Encode(false);
    }
  };
 }

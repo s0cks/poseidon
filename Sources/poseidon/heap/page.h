@@ -23,6 +23,43 @@ namespace poseidon{
    friend class PageTest;
 
    friend class RawObject;//TODO: remove
+   friend class NewPageTest; //TODO: remove
+   friend class OldPageTest; //TODO: remove
+  public:
+    class PageIterator : public RawObjectPointerIterator {
+     protected:
+      Page* page_;
+      uword current_;
+
+      inline Page* page() const {
+        return page_;
+      }
+
+      inline uword current_address() const {
+        return current_;
+      }
+
+      inline RawObject* current_ptr() const {
+        return (RawObject*)current_address();
+      }
+     public:
+      explicit PageIterator(Page* page):
+        RawObjectPointerIterator(),
+        page_(page),
+        current_(page->GetStartingAddress()) {
+      }
+      ~PageIterator() override = default;
+
+      bool HasNext() const override {
+        return current_address() < page()->GetCurrentAddress();
+      }
+
+      RawObject* Next() override {
+        auto next = current_ptr();
+        current_ += next->GetTotalSize();
+        return next;
+      }
+    };
   protected:
    MemoryRegion region_;
    uword current_;
@@ -81,7 +118,7 @@ namespace poseidon{
    explicit Page(const PageIndex index, const MemoryRegion& region):
     AllocationSection(),
     tag_(),
-    current_(0),
+    current_(region.GetStartingAddress()),
     region_(region) {
      ClearMarkedBit();
      ClearNewBit();

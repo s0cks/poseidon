@@ -268,11 +268,13 @@ namespace poseidon{
     RelaxedAtomic<uword> forwarding_; //TODO: merge w/ ObjectTag
 
     explicit RawObject(ObjectTag tag):
+      Region(),
       tag_((RawObjectTag)tag),
       forwarding_(0){
     }
    public:
-    RawObject()://TODO: make private
+    RawObject():
+      Region(), //TODO: make private
       tag_(0),
       forwarding_(0){
     }

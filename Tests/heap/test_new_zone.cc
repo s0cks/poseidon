@@ -57,17 +57,6 @@ namespace poseidon{
    ~NewZoneTest() override = default;
  };
 
- TEST_F(NewZoneTest, TestEquals) {
-   MemoryRegion region(GetNewZoneSize());
-
-   NewZone a(region);
-   NewZone b(region);
-   ASSERT_EQ(a, b);
-
-   SwapSpaces(b);
-   ASSERT_NE(a, b);
- }
-
  TEST_F(NewZoneTest, TestConstructor) {
    MemoryRegion region(GetNewZoneSize());
    NewZone zone(region);
@@ -82,6 +71,19 @@ namespace poseidon{
 
    const uword tospace = region.GetStartingAddress() + semi_size;
    ASSERT_EQ(zone.tospace(), tospace);
+ }
+
+ TEST_F(NewZoneTest, TestEquals) {
+   MemoryRegion region(GetNewZoneSize());
+
+   NewZone a(region);
+   NewZone b(region);
+   ASSERT_EQ(a, b);
+ }
+
+ TEST_F(NewZoneTest, TestNotEquals) {
+   NOT_IMPLEMENTED(ERROR);
+   ASSERT_TRUE(false);//TODO: implement
  }
 
  TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeLessThanZero) {
@@ -104,7 +106,6 @@ namespace poseidon{
    auto ptr = TryAllocateBytes(zone, GetNewZoneSize());
    ASSERT_EQ(ptr, UNALLOCATED);
  }
-
 
  TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeGreaterThanZoneSize) {
    MemoryRegion region(GetNewZoneSize());

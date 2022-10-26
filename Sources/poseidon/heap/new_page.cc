@@ -4,20 +4,10 @@ namespace poseidon {
 #define UNALLOCATED 0 //TODO: cleanup
 
  uword NewPage::TryAllocate(poseidon::ObjectSize size){
-   if(size <= 0) {
-     LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
-     return UNALLOCATED;
-   }
-
-   if(size >= GetAllocatableSize()) {
-     LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
-     return UNALLOCATED;
-   }
-
    auto total_size = static_cast<ObjectSize>(sizeof(RawObject) + size);
-   if(!Contains(GetCurrentAddress() + total_size)) {
-     LOG(ERROR) << "failed to allocate " << Bytes(total_size) << " in " << (*this);
-     return 0;
+   if(size <= 0 || total_size >= GetAllocatableSize()) {
+     LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
+     return UNALLOCATED;
    }
 
    LOG(INFO) << "allocating " << Bytes(size) << " in " << (*this);

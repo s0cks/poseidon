@@ -11,6 +11,8 @@ namespace poseidon{
  class OldZone;
  class OldPage : public Page{
    friend class OldPageTest;
+  protected:
+   uword TryAllocate(ObjectSize size) override;
   public:
    OldPage():
      Page() {
@@ -24,10 +26,6 @@ namespace poseidon{
    }
    OldPage(const OldPage& rhs) = default;
    ~OldPage() override = default;
-
-   uword TryAllocate(int64_t size) override{
-     return RawObject::TryAllocateOldIn(this, size);
-   }
 
    OldPage& operator=(const OldPage& rhs) = default;
 

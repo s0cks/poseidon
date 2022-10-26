@@ -21,7 +21,7 @@ namespace poseidon {
 
    static inline RawObject*
    TryAllocateWord(NewPage& page, word value) {
-     auto address = TryAllocateBytes(page, value);
+     auto address = TryAllocateBytes(page, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
      auto ptr = (RawObject*)address;
@@ -31,7 +31,7 @@ namespace poseidon {
 
    static inline RawObject*
    TryAllocateMarkedWord(NewPage& page, word value) {
-     auto address = TryAllocateBytes(page, value);
+     auto address = TryAllocateBytes(page, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
      auto ptr = (RawObject*)address;
@@ -39,36 +39,81 @@ namespace poseidon {
      (*((word*)ptr->GetObjectPointerAddress())) = value;
      return ptr;
    }
+
+   static inline void
+   SetTag(NewPage& page, const PageTag& tag) {
+     page.SetTag(tag.raw()); //TODO: cleanup
+   }
   public:
    ~NewPageTest() override = default;
  };
 
+ TEST_F(NewPageTest, TestConstructor) {
+   static const constexpr int64_t kPageIndex = 0;
+
+   MemoryRegion region(GetNewPageSize());
+   NewPage page(kPageIndex, region);
+   ASSERT_EQ((const Region&)page, (const Region&)region);
+   ASSERT_EQ(page.index(), kPageIndex);
+   ASSERT_TRUE(page.IsEmpty());
+   ASSERT_FALSE(page.marked());
+ }
+
+ TEST_F(NewPageTest, TestEquals) {
+   static const constexpr int64_t kPageIndex = 0;
+   MemoryRegion region(GetNewPageSize());
+   NewPage a(kPageIndex, region);
+   NewPage b(kPageIndex, region);
+   ASSERT_EQ(a, b);
+ }
+
+ TEST_F(NewPageTest, TestNotEquals) {
+   MemoryRegion region(GetNewPageSize());
+   NewPage a(0, region);
+   NewPage b(1, region);
+   ASSERT_NE(a, b);
+ }
+
  TEST_F(NewPageTest, TestTryAllocateWillFailEqualToZero) {
    MemoryRegion region(GetNewPageSize());
    NewPage page(0, region);
-   auto ptr = TryAllocateWord(page, 0);
-   ASSERT_FALSE(ptr);
+   auto ptr = TryAllocateBytes(page, 0);
+   ASSERT_EQ(ptr, UNALLOCATED);
  }
 
  TEST_F(NewPageTest, TestTryAllocateWillFailLessThanZero) {
    MemoryRegion region(GetNewPageSize());
    NewPage page(0, region);
-   auto ptr = TryAllocateWord(page, -1);
-   ASSERT_FALSE(ptr);
+   auto ptr = TryAllocateBytes(page, -1);
+   ASSERT_EQ(ptr, UNALLOCATED);
  }
 
  TEST_F(NewPageTest, TestTryAllocateWillFailEqualToPageSize) {
    MemoryRegion region(GetNewPageSize());
    NewPage page(0, region);
-   auto ptr = TryAllocateWord(page, GetNewPageSize());
-   ASSERT_FALSE(ptr);
+   auto ptr = TryAllocateBytes(page, GetNewPageSize());
+   ASSERT_EQ(ptr, UNALLOCATED);
  }
 
  TEST_F(NewPageTest, TestTryAllocateWillFailGreaterThanPageSize) {
    MemoryRegion region(GetNewPageSize());
    NewPage page(0, region);
-   auto ptr = TryAllocateWord(page, GetNewPageSize() + 1);
-   ASSERT_FALSE(ptr);
+   auto ptr = TryAllocateBytes(page, GetNewPageSize() + 1);
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+ TEST_F(NewPageTest, TestTag) {
+   static const constexpr PageIndex kDefaultPageIndex = 0;
+
+   static const constexpr RawPageTag kDefaultPageTag = PageTag::NewUnmarked(kDefaultPageIndex);
+   MemoryRegion region(GetNewPageSize());
+   NewPage page(kDefaultPageIndex, region);
+   SetTag(page, kDefaultPageTag);
+   ASSERT_EQ(page.tag(), PageTag(kDefaultPageTag));
+
+   static const constexpr RawPageTag kUpdatedPageTag = PageTag::OldUnmarked(kDefaultPageIndex);
+   SetTag(page, kUpdatedPageTag);
+   ASSERT_EQ(page.tag(), PageTag(kUpdatedPageTag));
  }
 
  TEST_F(NewPageTest, TestTryAllocate) {

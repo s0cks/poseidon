@@ -1,14 +1,102 @@
 #include "helpers.h"
 #include "helpers/assertions.h"
-#include "heap/test_old_page.h"
 
 namespace poseidon{
+#define UNALLOCATED 0 //TODO: cleanup
+
+ using namespace ::testing;
+
+ class OldPageTest : public Test {
+  protected:
+   OldPageTest() = default;
+
+   static inline uword
+   TryAllocateBytes(OldPage& page, const ObjectSize size) {
+     return page.TryAllocate(size);
+   }
+
+   static inline RawObject*
+   TryAllocateWord(OldPage& page, word value) {
+     auto address = TryAllocateBytes(page, kWordSize);
+     if (address == UNALLOCATED)
+       return nullptr;
+     auto ptr = (RawObject*)address;
+     (*((word*)ptr->GetObjectPointerAddress())) = value;
+     return ptr;
+   }
+
+   static inline RawObject*
+   TryAllocateMarkedWord(OldPage& page, word value) {
+     auto address = TryAllocateBytes(page, kWordSize);
+     if (address == UNALLOCATED)
+       return nullptr;
+     auto ptr = (RawObject*)address;
+     ptr->SetMarkedBit();
+     (*((word*)ptr->GetObjectPointerAddress())) = value;
+     return ptr;
+   }
+
+   static inline void
+   SetTag(OldPage& page, const PageTag& value) {
+     page.SetTag(value.raw());
+   }
+  public:
+   ~OldPageTest() override = default;
+ };
+
+ TEST_F(OldPageTest, TestConstructor) {
+   MemoryRegion region(GetOldPageSize());
+   OldPage page(0, region);
+ }
+
+ TEST_F(OldPageTest, TestTryAllocateWillFail_LessThanZero) {
+   MemoryRegion region(GetOldPageSize());
+   OldPage page(0, region);
+   auto ptr = TryAllocateBytes(page, -1);
+   ASSERT_EQ(ptr, 0);
+ }
+
+ TEST_F(OldPageTest, TestTryAllocateWillFail_EqualToZero) {
+   MemoryRegion region(GetOldPageSize());
+   OldPage page(0, region);
+   auto ptr = TryAllocateBytes(page, 0);
+   ASSERT_EQ(ptr, 0);
+ }
+
+ TEST_F(OldPageTest, TestTryAllocateWillFail_EqualToPageSize) {
+   MemoryRegion region(GetOldPageSize());
+   OldPage page(0, region);
+   auto ptr = TryAllocateBytes(page, GetOldPageSize());
+   ASSERT_EQ(ptr, 0);
+ }
+
+ TEST_F(OldPageTest, TestTryAllocateWillFail_GreaterThanPageSize) {
+   MemoryRegion region(GetOldPageSize());
+   OldPage page(0, region);
+   auto ptr = TryAllocateBytes(page, GetOldPageSize() + 1);
+   ASSERT_EQ(ptr, 0);
+ }
+
+ TEST_F(OldPageTest, TestTag) {
+   static const constexpr PageIndex kDefaultPageIndex = 0;
+
+   static const constexpr RawPageTag kDefaultPageTag = PageTag::NewUnmarked(kDefaultPageIndex);
+   MemoryRegion region(GetNewPageSize());
+   OldPage page(kDefaultPageIndex, region);
+   SetTag(page, kDefaultPageTag);
+   ASSERT_EQ(page.tag(), PageTag(kDefaultPageTag));
+
+   static const constexpr RawPageTag kUpdatedPageTag = PageTag::OldUnmarked(kDefaultPageIndex);
+   SetTag(page, kUpdatedPageTag);
+   ASSERT_EQ(page.tag(), PageTag(kUpdatedPageTag));
+ }
+
  TEST_F(OldPageTest, TestTryAllocate){
    MemoryRegion region(GetOldPageSize());
    OldPage page(0, region);
 
    static const constexpr word kDefaultWordValue = 42;
-   auto ptr = TryAllocateNewWord(&page, kDefaultWordValue);
+   auto ptr = TryAllocateWord(page, kDefaultWordValue);
    ASSERT_TRUE(IsAllocated(ptr));
    ASSERT_FALSE(IsNew(ptr));
    ASSERT_TRUE(IsOld(ptr));
@@ -24,7 +112,7 @@ namespace poseidon{
 
    static const constexpr int64_t kNumberOfPointers = 3;
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
-     auto ptr = TryAllocateNewWord(&page, idx);
+     auto ptr = TryAllocateWord(page, idx);
      ASSERT_TRUE(IsAllocated(ptr));
    }
 
@@ -42,7 +130,7 @@ namespace poseidon{
    static const constexpr int64_t kNumberOfMarkedPointers = 3;
 
    for(auto idx = 0; idx < kNumberOfUnmarkedPointers; idx++){
-     auto ptr = TryAllocateNewWord(&page, idx);
+     auto ptr = TryAllocateWord(page, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(page.Contains(ptr->GetStartingAddress()));
      ASSERT_TRUE(IsWord(ptr, idx));
@@ -50,7 +138,7 @@ namespace poseidon{
    }
 
    for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto ptr = TryAllocateMarkedWord(&page, idx);
+     auto ptr = TryAllocateMarkedWord(page, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(page.Contains(ptr->GetStartingAddress()));
      ASSERT_TRUE(IsWord(ptr, idx));
