@@ -13,6 +13,19 @@
 namespace poseidon{
  using namespace ::testing;
 
+ class MockFreeListNodeVisitor : public FreeListNodeVisitor {
+  public:
+   MockFreeListNodeVisitor():
+    FreeListNodeVisitor() {
+     ON_CALL(*this, Visit)
+      .WillByDefault([](FreeListNode* val) {
+        return true;
+      });
+   }
+   ~MockFreeListNodeVisitor() override = default;
+   MOCK_METHOD(bool, Visit, (FreeListNode*), (override));
+ };
+
  class MockRawObjectVisitor : public RawObjectVisitor{
   public:
    MockRawObjectVisitor():

@@ -5,7 +5,7 @@
 #include "poseidon/relaxed_atomic.h"
 
 #include "poseidon/marker/marker.h"
-#include "poseidon/collector/sweeper.h"
+#include "poseidon/sweeper/sweeper.h"
 #include "poseidon/collector/compactor.h"
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/collector/collector.h"
@@ -50,8 +50,7 @@ namespace poseidon{
 
    TIMED_SECTION("MajorCollection", {
      //TODO: mark objects
-
-     Sweeper::Sweep();
+     //TODO: sweep objects
      //Compactor::SerialCompact();
    });
  }

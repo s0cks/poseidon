@@ -2,11 +2,10 @@
 #define POSEIDON_SERIAL_SWEEPER_H
 
 #include "poseidon/heap/freelist.h"
-#include "poseidon/collector/sweeper.h"
 #include "poseidon/sweeper/sweeper_base.h"
 
 namespace poseidon {
- class SerialSweeper : public SweeperBase<false> {
+ class SerialSweeper : public SweeperVisitor<false> {
   protected:
    FreeList* free_list_;
 
@@ -14,29 +13,21 @@ namespace poseidon {
      return free_list_;
    }
 
-   bool Visit(RawObject* ptr) override {
-     if(ptr->IsMarked())
-       return true; // don't sweep marked objects
-     Sweeper::SweepObject(free_list(), ptr);
-     return true;
-   }
-
-   bool VisitPage(Page* page) override {
-     auto current = page->GetStartingAddress();
-     while(current < page->GetEndingAddress() && ((RawObject*)current)->GetPointerSize() > 0){
-       auto ptr = (RawObject*)current;
-       auto size = ptr->GetTotalSize();
-
-       if(!Visit(ptr))
-         return false;
-
-       current += size;
-     }
-     return true;
-   }
+   bool Visit(RawObject* raw) override;
   public:
-   SerialSweeper() = default;
+   explicit SerialSweeper(FreeList* free_list):
+    SweeperVisitor<false>(),
+    free_list_(free_list) {
+   }
    ~SerialSweeper() override = default;
+
+   bool SweepPage(Page* page) override {
+     TIMED_SECTION("SweepPage", {
+       if(!page->VisitPointers(this))
+         return false;
+     });
+     return true;
+   }
  };
 }
 

@@ -46,7 +46,7 @@ namespace poseidon {
 //   }
 // };
 
- class ParallelSweeper : public SweeperBase<true> {
+ class ParallelSweeper : public SweeperVisitor<true> {
    friend class ParallelSweeperTask;
   protected:
    bool VisitPage(Page* page) override {
@@ -60,7 +60,7 @@ namespace poseidon {
    }
   public:
    explicit ParallelSweeper():
-    SweeperBase<true>() {
+       SweeperVisitor<true>() {
    }
    ~ParallelSweeper() override = default;
  };

@@ -271,6 +271,7 @@ namespace poseidon{
     friend class NewZone;
     friend class OldZone;
     friend class Compactor;
+    friend class FreeList;
    private:
     RelaxedAtomic<RawObjectTag> tag_;
     RelaxedAtomic<uword> forwarding_; //TODO: merge w/ ObjectTag

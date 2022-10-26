@@ -11,6 +11,14 @@ namespace poseidon {
   protected:
    MarkerVisitor() = default;
 
+   virtual bool Mark(RawObject* raw) {
+     DLOG(INFO) << "marking " << raw->ToString();
+     TIMED_SECTION("MarkObject", {
+       raw->SetMarkedBit();
+       return raw->IsMarked();
+     });
+   }
+
    bool VisitPage(Page* page) override {
      return MarkPage(page);
    }
@@ -25,7 +33,6 @@ namespace poseidon {
      return Parallel;
    }
 
-   virtual bool Mark(RawObject* raw) = 0;
    virtual bool MarkPage(Page* page) = 0;
 
    virtual bool MarkAllRoots() {
@@ -35,14 +42,16 @@ namespace poseidon {
          page->VisitObjects(this);
          page = page->GetNext();
        }
-       return true;
      });
+     return true;
    }
 
    virtual bool MarkAllPages(Zone& zone) {
      TIMED_SECTION("MarkAllPages", {
-       zone.VisitPages(this);
+       if(!zone.VisitPages(this))
+         return false;
      });
+     return true;
    }
 
    virtual bool MarkAll(Zone& zone) {
@@ -56,8 +65,8 @@ namespace poseidon {
          LOG(WARNING) << "cannot mark all pages";
          return false;
        }
-       return true;
      });
+     return true;
    }
  };
 }

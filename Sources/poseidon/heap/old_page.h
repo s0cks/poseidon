@@ -11,6 +11,7 @@ namespace poseidon{
  class OldZone;
  class OldPage : public Page{
    friend class OldPageTest;
+   friend class SerialSweeperTest;
   protected:
    uword TryAllocate(ObjectSize size) override;
   public:

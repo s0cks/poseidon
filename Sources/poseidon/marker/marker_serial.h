@@ -11,15 +11,10 @@ namespace poseidon {
 
    bool MarkPage(Page* page) override {
      TIMED_SECTION("MarkPage", {
-       return page->VisitPointers(this);
+       if(!page->VisitPointers(this))
+         return false;
      });
-   }
-
-   bool Mark(RawObject* raw) override {
-     TIMED_SECTION("Mark", {
-       raw->SetMarkedBit();
-       return raw->IsMarked();
-     });
+     return true;
    }
  };
 }

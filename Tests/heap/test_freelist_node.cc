@@ -17,18 +17,19 @@ namespace poseidon {
    MemoryRegion region(1 * kMB);
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
 
-   auto node = FreeListNode::Of(region);
+   auto node = FreeListNode::NewNode(region);
    ASSERT_EQ(node->GetStartingAddress(), region.GetStartingAddress());
    ASSERT_EQ(node->GetSize(), region.GetSize());
    ASSERT_EQ(node->GetEndingAddress(), region.GetEndingAddress());
+   ASSERT_EQ(node->GetNextAddress(), node->GetEndingAddress());
  }
 
  TEST_F(FreeListNodeTest, TestEquals) {
    MemoryRegion region(1 * kMB);
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
 
-   auto a = FreeListNode::Of(region);
-   auto b = FreeListNode::Of(region);
+   auto a = FreeListNode::NewNode(region);
+   auto b = FreeListNode::NewNode(region);
    ASSERT_EQ(a, b);
  }
 }

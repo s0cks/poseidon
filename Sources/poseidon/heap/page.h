@@ -51,12 +51,14 @@ namespace poseidon{
       ~PageIterator() override = default;
 
       bool HasNext() const override {
-        return current_address() < page()->GetCurrentAddress();
+        return current_address() < page()->GetEndingAddress()
+            && current_ptr()->IsOld()
+            && current_ptr()->GetSize() > 0;
       }
 
       RawObject* Next() override {
         auto next = current_ptr();
-        current_ += next->GetTotalSize();
+        current_ += next->GetSize();
         return next;
       }
     };

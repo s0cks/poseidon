@@ -5,19 +5,25 @@
 
 namespace poseidon {
  template<bool Parallel>
- class SweeperBase : public RawObjectVisitor, public PageVisitor {
+ class SweeperVisitor : public RawObjectVisitor, public PageVisitor {
   protected:
-   SweeperBase() = default;
+   SweeperVisitor() = default;
+
+   bool VisitPage(Page* page) override {
+     return SweepPage(page);
+   }
   public:
-   ~SweeperBase() override = default;
+   ~SweeperVisitor() override = default;
 
    virtual inline bool IsParallel() const {
      return Parallel;
    }
 
-   inline bool Sweep(Page* page) {
-     TIMED_SECTION("SweepPage", {
-       return PageVisitor::VisitPage(page);
+   virtual bool SweepPage(Page* page) = 0;
+
+   virtual bool Sweep(OldZone& zone) {
+     TIMED_SECTION("SweepOldZone", {
+       return zone.VisitPages(this); //TODO: visit marked pages
      });
    }
  };

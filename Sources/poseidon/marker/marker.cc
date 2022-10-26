@@ -33,4 +33,8 @@ namespace poseidon {
    ClearMarking();
    return true;
  }
+
+ bool Marker::MarkRoots() {
+
+ }
 }

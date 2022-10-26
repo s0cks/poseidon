@@ -44,6 +44,62 @@ namespace poseidon {
    ~SerialMarkerTest() override = default;
  };
 
+ TEST_F(SerialMarkerTest, TestMarkRoots) {
+   LocalPage::ResetLocalPageForCurrentThread();
+
+   MemoryRegion region(GetNewPageSize());
+   NewPage page(0, region);
+
+   static const constexpr word kAValue = 10;
+   auto a = TryAllocateWord(page, kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsNew(a));
+   ASSERT_FALSE(IsMarked(a));
+   ASSERT_TRUE(IsWord(a, kAValue));
+   ASSERT_TRUE(page.Contains(*a));
+   Local<word> l1;
+   l1 = a->GetStartingAddress();
+
+   static const constexpr word kBValue = 33;
+   auto b = TryAllocateWord(page, kBValue);
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsNew(b));
+   ASSERT_FALSE(IsMarked(b));
+   ASSERT_TRUE(IsWord(b, kBValue));
+   ASSERT_TRUE(page.Contains(*b));
+
+   static const constexpr word kCValue = 66;
+   auto c = TryAllocateWord(page, kCValue);
+   ASSERT_TRUE(IsAllocated(c));
+   ASSERT_TRUE(IsNew(c));
+   ASSERT_FALSE(IsMarked(c));
+   ASSERT_TRUE(IsWord(c, kCValue));
+   ASSERT_TRUE(page.Contains(*c));
+   Local<word> l3;
+   l3 = c->GetStartingAddress();
+
+   SerialMarker marker;
+   ASSERT_TRUE(marker.MarkAllRoots());
+
+   ASSERT_TRUE(IsAllocated(l1));
+   ASSERT_TRUE(IsNew(l1));
+   ASSERT_TRUE(IsMarked(l1));
+   ASSERT_TRUE(IsWord(l1, kAValue));
+   ASSERT_TRUE(page.Contains(*l1.raw()));
+
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsNew(b));
+   ASSERT_FALSE(IsMarked(b));
+   ASSERT_TRUE(IsWord(b, kBValue));
+   ASSERT_TRUE(page.Contains(*b));
+
+   ASSERT_TRUE(IsAllocated(l3));
+   ASSERT_TRUE(IsNew(l3));
+   ASSERT_TRUE(IsMarked(l3));
+   ASSERT_TRUE(IsWord(l3, kCValue));
+   ASSERT_TRUE(page.Contains(*l3.raw()));
+ }
+
  TEST_F(SerialMarkerTest, TestMark) {
    MemoryRegion region(GetNewPageSize());
    NewPage page(0, region);
@@ -64,7 +120,7 @@ namespace poseidon {
    ASSERT_TRUE(IsWord(b, kBValue));
    ASSERT_TRUE(page.Contains(*b));
 
-   static const constexpr word kCValue = 33;
+   static const constexpr word kCValue = 66;
    auto c = TryAllocateWord(page, kCValue);
    ASSERT_TRUE(IsAllocated(c));
    ASSERT_TRUE(IsNew(c));

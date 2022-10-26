@@ -16,6 +16,7 @@ namespace poseidon {
  };
 
  class FreeListNode : public Region {
+   friend class FreeList;
   protected:
    RelaxedAtomic<RawObjectTag> tag_;
    RelaxedAtomic<uword> forwarding_;
@@ -39,23 +40,43 @@ namespace poseidon {
    inline void SetSize(const ObjectSize size) {
      set_raw_tag(ObjectTag::SizeTag::Update(size, raw_tag())); //TODO: cleanup
    }
+
+   inline void SetNextAddress(const uword value) {
+     forwarding_ = value;
+   }
+
+   inline void SetNext(FreeListNode* node) {
+     return SetNextAddress(node->GetStartingAddress());
+   }
+
+   inline void SetOldBit(bool value = true) {
+     set_raw_tag(ObjectTag::OldBit::Update(value, raw_tag()));
+   }
+
+   inline void ClearOldBit() {
+     return SetOldBit(false);
+   }
   public:
    FreeListNode():
     Region(),
     tag_(),
     forwarding_() {
+     SetSize(0);
+     SetNextAddress(0);
    }
    explicit FreeListNode(const ObjectSize size):
     Region(),
     tag_(),
     forwarding_() {
      SetSize(size);
+     SetNextAddress(GetStartingAddress() + GetSize());
    }
    explicit FreeListNode(const Region& region):
     Region(region),
     tag_(),
     forwarding_() {
      SetSize(region.GetSize());
+     SetNextAddress(GetStartingAddress() + GetSize());
    }
    FreeListNode(const FreeListNode& rhs) = default;
    ~FreeListNode() override = default;
@@ -64,16 +85,33 @@ namespace poseidon {
      return (uword)this;
    }
 
+   inline uword GetAddress() const {
+     return GetStartingAddress();
+   }
+
    ObjectSize GetSize() const override {
      return ObjectTag::SizeTag::Decode(raw_tag());
+   }
+
+   bool IsOld() const {
+     return ObjectTag::OldBit::Decode(raw_tag());
+   }
+
+   uword GetNextAddress() const {
+     return (uword)forwarding_;
+   }
+
+   FreeListNode* GetNext() const {
+     return (FreeListNode*)GetNextAddress();
    }
 
    FreeListNode& operator=(const FreeListNode& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const FreeListNode& val) {
      stream << "FreeListNode(";
-     stream << "start=" <<  val.GetStartingAddress() << ", ";
-     stream << "size=" << val.GetSize();
+     stream << "start=" <<  val.GetStartingAddressPointer() << ", ";
+     stream << "size=" << val.GetSize() << ", ";
+     stream << "next=" << val.GetNext();
      stream << ")";
      return stream;
    }
@@ -89,7 +127,7 @@ namespace poseidon {
 
    //TODO: make comparable
 
-   static inline FreeListNode* Of(const MemoryRegion& region) {
+   static inline FreeListNode* NewNode(const MemoryRegion& region) {
      return new (region.GetStartingAddressPointer())FreeListNode(region.GetSize());
    }
  };
