@@ -66,6 +66,11 @@ namespace poseidon{
    SetIndex(const PageIndex value) {
      SetTag(PageTag::IndexTag::Update(value, raw_tag()));
    }
+
+   inline int64_t
+   GetAllocatableSize() {
+     return Section::GetSize();
+   }
   public:
    explicit Page(const PageIndex index, const MemoryRegion& region):
     AllocationSection(region.GetStartingAddress(), region.GetSize()),

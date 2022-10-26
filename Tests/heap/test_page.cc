@@ -38,8 +38,4 @@ namespace poseidon {
    Unmark(p1);
    ASSERT_FALSE(p1->marked());
  }
-
- TEST_F(PageTest, TestTryAllocate) {
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
- }
 }

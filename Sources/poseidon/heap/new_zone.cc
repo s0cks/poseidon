@@ -8,7 +8,6 @@ namespace poseidon{
      const auto pageOffset = (idx * page_size);
      const auto pageRegion = MemoryRegion::Subregion(region, pageOffset, page_size);
      const auto page = new NewPage(idx, pageRegion);
-     LOG(INFO) << "creating page: " << (*page);
      PutPage(page);
    }
  }

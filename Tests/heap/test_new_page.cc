@@ -1,8 +1,50 @@
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+#include "poseidon/heap/new_page.h"
+
 #include "helpers.h"
-#include "heap/test_new_page.h"
-#include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
+#define UNALLOCATED 0 //TODO: cleanup
+
+ using namespace ::testing;
+
+ class NewPageTest : public Test {
+  protected:
+   NewPageTest() = default;
+  public:
+   ~NewPageTest() override = default;
+ };
+
+ TEST_F(NewPageTest, TestTryAllocateWillFailEqualToZero) {
+   MemoryRegion region(GetNewPageSize());
+   NewPage page(0, region);
+   auto ptr = page.TryAllocate(0);
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+ TEST_F(NewPageTest, TestTryAllocateWillFailLessThanZero) {
+   MemoryRegion region(GetNewPageSize());
+   NewPage page(0, region);
+   auto ptr = page.TryAllocate(-1);
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+ TEST_F(NewPageTest, TestTryAllocateWillFailEqualToPageSize) {
+   MemoryRegion region(GetNewPageSize());
+   NewPage page(0, region);
+   auto ptr = page.TryAllocate(GetNewPageSize());
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+ TEST_F(NewPageTest, TestTryAllocateWillFailGreaterThanPageSize) {
+   MemoryRegion region(GetNewPageSize());
+   NewPage page(0, region);
+   auto ptr = page.TryAllocate(GetNewPageSize() + 1);
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
  TEST_F(NewPageTest, TestTryAllocate) {
    MemoryRegion region(GetNewPageSize());
    NewPage page(0, region);

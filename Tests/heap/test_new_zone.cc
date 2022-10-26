@@ -1,8 +1,29 @@
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include "helpers.h"
-#include "helpers/assertions.h"
-#include "heap/test_new_zone.h"
+#include "poseidon/heap/new_zone.h"
 
 namespace poseidon{
+ using namespace ::testing;
+
+ class NewZoneTest : public Test {
+  protected:
+   NewZoneTest() = default;
+
+   static inline Semispace
+   GetFromspace(const NewZone& zone) {
+     return zone.GetFromspace();
+   }
+
+   static inline Semispace
+   GetTospace(const NewZone& zone) {
+     return zone.GetTospace();
+   }
+  public:
+   ~NewZoneTest() override = default;
+ };
+
  TEST_F(NewZoneTest, TestTryAllocate){
    MemoryRegion region(GetNewZoneSize());
    NewZone zone(region);
@@ -55,10 +76,10 @@ namespace poseidon{
  TEST_F(NewZoneTest, TestVisitMarkedPointers) {
    MemoryRegion region(GetNewZoneSize());
    NewZone zone(region);
-   static const constexpr int64_t kNumberOfUnmarkedPointers = 3;
    static const constexpr int64_t kNumberOfPointers = 3;
+   static const constexpr int64_t kNumberOfMarkedPointers = 3;
 
-   for(auto idx = 0; idx < kNumberOfUnmarkedPointers; idx++){
+   for(auto idx = 0; idx < kNumberOfPointers; idx++){
      auto ptr = TryAllocateNewWord(&zone, idx);
      ASSERT_TRUE(zone.Contains(ptr->GetStartingAddress()));
      ASSERT_TRUE(IsAllocated(ptr));
@@ -67,7 +88,7 @@ namespace poseidon{
      ASSERT_FALSE(IsMarked(ptr));
    }
 
-   for(auto idx = 0; idx < kNumberOfPointers; idx++){
+   for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
      auto ptr = TryAllocateMarkedWord(&zone, idx);
      ASSERT_TRUE(zone.Contains(ptr->GetStartingAddress()));
      ASSERT_TRUE(IsAllocated(ptr));
@@ -78,7 +99,7 @@ namespace poseidon{
 
    MockRawObjectVisitor visitor;
    EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfPointers);
+     .Times(kNumberOfMarkedPointers);
    ASSERT_NO_FATAL_FAILURE(zone.VisitMarkedPointers(&visitor));
  }
 }
