@@ -13,8 +13,7 @@ add_library(poseidon
     poseidon/collector/collector.h poseidon/collector/collector.cc
     poseidon/collector/compactor.h poseidon/collector/compactor.cc
     poseidon/collector/finalizer.h poseidon/collector/finalizer.cc
-    poseidon/collector/marker.h poseidon/collector/marker.cc
-    poseidon/collector/scavenger.h poseidon/collector/scavenger.cc
+        poseidon/collector/scavenger.h poseidon/collector/scavenger.cc
     poseidon/collector/sweeper.h poseidon/collector/sweeper.cc
     # heap
     poseidon/heap/heap.h poseidon/heap/heap.cc
@@ -37,14 +36,14 @@ add_library(poseidon
     poseidon/bitset.h
     poseidon/common.h
     poseidon/flags.h
-    poseidon/freelist.h poseidon/freelist.cc
+    poseidon/heap/freelist.h poseidon/heap/freelist.cc
     poseidon/local.h poseidon/local.cc
     poseidon/raw_object.h poseidon/raw_object.cc
     poseidon/relaxed_atomic.h
     poseidon/runtime.h poseidon/runtime.cc
     poseidon/task_pool.h poseidon/task_pool.cc
     poseidon/utils.h poseidon/utils.cc
-    poseidon/wsq.h poseidon/heap/section.cc poseidon/heap/page.h poseidon/reference.h poseidon/reference.cc poseidon/frontend/instruction.h poseidon/frontend/store_instruction.h poseidon/frontend/load_instruction.h poseidon/frontend/graph_entry_instr.h poseidon/frontend/block_entry_instr.h poseidon/heap/page_tag.h poseidon/heap/page_table.h poseidon/heap/page_table.cc poseidon/heap/new_page.h poseidon/heap/new_page.cc poseidon/heap/page.cc poseidon/heap/page_marker.h poseidon/region.h poseidon/heap/zone.cc poseidon/heap/old_page.cc)
+    poseidon/wsq.h poseidon/heap/section.cc poseidon/heap/page.h poseidon/reference.h poseidon/reference.cc poseidon/frontend/instruction.h poseidon/frontend/store_instruction.h poseidon/frontend/load_instruction.h poseidon/frontend/graph_entry_instr.h poseidon/frontend/block_entry_instr.h poseidon/heap/page_tag.h poseidon/heap/page_table.h poseidon/heap/page_table.cc poseidon/heap/new_page.h poseidon/heap/new_page.cc poseidon/heap/page.cc poseidon/heap/page_marker.h poseidon/region.h poseidon/heap/zone.cc poseidon/heap/old_page.cc poseidon/heap/freelist_node.h poseidon/sweeper/sweeper_stats.h poseidon/sweeper/sweeper_base.h poseidon/sweeper/sweeper_serial.h poseidon/sweeper/sweeper_parallel.h poseidon/marker/marker.h poseidon/marker/marker_visitor.h poseidon/marker/marker_serial.h poseidon/marker/marker.cc)
 target_link_libraries(poseidon
     ${CMAKE_THREAD_LIBS_INIT}
     glog::glog

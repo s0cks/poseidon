@@ -1,9 +1,11 @@
 #include "poseidon/wsq.h"
-#include "poseidon/runtime.h"
 #include "poseidon/task_pool.h"
 #include "poseidon/heap/heap.h"
 #include "poseidon/heap/old_zone.h"
+
 #include "poseidon/collector/sweeper.h"
+#include "poseidon/sweeper/sweeper_serial.h"
+#include "poseidon/sweeper/sweeper_parallel.h"
 
 namespace poseidon{
  static RelaxedAtomic<bool> sweeping(false);
@@ -19,7 +21,7 @@ namespace poseidon{
      return;
 
    DLOG(INFO) << "sweeping " << ptr->ToString();
-   free_list->Add(ptr->GetStartingAddress(), ptr->GetTotalSize());
+   //TODO: free_list->Add(ptr->GetStartingAddress(), ptr->GetTotalSize());
 #ifdef PSDN_DEBUG
    memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
 #endif//PSDN_DEBUG
@@ -67,102 +69,25 @@ namespace poseidon{
    return (int64_t)last_sweep_bytes;
  }
 
- class ParallelSweeper : public SweeperVisitorBase<true>, public PageVisitor {
-   friend class ParallelSweeperTask;
-  protected:
-   WorkStealingQueue<uword>* work_;
-   FreeList* free_list_;
-  public:
-   explicit ParallelSweeper(OldZone* zone):
-    SweeperVisitorBase<true>(zone),
-    work_(new WorkStealingQueue<uword>(1024)),
-    free_list_(zone->free_list()){
-   }
-   ~ParallelSweeper() override = default;//TODO: free work_
-
-   inline FreeList* free_list() const{
-     return free_list_;
-   }
-
-   WorkStealingQueue<uword>* work() const{
-     return work_;
-   }
-
-   bool Visit(RawObject* ptr) override{
-     if(!ptr->IsMarked())
-       work()->Push(ptr->GetStartingAddress());
-     return true;
-   }
-
-   bool Visit(Page* page) override {
-     page->VisitPointers(this);
-     return true;
-   }
-
-   void Sweep() override{
-     zone()->VisitPages(this);
-   }
- };
-
- class ParallelSweeperTask : public Task{
-   friend class ParallelSweeperTask;
-  private:
-   WorkStealingQueue<uword>* work_;
-   FreeList* free_list_;
-
-   inline FreeList* free_list() const{
-     return free_list_;
-   }
-
-   inline bool HasWork(){
-     return !work_->empty();
-   }
-
-   inline uword GetNext(){
-     return work_->Steal();
-   }
-  public:
-   explicit ParallelSweeperTask(ParallelSweeper& sweeper):
-    Task(),
-    work_(sweeper.work()),
-    free_list_(sweeper.free_list()){
-   }
-   ~ParallelSweeperTask() override = default;
-
-   const char* name() const override{
-     return "ParallelSweeperTask";
-   }
-
-   void Run() override{
-     do{
-       do{
-         uword next;
-         if((next = GetNext()) != 0){
-           Sweeper::SweepObject(free_list(), (RawObject*)next);
-         }
-       } while(HasWork());
-     } while(Sweeper::IsSweeping());
-   }
- };
-
  static inline double
  GetPercentageFreeInFreeList(OldZone* zone){
-   return GetPercentageOf(zone->free_list()->GetTotalBytesFree(), zone->GetSize());
+   return 0; //TODO: GetPercentageOf(zone->free_list()->GetTotalBytesFree(), zone->GetSize());
  }
 
  void Sweeper::SerialSweep(OldZone* old_zone){
-   SerialSweeper sweeper(old_zone);
+   SerialSweeper sweeper;
    TIMED_SECTION("SerialSweep", {
-     sweeper.Sweep();
+     old_zone->VisitPages(&sweeper);
    });
  }
 
  void Sweeper::ParallelSweep(OldZone* old_zone){
-   ParallelSweeper sweeper(old_zone);
-   Runtime::GetTaskPool()->SubmitToAll<ParallelSweeperTask>(sweeper);
-   TIMED_SECTION("ParallelSweep", {
-     sweeper.Sweep();
-   });
+   NOT_IMPLEMENTED(FATAL);//TODO: implement
+//   ParallelSweeper sweeper;
+//   Runtime::GetTaskPool()->SubmitToAll<ParallelSweeperTask>(sweeper);
+//   TIMED_SECTION("ParallelSweep", {
+//     sweeper.Sweep();
+//   });
  }
 
  void Sweeper::Sweep(){
@@ -187,13 +112,5 @@ namespace poseidon{
    double perc_free_after = GetPercentageFreeInFreeList(&old_zone);
    last_sweep_frag_perc = perc_free_after - perc_free_before;
    DLOG(INFO) << "sweeper stats (after): " << GetStats();
- }
-
- bool SerialSweeper::Visit(RawObject* ptr){
-   DLOG(INFO) << "checking: " << ptr->ToString();
-   if(ptr->IsMarked())
-     return true; // don't sweep marked objects
-   Sweeper::SweepObject(free_list(), ptr);
-   return true;
  }
 }

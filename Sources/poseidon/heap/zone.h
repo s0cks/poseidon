@@ -11,6 +11,41 @@ namespace poseidon{
    friend class ZoneTest;
    friend class RawObject;
    friend class Scavenger;
+  public:
+   class ZoneIterator : public RawObjectPointerIterator {
+    protected:
+     Zone* zone_;
+     uword current_;
+
+     inline Zone* zone() const {
+       return zone_;
+     }
+
+     inline uword current_address() const {
+       return current_;
+     }
+
+     inline RawObject* current_ptr() const {
+       return (RawObject*)current_address();
+     }
+    public:
+     explicit ZoneIterator(Zone* zone):
+      RawObjectPointerIterator(),
+      zone_(zone),
+      current_(zone->GetStartingAddress()) {
+     }
+     ~ZoneIterator() override = default;
+
+     bool HasNext() const override {
+       return current_address() < zone()->GetCurrentAddress();
+     }
+
+     RawObject* Next() override {
+       auto next = current_ptr();
+       current_ += next->GetTotalSize();
+       return next;
+     }
+   };
   protected:
    static inline int64_t
    CalculateNumberOfPages(const MemoryRegion& region, const int64_t page_size) { //TODO: cleanup
@@ -108,6 +143,10 @@ namespace poseidon{
      return region_.GetSize();
    }
 
+   int64_t GetNumberOfPages() const {
+     return pages_.size();
+   }
+
    BitSet marked_set() { //TODO: remove
      return pages().table_;
    }
@@ -150,10 +189,12 @@ namespace poseidon{
      return Unmark(pages().pages(index));
    }
 
-   virtual void VisitPages(PageVisitor* vis) const {
-     return pages_.VisitPages(vis);
+   inline bool IsMarked(const PageIndex index) const {
+     return pages_.IsMarked(pages_[index]);
    }
 
+   virtual bool VisitPages(PageVisitor* vis);
+   virtual bool VisitMarkedPages(PageVisitor* vis);
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 

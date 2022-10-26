@@ -101,6 +101,10 @@ namespace poseidon {
      page->SetMarkedBit(false);
    }
 
+   inline bool IsMarked(Page* page) const {
+     return table_.Test(page->index()) && page->marked();
+   }
+
    void VisitPages(PageVisitor* vis) const;
    void VisitMarkedPages(PageVisitor* vis) const;
    void VisitUnmarkedPages(PageVisitor* vis) const;

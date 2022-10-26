@@ -31,14 +31,14 @@ namespace poseidon{
   public:
    MockPageVisitor():
     PageVisitor() {
-     ON_CALL(*this, Visit)
+     ON_CALL(*this, VisitPage)
      .WillByDefault([](Page* val) {
        return true;
      });
    }
    ~MockPageVisitor() override = default;
 
-   MOCK_METHOD(bool, Visit, (Page*), (override));
+   MOCK_METHOD(bool, VisitPage, (Page*), (override));
  };
 
  static inline uword

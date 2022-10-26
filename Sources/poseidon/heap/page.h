@@ -15,7 +15,7 @@ namespace poseidon{
    PageVisitor() = default;
   public:
    virtual ~PageVisitor() = default;
-   virtual bool Visit(Page* page) = 0;
+   virtual bool VisitPage(Page* page) = 0;
  };
 
  class Page : public AllocationSection {

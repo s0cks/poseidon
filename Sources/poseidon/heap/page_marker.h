@@ -18,7 +18,7 @@ namespace poseidon {
      return table_;
    }
 
-   bool Visit(Page* page) override {
+   bool VisitPage(Page* page) override {
      LOG(INFO) << "marking " << (*page);
      table()->Mark(page);
      return true;

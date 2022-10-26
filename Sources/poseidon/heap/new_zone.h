@@ -14,41 +14,6 @@ namespace poseidon{
 
    friend class Heap;
    friend class NewZoneTest;
-  public:
-   class NewZoneIterator : public RawObjectPointerIterator {
-    protected:
-     NewZone* zone_;
-     uword current_;
-
-     inline NewZone* zone() const {
-       return zone_;
-     }
-
-     inline uword current_address() const {
-       return current_;
-     }
-
-     inline RawObject* current_ptr() const {
-       return (RawObject*)current_address();
-     }
-    public:
-     explicit NewZoneIterator(NewZone* zone):
-      RawObjectPointerIterator(),
-      zone_(zone),
-      current_(zone->GetStartingAddress()) {
-     }
-     ~NewZoneIterator() override = default;
-
-     bool HasNext() const override {
-       return current_address() < zone()->GetCurrentAddress();
-     }
-
-     RawObject* Next() override {
-       auto next = current_ptr();
-       current_ += next->GetTotalSize();
-       return next;
-     }
-   };
   protected:
    static inline uword
    GetFromspaceAddress(const MemoryRegion& region) {
@@ -156,8 +121,8 @@ namespace poseidon{
 
    friend bool operator==(const NewZone& lhs, const NewZone& rhs) {
      return ((const Zone&)lhs) == ((const Zone&)rhs) &&
-            lhs.fromspace() == rhs.fromspace() &&
-            lhs.tospace() == rhs.tospace();
+            lhs.GetFromspace() == rhs.GetFromspace() &&
+            lhs.GetTospace() == rhs.GetTospace();
    }
 
    friend bool operator!=(const NewZone& lhs, const NewZone& rhs) {

@@ -8,6 +8,7 @@ namespace poseidon {
  class NewPage : public Page {
    friend class NewZone;
    friend class NewPageTest;
+   friend class SerialMarkerTest;
   protected:
    uword TryAllocate(ObjectSize size) override; //TODO: change visibility
   public:

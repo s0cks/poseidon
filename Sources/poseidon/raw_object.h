@@ -79,16 +79,16 @@ namespace poseidon{
     class RememberedBit : public BitField<RawObjectTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
    private:
     RawObjectTag raw_;
-
-    inline RawObjectTag raw() const{
-      return raw_;
-    }
    public:
     explicit ObjectTag(RawObjectTag raw=kInvalidObjectTag):
       raw_(raw){
     }
     ObjectTag(const ObjectTag& rhs) = default;
     ~ObjectTag() = default;
+
+    inline RawObjectTag raw() const{
+      return raw_;
+    }
 
     ObjectTag& operator=(const ObjectTag& rhs) = default;
 
@@ -168,6 +168,14 @@ namespace poseidon{
       stream << "size=" << val.GetSize();
       stream << ")";
       return stream;
+    }
+
+    friend bool operator==(const ObjectTag& lhs, const ObjectTag& rhs) {
+      return lhs.raw() == rhs.raw();
+    }
+
+    friend bool operator!=(const ObjectTag& lhs, const ObjectTag& rhs) {
+      return lhs.raw() != rhs.raw();
     }
    public:
     static inline ObjectTag

@@ -1,7 +1,14 @@
 #include "poseidon/heap/old_zone.h"
 
 namespace poseidon{
- uword OldZone::TryAllocate(int64_t size) {
+#define UNALLOCATED 0 //TODO: cleanup
+
+ uword OldZone::TryAllocate(const ObjectSize size) {
+   if(size <= 0 || size >= GetAllocatableSize()) {
+     LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
+     return UNALLOCATED;
+   }
+
    auto ptr = (void*)free_list()->TryAllocate(size);
    auto val = new (ptr)RawObject();
    val->SetOldBit();

@@ -7,7 +7,7 @@ namespace poseidon {
    PageTableIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
-     if ((next->Contains(region) || region.Contains(*next)) && !marker.Visit(next))
+     if ((next->Contains(region) || region.Contains(*next)) && !marker.VisitPage(next))
        return;
    }
  }
@@ -15,7 +15,7 @@ namespace poseidon {
  void PageTable::VisitPages(poseidon::PageVisitor* vis) const {
    PageTableIterator iterator(this);
    while(iterator.HasNext()) {
-     if(!vis->Visit(iterator.Next()))
+     if(!vis->VisitPage(iterator.Next()))
        return;
    }
  }
@@ -24,7 +24,7 @@ namespace poseidon {
    PageTableIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
-     if(next->marked() && !vis->Visit(next))
+     if(next->marked() && !vis->VisitPage(next))
        return;
    }
  }
@@ -33,7 +33,7 @@ namespace poseidon {
    PageTableIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
-     if(!next->marked() && !vis->Visit(next))
+     if(!next->marked() && !vis->VisitPage(next))
        return;
    }
  }

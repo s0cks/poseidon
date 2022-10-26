@@ -15,7 +15,7 @@ namespace poseidon{
  }
 
  bool NewZone::VisitPointers(poseidon::RawObjectVisitor* vis){
-   NewZoneIterator iter(this);
+   ZoneIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
      if(!vis->Visit(next))
@@ -25,7 +25,7 @@ namespace poseidon{
  }
 
  bool NewZone::VisitMarkedPointers(poseidon::RawObjectVisitor* vis){
-   NewZoneIterator iter(this);
+   ZoneIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
      if(next->IsMarked() && !vis->Visit(next))

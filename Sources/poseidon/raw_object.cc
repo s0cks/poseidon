@@ -8,7 +8,7 @@ namespace poseidon{
 //   auto first = (RawObject**)from;
 //   auto last = (RawObject**)to;
 //   for(auto current = first; current <= last; current++){
-//     if(Allocator::GetHeap()->Contains((uword)*current) && !vis->Visit(current))
+//     if(Allocator::GetHeap()->Contains((uword)*current) && !vis->VisitPage(current))
 //       break;
 //   }
 //   return instance_size;

@@ -2,39 +2,24 @@
 #include <gmock/gmock.h>
 
 #include "helpers.h"
-#include "poseidon/heap/new_zone.h"
+#include "poseidon/heap/old_zone.h"
 
-namespace poseidon{
+namespace poseidon {
 #define UNALLOCATED 0 //TODO: cleanup
 
  using namespace ::testing;
 
- class NewZoneTest : public Test {
+ class OldZoneTest : public Test {
   protected:
-   NewZoneTest() = default;
-
-   static inline void
-   SwapSpaces(NewZone& zone) {
-     zone.SwapSpaces();
-   }
-
-   static inline Semispace
-   GetFromspace(const NewZone& zone) {
-     return zone.GetFromspace();
-   }
-
-   static inline Semispace
-   GetTospace(const NewZone& zone) {
-     return zone.GetTospace();
-   }
+   OldZoneTest() = default;
 
    static inline uword
-   TryAllocateBytes(NewZone& zone, const ObjectSize size) {
+   TryAllocateBytes(OldZone& zone, const ObjectSize size) {
      return zone.TryAllocate(size);
    }
 
    static inline RawObject*
-   TryAllocateWord(NewZone& zone, word value) {
+   TryAllocateWord(OldZone& zone, word value) {
      auto address = TryAllocateBytes(zone, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
@@ -44,7 +29,7 @@ namespace poseidon{
    }
 
    static inline RawObject*
-   TryAllocateMarkedWord(NewZone& zone, word value) {
+   TryAllocateMarkedWord(OldZone& zone, word value) {
      auto address = TryAllocateBytes(zone, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
@@ -54,65 +39,58 @@ namespace poseidon{
      return ptr;
    }
   public:
-   ~NewZoneTest() override = default;
+   ~OldZoneTest() override = default;
  };
 
- TEST_F(NewZoneTest, TestConstructor) {
-   MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+ TEST_F(OldZoneTest, TestConstructor) {
+   MemoryRegion region(GetOldZoneSize());
+   OldZone zone(region);
    ASSERT_EQ((const Region&)zone, (const Region&)region);
+   ASSERT_EQ(zone.GetSize(), GetOldZoneSize());
    ASSERT_EQ(zone.GetCurrentAddress(), zone.GetStartingAddress());
 
-   const int64_t semi_size = region.GetSize() / 2;
-   ASSERT_EQ(zone.semisize(), semi_size);
-
-   const uword fromspace = region.GetStartingAddress();
-   ASSERT_EQ(zone.fromspace(), fromspace);
-
-   const uword tospace = region.GetStartingAddress() + semi_size;
-   ASSERT_EQ(zone.tospace(), tospace);
+   NOT_IMPLEMENTED(ERROR);//TODO: implement
  }
 
- TEST_F(NewZoneTest, TestEquals) {
-   MemoryRegion region(GetNewZoneSize());
+ TEST_F(OldZoneTest, TestEquals) {
+   MemoryRegion region(GetOldZoneSize());
 
-   NewZone a(region);
-   NewZone b(region);
+   OldZone a(region);
+   OldZone b(region);
    ASSERT_EQ(a, b);
  }
 
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeLessThanZero) {
-   MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+ TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeLessThanZero) {
+   MemoryRegion region(GetOldZoneSize());
+   OldZone zone(region);
    auto ptr = TryAllocateBytes(zone, -1);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeEqualToZero) {
-   MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+ TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeEqualToZero) {
+   MemoryRegion region(GetOldZoneSize());
+   OldZone zone(region);
    auto ptr = TryAllocateBytes(zone, 0);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeEqualToZoneSize) {
-   MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
-   auto ptr = TryAllocateBytes(zone, GetNewZoneSize());
+ TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeEqualToZoneSize) {
+   MemoryRegion region(GetOldZoneSize());
+   OldZone zone(region);
+   auto ptr = TryAllocateBytes(zone, GetOldZoneSize());
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeGreaterThanZoneSize) {
-   MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
-   auto ptr = TryAllocateBytes(zone, GetNewZoneSize() + 1);
+ TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeGreaterThanZoneSize) {
+   MemoryRegion region(GetOldZoneSize());
+   OldZone zone(region);
+   auto ptr = TryAllocateBytes(zone, GetOldZoneSize() + 1);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocate){
+ TEST_F(OldZoneTest, TestTryAllocate){
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
-   Semispace fromspace = GetFromspace(zone);
+   OldZone zone(region);
 
    static const constexpr word kDefaultWordValue = 42;
    auto ptr = TryAllocateWord(zone, kDefaultWordValue);
@@ -123,23 +101,22 @@ namespace poseidon{
    ASSERT_FALSE(IsRemembered(ptr));
    ASSERT_FALSE(IsForwarding(ptr));
    ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
-   ASSERT_TRUE(fromspace.Contains(*ptr));
    ASSERT_TRUE(zone.IsMarked(0));
  }
 
- TEST_F(NewZoneTest, TestVisitPages) {
-   MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+ TEST_F(OldZoneTest, TestVisitPages) {
+   MemoryRegion region(GetOldZoneSize());
+   OldZone zone(region);
 
    MockPageVisitor visitor;
    EXPECT_CALL(visitor, VisitPage)
-    .Times(static_cast<int>(zone.GetNumberOfPages()));
+       .Times(static_cast<int>(zone.GetNumberOfPages()));
    ASSERT_NO_FATAL_FAILURE(zone.VisitPages(&visitor));
  }
 
- TEST_F(NewZoneTest, TestVisitMarkedPages) {
+ TEST_F(OldZoneTest, TestVisitMarkedPages) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   OldZone zone(region);
 
    static const constexpr int kNumberOfMarkedPages = 3;
    zone.Mark((PageIndex) 0);
@@ -152,9 +129,9 @@ namespace poseidon{
    ASSERT_NO_FATAL_FAILURE(zone.VisitMarkedPages(&visitor));
  }
 
- TEST_F(NewZoneTest, TestVisitPointers) {
+ TEST_F(OldZoneTest, TestVisitPointers) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   OldZone zone(region);
    static const constexpr int64_t kNumberOfPointers = 3;
 
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
@@ -166,13 +143,13 @@ namespace poseidon{
 
    MockRawObjectVisitor visitor;
    EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfPointers);
+       .Times(kNumberOfPointers);
    ASSERT_NO_FATAL_FAILURE(zone.VisitPointers(&visitor));
  }
 
- TEST_F(NewZoneTest, TestVisitMarkedPointers) {
+ TEST_F(OldZoneTest, TestVisitMarkedPointers) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   OldZone zone(region);
    static const constexpr int64_t kNumberOfPointers = 3;
    static const constexpr int64_t kNumberOfMarkedPointers = 3;
 
@@ -193,7 +170,7 @@ namespace poseidon{
 
    MockRawObjectVisitor visitor;
    EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfMarkedPointers);
+       .Times(kNumberOfMarkedPointers);
    ASSERT_NO_FATAL_FAILURE(zone.VisitMarkedPointers(&visitor));
  }
 }
