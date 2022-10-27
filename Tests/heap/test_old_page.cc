@@ -80,13 +80,13 @@ namespace poseidon{
  TEST_F(OldPageTest, TestTag) {
    static const constexpr PageIndex kDefaultPageIndex = 0;
 
-   static const constexpr RawPageTag kDefaultPageTag = PageTag::NewUnmarked(kDefaultPageIndex);
+   static const constexpr PageTag kDefaultPageTag = PageTag::New(kDefaultPageIndex);
    MemoryRegion region(GetNewPageSize());
    OldPage page(kDefaultPageIndex, region);
    SetTag(page, kDefaultPageTag);
    ASSERT_EQ(page.tag(), PageTag(kDefaultPageTag));
 
-   static const constexpr RawPageTag kUpdatedPageTag = PageTag::OldUnmarked(kDefaultPageIndex);
+   static const constexpr PageTag kUpdatedPageTag = PageTag::Old(kDefaultPageIndex);
    SetTag(page, kUpdatedPageTag);
    ASSERT_EQ(page.tag(), PageTag(kUpdatedPageTag));
  }
@@ -133,6 +133,7 @@ namespace poseidon{
      auto ptr = TryAllocateWord(page, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(page.Contains(ptr->GetStartingAddress()));
+     ASSERT_TRUE(IsOld(ptr));
      ASSERT_TRUE(IsWord(ptr, idx));
      ASSERT_FALSE(IsMarked(ptr));
    }
@@ -141,6 +142,7 @@ namespace poseidon{
      auto ptr = TryAllocateMarkedWord(page, idx);
      ASSERT_TRUE(IsAllocated(ptr));
      ASSERT_TRUE(page.Contains(ptr->GetStartingAddress()));
+     ASSERT_TRUE(IsOld(ptr));
      ASSERT_TRUE(IsWord(ptr, idx));
      ASSERT_TRUE(IsMarked(ptr));
    }

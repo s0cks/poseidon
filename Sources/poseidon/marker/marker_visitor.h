@@ -12,7 +12,7 @@ namespace poseidon {
    MarkerVisitor() = default;
 
    virtual bool Mark(RawObject* raw) {
-     DLOG(INFO) << "marking " << raw->ToString();
+     DLOG(INFO) << "marking " << (*raw);
      TIMED_SECTION("MarkObject", {
        raw->SetMarkedBit();
        return raw->IsMarked();

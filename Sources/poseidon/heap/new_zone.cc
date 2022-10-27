@@ -5,17 +5,48 @@
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
 
- void NewZone::InitializePageTable(const MemoryRegion& region, int64_t num_pages, int64_t page_size) {
-   for(auto idx = 0; idx < num_pages; idx++) {
-     const auto pageOffset = (idx * page_size);
-     const auto pageRegion = MemoryRegion::Subregion(region, pageOffset, page_size);
-     const auto page = new NewPage(idx, pageRegion);
-     PutPage(page);
-   }
+ bool NewZone::InitializePages(const MemoryRegion& region) {
+   const auto page_size = GetNewPageSize();
+   const auto num_pages = CalculateNumberOfPages(region, page_size);
+   table_ = BitSet(num_pages);
+   pages_ = new NewPage[num_pages];
+   for(num_pages_ = 0; num_pages_ < num_pages; num_pages_++)
+     pages_[num_pages_] = NewPage(num_pages_, MemoryRegion::Subregion(region, num_pages_ * page_size, page_size));
+   return num_pages_ == num_pages;
  }
 
- bool NewZone::VisitPointers(poseidon::RawObjectVisitor* vis){
-   ZoneIterator iter(this);
+ bool NewZone::VisitPages(PageVisitor* vis){
+   NewZonePageIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(!vis->VisitPage(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool NewZone::VisitMarkedPages(PageVisitor* vis){
+   NewZonePageIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(next->marked() && !vis->VisitPage(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool NewZone::VisitUnmarkedPages(PageVisitor* vis){
+   NewZonePageIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(!next->marked() && !vis->VisitPage(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool NewZone::VisitPointers(RawObjectVisitor* vis){
+   NewZoneIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
      if(!vis->Visit(next))
@@ -24,8 +55,8 @@ namespace poseidon{
    return true;
  }
 
- bool NewZone::VisitMarkedPointers(poseidon::RawObjectVisitor* vis){
-   ZoneIterator iter(this);
+ bool NewZone::VisitMarkedPointers(RawObjectVisitor* vis){
+   NewZoneIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
      if(next->IsMarked() && !vis->Visit(next))
@@ -35,7 +66,7 @@ namespace poseidon{
  }
 
  uword NewZone::TryAllocate(int64_t size){
-   if(size <= 0 || size >= GetAllocatableSize())
+   if(size <= 0 || size >= semisize())
      return UNALLOCATED;
 
    LOG(INFO) << "allocating " << Bytes(size) << " in " << (*this);
@@ -49,9 +80,9 @@ namespace poseidon{
      PSDN_CANT_ALLOCATE(FATAL, total_size, (*this));
    }
 
-   auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::NewWithSize(size));
+   auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::New(size));
    current_ += total_size;
-   MarkAll(ptr);
+   MarkAllIntersectedBy((*ptr));
    return ptr->GetStartingAddress();
  }
 }

@@ -71,10 +71,6 @@ namespace poseidon{
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
 
-   uword GetAllocatableSize() const {
-     return GetSize();
-   }
-
    uword GetStartingAddress() const override {
      return region_.GetStartingAddress();
    }

@@ -8,7 +8,7 @@ namespace poseidon{
  }
 
  void Finalizer::Finalize(RawObject* ptr){
-   DLOG(INFO) << "finalizing " << ptr->ToString() << ".";
+   DLOG(INFO) << "finalizing " << (*ptr) << ".";
    memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
 
    ptr->ClearMarkedBit();

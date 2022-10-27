@@ -5,11 +5,13 @@
 
 namespace poseidon {
  typedef int64_t PageIndex;
+
  typedef uword RawPageTag;
 
  static constexpr const RawPageTag kInvalidPageTag = 0x0;
 
  class PageTag {
+   friend class PageTagTest;
   public:
    enum Layout {
      kMarkedBitOffset = 0,
@@ -31,20 +33,39 @@ namespace poseidon {
    class NewBit : public BitField<RawPageTag, bool, kNewBitOffset, kBitsForNewBit>{};
    class OldBit : public BitField<RawPageTag, bool, kOldBitOffset, kBitsForOldBit>{};
    class IndexTag : public BitField<RawPageTag, PageIndex, kIndexTagOffset, kBitsForIndexTag>{};
-
-   static inline int
-   Compare(const PageTag& lhs, const PageTag& rhs) {
-     if(lhs.GetIndex() < rhs.GetIndex())
-       return -1;
-     else if(lhs.GetIndex() > rhs.GetIndex())
-       return +1;
-     return 0;
-   }
   private:
    RawPageTag raw_;
+
+   inline void SetMarkedBit(const bool value = true) {
+     raw_ = MarkedBit::Update(value, raw());
+   }
+
+   inline void ClearMarkedBit() {
+     return SetMarkedBit(false);
+   }
+
+   inline void SetNewBit(const bool value = true) {
+     raw_ = NewBit::Update(value, raw());
+   }
+
+   inline void ClearNewBit() {
+     return SetNewBit(false);
+   }
+
+   inline void SetOldBit(const bool value = true) {
+     raw_ = OldBit::Update(value, raw());
+   }
+
+   inline void ClearOldBit() {
+     return SetOldBit(false);
+   }
+
+   inline void SetIndex(const PageIndex value) {
+     raw_ = IndexTag::Update(value, raw());
+   }
   public:
    constexpr PageTag(const RawPageTag raw = kInvalidPageTag):
-     raw_(raw) {
+    raw_(raw) {
    }
    PageTag(const PageTag& rhs) = default;
    ~PageTag() = default;
@@ -57,58 +78,26 @@ namespace poseidon {
      return MarkedBit::Decode(raw());
    }
 
-   void SetMarkedBit(const bool value = true) {
-     raw_ = MarkedBit::Update(value, raw());
-   }
-
-   inline void
-   ClearMarkedBit() {
-     return SetMarkedBit(false);
-   }
-
    bool IsNew() const {
      return NewBit::Decode(raw());
-   }
-
-   void SetNewBit(const bool value = true) {
-     raw_ = NewBit::Update(value, raw());
-   }
-
-   inline void
-   ClearNewBit() {
-     return SetNewBit(false);
    }
 
    bool IsOld() const {
      return OldBit::Decode(raw());
    }
 
-   void SetOldBit(const bool value = true) {
-     raw_ = OldBit::Update(value, raw());
-   }
-
-   inline void
-   ClearOldBit() {
-     return SetOldBit(false);
-   }
-
    PageIndex GetIndex() const {
      return IndexTag::Decode(raw());
    }
 
-   void SetIndex(const PageIndex val) {
-     raw_ = IndexTag::Update(val, raw());
+   explicit operator RawPageTag() const {
+     return raw();
    }
 
-   PageTag& operator=(const PageTag& rhs) {
-     if(this == &rhs)
-       return *this;
-     raw_ = rhs.raw();
-     return *this;
-   }
+   PageTag& operator=(const PageTag& rhs) = default;
 
    PageTag& operator=(const RawPageTag& rhs) {
-     if(raw() == rhs)
+     if(raw_ == rhs)
        return *this;
      raw_ = rhs;
      return *this;
@@ -116,9 +105,12 @@ namespace poseidon {
 
    friend std::ostream& operator<<(std::ostream& stream, const PageTag& val) {
      stream << "PageTag(";
-     stream << "marked=" << (val.IsMarked() ? "Y" : "N") << ", ";
+     stream << "marked=" << val.IsMarked() << ", ";
+     stream << "new=" << val.IsNew() << ", ";
+     stream << "old=" << val.IsOld() << ", ";
      stream << "index=" << val.GetIndex();
-     return stream << ")";
+     stream << ")";
+     return stream;
    }
 
    friend bool operator==(const PageTag& lhs, const PageTag& rhs) {
@@ -128,48 +120,30 @@ namespace poseidon {
    friend bool operator!=(const PageTag& lhs, const PageTag& rhs) {
      return lhs.raw() != rhs.raw();
    }
-
-   friend bool operator<(const PageTag& lhs, const PageTag& rhs) {
-     return Compare(lhs, rhs) < 0;
-   }
-
-   friend bool operator>(const PageTag& lhs, const PageTag& rhs) {
-     return Compare(lhs, rhs) > 0;
+  public:
+   static inline constexpr RawPageTag
+   Empty() {
+     return kInvalidPageTag;
    }
 
    static inline constexpr RawPageTag
-   Index(const PageIndex index) {
-     return PageTag::IndexTag::Encode(index);
+   New(const PageIndex& index) {
+     return Empty() | NewBit::Encode(true) | IndexTag::Encode(index);
    }
 
    static inline constexpr RawPageTag
-   Marked(const PageIndex index) {
-     return Index(index) | PageTag::MarkedBit::Encode(true);
+   NewMarked(const PageIndex& index) {
+     return New(index) | MarkedBit::Encode(true);
    }
 
    static inline constexpr RawPageTag
-   Unmarked(const PageIndex index) {
-     return Index(index) | PageTag::MarkedBit::Encode(false);
+   Old(const PageIndex& index) {
+     return Empty() | OldBit::Encode(true) | IndexTag::Encode(index);
    }
 
    static inline constexpr RawPageTag
-   NewMarked(const PageIndex index) {
-     return Marked(index) | PageTag::NewBit::Encode(true);
-   }
-
-   static inline constexpr RawPageTag
-   NewUnmarked(const PageIndex index) {
-     return Unmarked(index) | PageTag::NewBit::Encode(true);
-   }
-
-   static inline constexpr RawPageTag
-   OldMarked(const PageIndex index) {
-     return Marked(index) | PageTag::OldBit::Encode(true);
-   }
-
-   static inline constexpr RawPageTag
-   OldUnmarked(const PageIndex index) {
-     return Unmarked(index) | PageTag::OldBit::Encode(false);
+   OldMarked(const PageIndex& index) {
+     return Old(index) | MarkedBit::Encode(true);
    }
  };
 }

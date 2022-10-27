@@ -27,7 +27,7 @@ namespace poseidon{
    if(!val)
      return AssertionSuccess();
    if(val->GetPointerSize() != 0)
-     return AssertionFailure() << val->ToString() << " is allocated.";
+     return AssertionFailure() << (*val) << " is allocated.";
 
    return AssertionSuccess();
  }
@@ -41,7 +41,7 @@ namespace poseidon{
  static inline AssertionResult
  IsNew(RawObject* val){
    if(!val->IsNew())
-     return AssertionFailure() << "Expected " << val->ToString() << " to be new.";
+     return AssertionFailure() << "Expected " << (*val) << " to be new.";
    return AssertionSuccess();
  }
 
@@ -54,7 +54,7 @@ namespace poseidon{
  static inline AssertionResult
  IsOld(RawObject* val){
    if(!val->IsOld())
-     return AssertionFailure() << "Expected " << val->ToString() << " to be old.";
+     return AssertionFailure() << "Expected " << (*val) << " to be old.";
    return AssertionSuccess();
  }
 
@@ -67,7 +67,7 @@ namespace poseidon{
  static inline AssertionResult
  IsMarked(RawObject* val){
    if(!val->IsMarked())
-     return AssertionFailure() << "Expected " << val->ToString() << " to marked.";
+     return AssertionFailure() << "Expected " << (*val) << " to marked.";
    return AssertionSuccess();
  }
 
@@ -80,7 +80,7 @@ namespace poseidon{
  static inline AssertionResult
  IsRemembered(RawObject* val){
    if(!val->IsRemembered())
-     return AssertionFailure() << "Expected " << val->ToString() << " to be remembered.";
+     return AssertionFailure() << "Expected " << (*val) << " to be remembered.";
    return AssertionSuccess();
  }
 
@@ -93,16 +93,16 @@ namespace poseidon{
  static inline AssertionResult
  IsForwarding(RawObject* val){
    if(!val->IsForwarding())
-     return AssertionFailure() << "Expected " << val->ToString() << " to be forwarding.";
+     return AssertionFailure() << "Expected " << (*val) << " to be forwarding.";
    return AssertionSuccess();
  }
 
  static inline AssertionResult
  IsForwardingTo(RawObject* val, uword address){
    if(!val->IsForwarding())
-     return AssertionFailure() << "Expected " << val->ToString() << " to be forwarding.";
+     return AssertionFailure() << "Expected " << (*val) << " to be forwarding.";
    if(val->GetForwardingAddress() != address)
-     return AssertionFailure() << "Expected " << val->ToString() << " to be forwarding to: " << ((void*)address);
+     return AssertionFailure() << "Expected " << (*val) << " to be forwarding to: " << ((void*)address);
    return AssertionSuccess();
  }
 
@@ -120,10 +120,10 @@ namespace poseidon{
  static inline AssertionResult
  IsWord(RawObject* ptr, word value){
    if(ptr->GetPointerSize() != kWordSize)
-     return AssertionFailure() << ptr->ToString() << " is not a word.";
+     return AssertionFailure() << (*ptr) << " is not a word.";
    auto lhs = *((word*)ptr->GetPointer());
    if(lhs != value)
-     return AssertionFailure() << ptr->ToString() << " (" << lhs << ") does not equal: " << value;
+     return AssertionFailure() << (*ptr) << " (" << lhs << ") does not equal: " << value;
    return AssertionSuccess();
  }
 
@@ -138,7 +138,7 @@ namespace poseidon{
    if(!IsAllocated(ptr))
      return IsAllocated(ptr);
    if(!ptr->IsNew())
-     return AssertionFailure() << ptr->ToString() << " is not new.";
+     return AssertionFailure() << (*ptr) << " is not new.";
    return IsWord(ptr, value);
  }
 
@@ -153,7 +153,7 @@ namespace poseidon{
    if(!IsAllocated(ptr))
      return IsAllocated(ptr);
    if(!ptr->IsOld())
-     return AssertionFailure() << ptr->ToString() << " is not old.";
+     return AssertionFailure() << (*ptr) << " is not old.";
    return IsWord(ptr, value);
  }
 

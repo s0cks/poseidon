@@ -21,53 +21,47 @@ namespace poseidon{
  class Page : public AllocationSection {
    friend class PageTable;
    friend class PageTest;
+   friend class NewZone;
+   friend class OldZone;
 
    friend class RawObject;//TODO: remove
    friend class NewPageTest; //TODO: remove
    friend class OldPageTest; //TODO: remove
-  public:
-    class PageIterator : public RawObjectPointerIterator {
-     protected:
-      Page* page_;
-      uword current_;
+  protected:
+   template<class T>
+   class PageIterator : public RawObjectPointerIterator {
+    protected:
+     T* page_;
+     uword current_address_;
 
-      inline Page* page() const {
-        return page_;
-      }
+     inline T* page() const {
+       return page_;
+     }
 
-      inline uword current_address() const {
-        return current_;
-      }
+     inline uword current_address() const {
+       return current_address_;
+     }
 
-      inline RawObject* current_ptr() const {
-        return (RawObject*)current_address();
-      }
-     public:
-      explicit PageIterator(Page* page):
-        RawObjectPointerIterator(),
-        page_(page),
-        current_(page->GetStartingAddress()) {
-      }
-      ~PageIterator() override = default;
+     inline RawObject* current_ptr() const {
+       return (RawObject*)current_address();
+     }
+    public:
+     explicit PageIterator(T* page):
+       page_(page),
+       current_address_(page->GetStartingAddress()) {
+     }
+     ~PageIterator() override = default;
 
-      bool HasNext() const override {
-        return current_address() < page()->GetEndingAddress()
-            && current_ptr()->IsOld()
-            && current_ptr()->GetSize() > 0;
-      }
-
-      RawObject* Next() override {
-        auto next = current_ptr();
-        current_ += next->GetSize();
-        return next;
-      }
-    };
+     RawObject* Next() override {
+       auto next = current_ptr();
+       current_address_ += next->GetTotalSize();
+       return next;
+     }
+   };
   protected:
    MemoryRegion region_;
    uword current_;
    RelaxedAtomic<RawPageTag> tag_;
-
-   Page() = default;
 
    inline void
    SetTag(const RawPageTag tag) {
@@ -117,16 +111,15 @@ namespace poseidon{
    uword TryAllocate(ObjectSize size) override;
    void Clear() override;
   public:
+   Page() = default;
    explicit Page(const PageIndex index, const MemoryRegion& region):
     AllocationSection(),
     tag_(),
     current_(region.GetStartingAddress()),
     region_(region) {
-     ClearMarkedBit();
-     ClearNewBit();
-     ClearOldBit();
      SetIndex(index);
    }
+   Page(const Page& rhs) = default;
    ~Page() override = default;
 
    uword GetStartingAddress() const override {
@@ -146,7 +139,7 @@ namespace poseidon{
    }
 
    PageTag tag() const {
-     return PageTag(raw_tag());
+     return { raw_tag() };
    }
 
    bool marked() const {
@@ -157,13 +150,12 @@ namespace poseidon{
      return PageTag::IndexTag::Decode(raw_tag());
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
-
    Page& operator=(const Page& rhs) {
      if(this == &rhs)
        return *this;
      AllocationSection::operator=(rhs);
+     region_ = rhs.region_;
+     current_ = rhs.current_;
      tag_ = rhs.raw_tag();
      return *this;
    }
@@ -176,24 +168,17 @@ namespace poseidon{
      stream << "current=" << val.GetCurrentAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
      stream << "end=" << val.GetEndingAddressPointer();
-     return stream << ")";
+     stream << ")";
+     return stream;
    }
 
    friend bool operator==(const Page& lhs, const Page& rhs) {
-     return lhs.tag() == rhs.tag()
-         && ((const AllocationSection&)lhs) == ((const AllocationSection&)rhs);
+     return ((const AllocationSection&)lhs) == ((const AllocationSection&)rhs) &&
+            lhs.raw_tag() == rhs.raw_tag();
    }
 
    friend bool operator!=(const Page& lhs, const Page& rhs) {
      return !operator==(lhs, rhs);
-   }
-
-   friend bool operator<(const Page& lhs, const Page& rhs) {
-     return lhs.tag() < rhs.tag();
-   }
-
-   friend bool operator>(const Page& lhs, const Page& rhs) {
-     return lhs.tag() > rhs.tag();
    }
  };
 }

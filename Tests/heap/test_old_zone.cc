@@ -47,9 +47,19 @@ namespace poseidon {
    OldZone zone(region);
    ASSERT_EQ((const Region&)zone, (const Region&)region);
    ASSERT_EQ(zone.GetSize(), GetOldZoneSize());
-   ASSERT_EQ(zone.GetCurrentAddress(), zone.GetStartingAddress());
 
-   NOT_IMPLEMENTED(ERROR);//TODO: implement
+   const auto page_size = GetOldPageSize();
+   const auto num_pages = GetNumberOfNewPages();
+   for(auto idx = 0; idx < num_pages; idx++) {
+     auto page_start = region.GetStartingAddress() + (idx * page_size);
+     auto page = zone.pages(idx);
+     DLOG(INFO) << "checking: " << (*page);
+     ASSERT_EQ(page->index(), idx);
+     ASSERT_TRUE(page->IsEmpty());
+     ASSERT_FALSE(page->marked());
+     ASSERT_EQ(page->GetStartingAddress(), page_start);
+     ASSERT_EQ(page->GetSize(), page_size);
+   }
  }
 
  TEST_F(OldZoneTest, TestEquals) {
@@ -95,8 +105,8 @@ namespace poseidon {
    static const constexpr word kDefaultWordValue = 42;
    auto ptr = TryAllocateWord(zone, kDefaultWordValue);
    ASSERT_TRUE(IsAllocated(ptr));
-   ASSERT_TRUE(IsNew(ptr));
-   ASSERT_FALSE(IsOld(ptr));
+   ASSERT_FALSE(IsNew(ptr));
+   ASSERT_TRUE(IsOld(ptr));
    ASSERT_FALSE(IsMarked(ptr));
    ASSERT_FALSE(IsRemembered(ptr));
    ASSERT_FALSE(IsForwarding(ptr));
@@ -115,13 +125,13 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestVisitMarkedPages) {
-   MemoryRegion region(GetNewZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    OldZone zone(region);
 
    static const constexpr int kNumberOfMarkedPages = 3;
-   zone.Mark((PageIndex) 0);
-   zone.Mark((PageIndex) 1);
-   zone.Mark((PageIndex) 3);
+   ASSERT_TRUE(zone.Mark(0));
+   ASSERT_TRUE(zone.Mark(1));
+   ASSERT_TRUE(zone.Mark(2));
 
    MockPageVisitor visitor;
    EXPECT_CALL(visitor, VisitPage)
@@ -137,7 +147,7 @@ namespace poseidon {
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
      auto ptr = TryAllocateWord(zone, idx);
      ASSERT_TRUE(IsAllocated(ptr));
-     ASSERT_TRUE(IsNew(ptr));
+     ASSERT_TRUE(IsOld(ptr));
      ASSERT_TRUE(IsWord(ptr, idx));
    }
 
@@ -156,14 +166,14 @@ namespace poseidon {
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
      auto ptr = TryAllocateWord(zone, idx);
      ASSERT_TRUE(IsAllocated(ptr));
-     ASSERT_TRUE(IsNew(ptr));
+     ASSERT_TRUE(IsOld(ptr));
      ASSERT_TRUE(IsWord(ptr, idx));
    }
 
    for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
      auto ptr = TryAllocateMarkedWord(zone, idx);
      ASSERT_TRUE(IsAllocated(ptr));
-     ASSERT_TRUE(IsNew(ptr));
+     ASSERT_TRUE(IsOld(ptr));
      ASSERT_TRUE(IsMarked(ptr));
      ASSERT_TRUE(IsWord(ptr, idx));
    }

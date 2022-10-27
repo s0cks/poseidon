@@ -68,7 +68,7 @@ namespace poseidon{
    }
    ~BitSet() = default;
 
-   void Set(int64_t idx, bool val){
+   void Set(int64_t idx, const bool val = true){
      PSDN_ASSERT(idx >= 0);
      PSDN_ASSERT(idx < GetLengthInBits(size()));
      uword mask = (static_cast<uword>(1) << (idx & (kBitsPerWord - 1)));

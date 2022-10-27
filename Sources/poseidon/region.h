@@ -47,6 +47,10 @@ namespace poseidon {
      return Contains(rhs.GetStartingAddress()) || Contains(rhs.GetEndingAddress());
    }
 
+   virtual inline bool Contains(const RawObject* ptr) const {
+     return Contains((const Region&) (*ptr));
+   }
+
    friend bool operator==(const Region& lhs, const Region& rhs) {
      return Compare(lhs, rhs) == 0;
    }

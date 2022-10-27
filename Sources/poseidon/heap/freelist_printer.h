@@ -6,7 +6,7 @@
 namespace poseidon {
  class FreeListPrinter : public FreeListNodeVisitor {
   protected:
-   bool Visit(FreeListNode* node) override {
+   bool Visit(FreeObject* node) override {
      LOG(INFO) << " - " << (*node);
      return true;
    }

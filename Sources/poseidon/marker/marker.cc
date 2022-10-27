@@ -35,6 +35,7 @@ namespace poseidon {
  }
 
  bool Marker::MarkRoots() {
-
+   NOT_IMPLEMENTED(FATAL); //TODO: implement
+   return false;
  }
 }

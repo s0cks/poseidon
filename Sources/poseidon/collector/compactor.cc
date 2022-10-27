@@ -61,13 +61,13 @@ namespace poseidon{
    }
 
    inline int64_t Forward(RawObject* ptr){ //TODO: need to copy object over
-     DLOG(INFO) << "forwarding " << ptr->ToString() << " to " << free_ptr();
+     DLOG(INFO) << "forwarding " << (*ptr) << " to " << free_ptr();
      ptr->SetForwardingAddress(free_ptr()->GetStartingAddress());
      return ptr->GetTotalSize();
    }
 
    inline int64_t CopyObject(RawObject* src, RawObject* dst){
-     DLOG(INFO) << "copying " << src->ToString() << " to " << dst->ToString();
+     DLOG(INFO) << "copying " << (*src) << " to " << (*dst);
      new (dst)RawObject();
      dst->SetPointerSize(src->GetPointerSize());
      dst->SetOldBit();

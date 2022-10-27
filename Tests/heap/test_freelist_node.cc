@@ -17,7 +17,7 @@ namespace poseidon {
    MemoryRegion region(1 * kMB);
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
 
-   auto node = FreeListNode::NewNode(region);
+   auto node = FreeObject::NewNode(region);
    ASSERT_EQ(node->GetStartingAddress(), region.GetStartingAddress());
    ASSERT_EQ(node->GetSize(), region.GetSize());
    ASSERT_EQ(node->GetEndingAddress(), region.GetEndingAddress());
@@ -28,8 +28,8 @@ namespace poseidon {
    MemoryRegion region(1 * kMB);
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
 
-   auto a = FreeListNode::NewNode(region);
-   auto b = FreeListNode::NewNode(region);
+   auto a = FreeObject::NewNode(region);
+   auto b = FreeObject::NewNode(region);
    ASSERT_EQ(a, b);
  }
 }

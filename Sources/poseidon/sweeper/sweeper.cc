@@ -13,7 +13,7 @@ namespace poseidon {
  }
 
  bool Sweeper::SweepObject(FreeList* free_list, RawObject* raw) { //TODO: cleanup
-   DLOG(INFO) << "sweeping " << raw->ToString();
+   DLOG(INFO) << "sweeping " << (*raw);
    return free_list->Insert(raw->GetStartingAddress(), raw->GetTotalSize());
  }
 

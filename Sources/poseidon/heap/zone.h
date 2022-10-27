@@ -7,17 +7,18 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- class Zone : public AllocationSection {
+ class Zone : public Section {
    friend class ZoneTest;
    friend class RawObject;
    friend class Scavenger;
   public:
+   template<class T>
    class ZoneIterator : public RawObjectPointerIterator {
     protected:
-     Zone* zone_;
+     T* zone_;
      uword current_;
 
-     inline Zone* zone() const {
+     inline T* zone() const {
        return zone_;
      }
 
@@ -29,16 +30,12 @@ namespace poseidon{
        return (RawObject*)current_address();
      }
     public:
-     explicit ZoneIterator(Zone* zone):
+     explicit ZoneIterator(T* zone):
       RawObjectPointerIterator(),
       zone_(zone),
       current_(zone->GetStartingAddress()) {
      }
      ~ZoneIterator() override = default;
-
-     bool HasNext() const override {
-       return current_address() < zone()->GetCurrentAddress();
-     }
 
      RawObject* Next() override {
        auto next = current_ptr();
@@ -53,64 +50,11 @@ namespace poseidon{
    }
   protected:
    MemoryRegion region_;
-   RelaxedAtomic<MemoryRegion::ProtectionMode> mode_; //TODO: remove
-   PageTable pages_;
-   uword current_;
-
-   inline MemoryRegion::ProtectionMode
-   GetMode() const{
-     return (MemoryRegion::ProtectionMode)mode_;
-   }
-
-   inline void
-   SetMode(const MemoryRegion::ProtectionMode& mode){
-     if(!region_.Protect(mode)){
-       LOG(FATAL) << "failed to set " << (*this) << " to " << mode;
-       return;
-     }
-     DLOG(INFO) << "set " << (*this) << " to " << mode;
-     mode_ = mode;
-   }
-
-   inline void
-   SetWriteable(){
-     if(IsWritable()){
-       DLOG(WARNING) << (*this) << " is already writeable.";
-       return;
-     }
-     return SetMode(MemoryRegion::kReadWrite);
-   }
-
-   inline void
-   SetReadOnly(){
-     if(IsReadOnly()){
-       DLOG(WARNING) << (*this) << " is already read-only.";
-       return;
-     }
-     return SetMode(MemoryRegion::kReadOnly);
-   }
-
-   inline PageTable& pages() {
-     return pages_;
-   }
-
-   virtual void InitializePageTable(const MemoryRegion& region, int64_t num_pages, int64_t page_size) {
-     // do nothing, TODO: clean this up
-   }
-
-   inline void PutPage(Page* page) {
-     pages_.pages_[page->index()] = page;
-   }
-
-   void Clear() override;
+   void Clear();
   public:
    Zone():
-    AllocationSection(),
-    region_(),
-    mode_(MemoryRegion::kReadOnly),
-    current_(0),
-    pages_(0) {
-     InitializePageTable(MemoryRegion(), 0, 0);
+    Section(),
+    region_() {
    }
 
    /**
@@ -119,13 +63,9 @@ namespace poseidon{
     * @param start The starting address for the {@link Zone}
     * @param size The size of the {@link Zone}
     */
-   Zone(const MemoryRegion& region, const int64_t page_size):
-    AllocationSection(),
-    region_(region),
-    mode_(MemoryRegion::kReadOnly),
-    current_(region.GetStartingAddress()),
-    pages_(CalculateNumberOfPages(region, page_size)){
-     InitializePageTable(region, CalculateNumberOfPages(region, page_size), page_size);
+   Zone(const MemoryRegion& region):
+    Section(),
+    region_(region) {
    }
 
    Zone(const Zone& rhs) = default;
@@ -135,76 +75,19 @@ namespace poseidon{
      return region_.GetStartingAddress();
    }
 
-   uword GetCurrentAddress() const override {
-     return current_;
-   }
-
    int64_t GetSize() const override {
      return region_.GetSize();
    }
 
-   int64_t GetNumberOfPages() const {
-     return pages_.size();
-   }
-
-   BitSet marked_set() { //TODO: remove
-     return pages().table_;
-   }
-
-   bool IsReadOnly() const{
-     return GetMode() == MemoryRegion::kReadOnly;
-   }
-
-   bool IsWritable() const{
-     return GetMode() == MemoryRegion::kReadWrite;
-   }
-
-   inline void
-   Mark(Page* page) {
-     pages().Mark(page);
-   }
-
-   inline void
-   Mark(const PageIndex index) {
-     return Mark(pages().pages(index));
-   }
-
-   inline void
-   MarkAll(const Region& region) {
-     return pages().MarkAll(region);
-   }
-
-   inline void
-   MarkAll(const RawObject* ptr) {
-     return MarkAll((*ptr));
-   }
-
-   inline void
-   Unmark(Page* page) {
-     pages().Unmark(page);
-   }
-
-   inline void
-   Unmark(const PageIndex index) {
-     return Unmark(pages().pages(index));
-   }
-
-   inline bool IsMarked(const PageIndex index) const {
-     return pages_.IsMarked(pages_[index]);
-   }
-
-   virtual bool VisitPages(PageVisitor* vis);
-   virtual bool VisitMarkedPages(PageVisitor* vis);
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   virtual bool VisitPages(PageVisitor* vis) = 0;
+   virtual bool VisitMarkedPages(PageVisitor* vis) = 0;
+   virtual bool VisitUnmarkedPages(PageVisitor* vis) = 0;
 
    Zone& operator=(const Zone& rhs){
      if(*this == rhs)
        return *this;
-     AllocationSection::operator=(rhs);
+     Section::operator=(rhs);
      region_ = rhs.region_;
-     mode_ = rhs.GetMode();
-     current_ = rhs.GetCurrentAddress();
      return *this;
    }
 

@@ -6,16 +6,16 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
- class FreeListNode;
+ class FreeObject;
  class FreeListNodeVisitor {
   protected:
    FreeListNodeVisitor() = default;
   public:
    virtual ~FreeListNodeVisitor() = default;
-   virtual bool Visit(FreeListNode* node) = 0;
+   virtual bool Visit(FreeObject* node) = 0;
  };
 
- class FreeListNode : public Region {
+ class FreeObject : public Region {
    friend class FreeList;
   protected:
    RelaxedAtomic<RawObjectTag> tag_;
@@ -45,7 +45,7 @@ namespace poseidon {
      forwarding_ = value;
    }
 
-   inline void SetNext(FreeListNode* node) {
+   inline void SetNext(FreeObject* node) {
      return SetNextAddress(node->GetStartingAddress());
    }
 
@@ -57,29 +57,29 @@ namespace poseidon {
      return SetOldBit(false);
    }
   public:
-   FreeListNode():
+   FreeObject():
     Region(),
     tag_(),
     forwarding_() {
      SetSize(0);
      SetNextAddress(0);
    }
-   explicit FreeListNode(const ObjectSize size):
+   explicit FreeObject(const ObjectSize size):
     Region(),
     tag_(),
     forwarding_() {
      SetSize(size);
      SetNextAddress(GetStartingAddress() + GetSize());
    }
-   explicit FreeListNode(const Region& region):
+   explicit FreeObject(const Region& region):
     Region(region),
     tag_(),
     forwarding_() {
      SetSize(region.GetSize());
      SetNextAddress(GetStartingAddress() + GetSize());
    }
-   FreeListNode(const FreeListNode& rhs) = default;
-   ~FreeListNode() override = default;
+   FreeObject(const FreeObject& rhs) = default;
+   ~FreeObject() override = default;
 
    uword GetStartingAddress() const override {
      return (uword)this;
@@ -101,14 +101,14 @@ namespace poseidon {
      return (uword)forwarding_;
    }
 
-   FreeListNode* GetNext() const {
-     return (FreeListNode*)GetNextAddress();
+   FreeObject* GetNext() const {
+     return (FreeObject*)GetNextAddress();
    }
 
-   FreeListNode& operator=(const FreeListNode& rhs) = default;
+   FreeObject& operator=(const FreeObject& rhs) = default;
 
-   friend std::ostream& operator<<(std::ostream& stream, const FreeListNode& val) {
-     stream << "FreeListNode(";
+   friend std::ostream& operator<<(std::ostream& stream, const FreeObject& val) {
+     stream << "FreeObject(";
      stream << "start=" <<  val.GetStartingAddressPointer() << ", ";
      stream << "size=" << val.GetSize() << ", ";
      stream << "next=" << val.GetNext();
@@ -116,19 +116,19 @@ namespace poseidon {
      return stream;
    }
 
-   friend bool operator==(const FreeListNode& lhs, const FreeListNode& rhs) {
+   friend bool operator==(const FreeObject& lhs, const FreeObject& rhs) {
      return ((const Region&)lhs) == ((const Region&)rhs) &&
             lhs.tag() == rhs.tag();
    }
 
-   friend bool operator!=(const FreeListNode& lhs, const FreeListNode& rhs) {
+   friend bool operator!=(const FreeObject& lhs, const FreeObject& rhs) {
      return !operator==(lhs, rhs);
    }
 
    //TODO: make comparable
 
-   static inline FreeListNode* NewNode(const MemoryRegion& region) {
-     return new (region.GetStartingAddressPointer())FreeListNode(region.GetSize());
+   static inline FreeObject* NewNode(const MemoryRegion& region) {
+     return new (region.GetStartingAddressPointer())FreeObject(region.GetSize());
    }
  };
 }

@@ -6,7 +6,7 @@ namespace poseidon{
 
  bool FreeList::Remove(const uword starting_address, const ObjectSize size) {
    auto node = GetHead();
-   FreeListNode* previous = nullptr;
+   FreeObject* previous = nullptr;
    if(node != nullptr && (node->GetStartingAddress() == starting_address && node->GetSize() == size)) {
      if(node->GetNextAddress() >= GetEndingAddress()) {
        SetHead(nullptr);
@@ -36,12 +36,12 @@ namespace poseidon{
      return false;
    }
 
-   auto new_node = new ((void*) starting_address)FreeListNode(size);
+   auto new_node = new ((void*) starting_address)FreeObject(size);
    if(IsEmpty() || GetHead()->GetSize() < size) {
      return InsertAtHead(new_node);
    }
 
-   FreeListNode* node = GetHead();
+   FreeObject* node = GetHead();
    while(node != nullptr && node->GetSize() > 0 && node->GetNextAddress() < GetEndingAddress()) {
      if(node->GetSize() > new_node->GetSize())
        break;
@@ -55,7 +55,7 @@ namespace poseidon{
    return true;
  }
 
- bool FreeList::InsertAtHead(FreeListNode* node){
+ bool FreeList::InsertAtHead(FreeObject* node){
    DLOG(INFO) << "inserting " << (*node) << " at head";
    if(IsEmpty()) {
      SetHead(node);
@@ -67,10 +67,9 @@ namespace poseidon{
    return true;
  }
 
- FreeListNode* FreeList::FindBestFit(ObjectSize size){
+ FreeObject* FreeList::FindBestFit(ObjectSize size){
    auto node = GetHead();
    while(node != nullptr && node->GetAddress() < GetEndingAddress()) {
-     DLOG(INFO) << "checking " << (*node);
      if(node->GetSize() >= size)
        return node;
      node = node->GetNext();
@@ -78,14 +77,14 @@ namespace poseidon{
    return nullptr;
  }
 
- FreeListNode* FreeList::Split(FreeListNode* parent, ObjectSize size){
+ FreeObject* FreeList::Split(FreeObject* parent, ObjectSize size){
    // we need to split from the end
    auto next_address = parent->GetStartingAddress() + size;
    auto new_size = parent->GetSize() - size;
    if(new_size <= 0)
      return nullptr;
    memset((void*) next_address, 0, new_size);
-   return new ((void*)next_address)FreeListNode(new_size);
+   return new ((void*)next_address)FreeObject(new_size);
  }
 
  uword FreeList::TryAllocate(int64_t size){

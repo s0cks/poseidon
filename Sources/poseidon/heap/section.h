@@ -13,7 +13,6 @@ namespace poseidon{
    ~Section() override = default;
    virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
    virtual bool VisitMarkedPointers(RawObjectVisitor* vis) = 0;
-
    friend bool operator==(const Section& lhs, const Section& rhs) {
      return ((const Region&)lhs) == ((const Region&)rhs);
    }
@@ -35,6 +34,10 @@ namespace poseidon{
 
    virtual bool IsFull() const {
      return GetCurrentAddress() == GetEndingAddress();
+   }
+
+   virtual int64_t GetAllocatableSize() const {
+     return GetSize();
    }
 
    virtual int64_t GetNumberOfBytesAllocated() const{

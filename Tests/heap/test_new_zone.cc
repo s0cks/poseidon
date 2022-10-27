@@ -61,7 +61,6 @@ namespace poseidon{
    MemoryRegion region(GetNewZoneSize());
    NewZone zone(region);
    ASSERT_EQ((const Region&)zone, (const Region&)region);
-   ASSERT_EQ(zone.GetCurrentAddress(), zone.GetStartingAddress());
 
    const int64_t semi_size = region.GetSize() / 2;
    ASSERT_EQ(zone.semisize(), semi_size);
@@ -71,6 +70,19 @@ namespace poseidon{
 
    const uword tospace = region.GetStartingAddress() + semi_size;
    ASSERT_EQ(zone.tospace(), tospace);
+
+   const auto page_size = GetNewPageSize();
+   const auto num_pages = GetNumberOfNewPages();
+   for(auto idx = 0; idx < num_pages; idx++) {
+     auto page_start = region.GetStartingAddress() + (idx * page_size);
+     auto page = zone.pages(idx);
+     LOG(INFO) << "validating " << (*page) << " in " << zone;
+     ASSERT_EQ(page->index(), idx);
+     ASSERT_TRUE(page->IsEmpty());
+     ASSERT_FALSE(page->marked());
+     ASSERT_EQ(page->GetStartingAddress(), page_start);
+     ASSERT_EQ(page->GetSize(), page_size);
+   }
  }
 
  TEST_F(NewZoneTest, TestEquals) {
@@ -109,7 +121,7 @@ namespace poseidon{
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocate){
+ TEST_F(NewZoneTest, TestTryAllocate_WillPass){
    MemoryRegion region(GetNewZoneSize());
    NewZone zone(region);
    Semispace fromspace = GetFromspace(zone);
@@ -123,8 +135,15 @@ namespace poseidon{
    ASSERT_FALSE(IsRemembered(ptr));
    ASSERT_FALSE(IsForwarding(ptr));
    ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
-   ASSERT_TRUE(fromspace.Contains(*ptr));
-   ASSERT_TRUE(zone.IsMarked(0));
+
+   // the object should be inside the fromspace
+   ASSERT_TRUE(fromspace.Contains(ptr));
+
+   // the object should be in the first page, and the page should be marked
+   auto first_page = (*zone.pages());
+   ASSERT_TRUE(first_page.Contains(ptr));
+   ASSERT_TRUE(first_page.marked());
+   ASSERT_TRUE(zone.IsMarked(first_page.index()));
  }
 
  TEST_F(NewZoneTest, TestVisitPages) {
@@ -142,9 +161,9 @@ namespace poseidon{
    NewZone zone(region);
 
    static const constexpr int kNumberOfMarkedPages = 3;
-   zone.Mark((PageIndex) 0);
-   zone.Mark((PageIndex) 1);
-   zone.Mark((PageIndex) 3);
+   ASSERT_TRUE(zone.Mark(0));
+   ASSERT_TRUE(zone.Mark(1));
+   ASSERT_TRUE(zone.Mark(2));
 
    MockPageVisitor visitor;
    EXPECT_CALL(visitor, VisitPage)

@@ -56,6 +56,7 @@ namespace poseidon{
 
  static constexpr int kBitsPerWordLog2 = kWordSizeLog2 + kBitsPerByteLog2;
  static constexpr int kBitsPerWord = 1 << kBitsPerWordLog2;
+ static constexpr int64_t kWordSizeInBits = kWordSize * kBitsPerWord;
 
  static constexpr uword kUWordOne = 1U;
 }

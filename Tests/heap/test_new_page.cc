@@ -105,13 +105,13 @@ namespace poseidon {
  TEST_F(NewPageTest, TestTag) {
    static const constexpr PageIndex kDefaultPageIndex = 0;
 
-   static const constexpr RawPageTag kDefaultPageTag = PageTag::NewUnmarked(kDefaultPageIndex);
+   static const constexpr RawPageTag kDefaultPageTag = PageTag::New(kDefaultPageIndex);
    MemoryRegion region(GetNewPageSize());
    NewPage page(kDefaultPageIndex, region);
    SetTag(page, kDefaultPageTag);
    ASSERT_EQ(page.tag(), PageTag(kDefaultPageTag));
 
-   static const constexpr RawPageTag kUpdatedPageTag = PageTag::OldUnmarked(kDefaultPageIndex);
+   static const constexpr RawPageTag kUpdatedPageTag = PageTag::Old(kDefaultPageIndex);
    SetTag(page, kUpdatedPageTag);
    ASSERT_EQ(page.tag(), PageTag(kUpdatedPageTag));
  }

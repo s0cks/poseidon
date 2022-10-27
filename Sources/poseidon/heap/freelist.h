@@ -20,6 +20,13 @@ namespace poseidon{ //TODO: atomic support?
    friend class FreeListTest;
    friend class SerialSweeperTest;
   public:
+   class FreeListNode {
+    protected:
+     FreeObject* item_;
+     int level;
+    public:
+   };
+
    class FreeListIterator {
     protected:
      FreeList* free_list_;
@@ -33,11 +40,11 @@ namespace poseidon{ //TODO: atomic support?
        return current_;
      }
 
-     inline FreeListNode* current_ptr() const {
-       return (FreeListNode*)current_address();
+     inline FreeObject* current_ptr() const {
+       return (FreeObject*)current_address();
      }
 
-     inline void set_current_address(FreeListNode* node) {
+     inline void set_current_address(FreeObject* node) {
        current_ = node ? node->GetAddress() : 0;
      }
     public:
@@ -53,7 +60,7 @@ namespace poseidon{ //TODO: atomic support?
               current_address() < free_list()->GetEndingAddress();
      }
 
-     virtual FreeListNode* Next() {
+     virtual FreeObject* Next() {
        auto node = current_ptr();
        current_ = node->GetNextAddress();
        return node;
@@ -61,22 +68,23 @@ namespace poseidon{ //TODO: atomic support?
    };
   protected:
    MemoryRegion region_;
-   FreeListNode* head_;
+   FreeObject* head_;
    int64_t num_nodes_;
+   int64_t level;
 
    virtual bool Remove(uword starting_address, ObjectSize size);
    virtual bool Insert(uword starting_address, ObjectSize size);
 
-   virtual inline bool Insert(FreeListNode* node) {
+   virtual inline bool Insert(FreeObject* node) {
      return Insert(node->GetStartingAddress(), node->GetSize());
    }
 
-   virtual bool InsertAtHead(FreeListNode* node);
+   virtual bool InsertAtHead(FreeObject* node);
    virtual uword TryAllocate(ObjectSize size);
-   virtual FreeListNode* FindBestFit(ObjectSize size);
-   virtual FreeListNode* Split(FreeListNode* parent, ObjectSize size);
+   virtual FreeObject* FindBestFit(ObjectSize size);
+   virtual FreeObject* Split(FreeObject* parent, ObjectSize size);
 
-   inline void SetHead(FreeListNode* node) {
+   inline void SetHead(FreeObject* node) {
      head_ = node;
      num_nodes_ = node == nullptr ? 0 : num_nodes_;
    }
@@ -93,7 +101,7 @@ namespace poseidon{ //TODO: atomic support?
      if(!region.Protect(MemoryRegion::kReadWrite)) {
        LOG(FATAL) << "failed to protect " << region;
      }
-     Insert(FreeListNode::NewNode(region));
+     Insert(FreeObject::NewNode(region));
    }
    FreeList(const FreeList& rhs) = default;
    ~FreeList() override = default;
@@ -106,7 +114,7 @@ namespace poseidon{ //TODO: atomic support?
      return region_.GetSize();
    }
 
-   virtual FreeListNode* GetHead() const {
+   virtual FreeObject* GetHead() const {
      return head_;
    }
 

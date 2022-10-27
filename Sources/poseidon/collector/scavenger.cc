@@ -69,7 +69,7 @@ namespace poseidon{
  }
 
  uword Scavenger::ScavengeObject(Semispace* tospace, RawObject* ptr){
-   DLOG(INFO) << "scavenging " << ptr->ToString();
+   DLOG(INFO) << "scavenging " << (*ptr);
    auto new_ptr = (RawObject*)tospace->TryAllocate(ptr->GetPointerSize());
    new_ptr->SetPointerSize(ptr->GetPointerSize());
    CopyObject(ptr, new_ptr);
@@ -78,7 +78,7 @@ namespace poseidon{
  }
 
  uword Scavenger::PromoteObject(OldZone* zone, RawObject* ptr){
-   DLOG(INFO) << "promoting " << ptr->ToString() << " to new zone.";
+   DLOG(INFO) << "promoting " << (*ptr) << " to new zone.";
    auto new_ptr = (RawObject*)zone->TryAllocate(ptr->GetPointerSize());
    CopyObject(ptr, new_ptr);
    last_scavenge_promoted_ += ptr;
@@ -86,7 +86,7 @@ namespace poseidon{
  }
 
  uword Scavenger::ProcessObject(Semispace* tospace, OldZone* old_zone, RawObject* ptr){
-   DLOG(INFO) << "processing " << ptr->ToString();
+   DLOG(INFO) << "processing " << (*ptr);
    if(!ptr->IsForwarding()){
      if(ptr->IsRemembered()){
        auto new_address = PromoteObject(old_zone, ptr);
@@ -104,7 +104,7 @@ namespace poseidon{
  }
 
  void Scavenger::ForwardObject(RawObject* obj, uword forwarding_address){
-   DLOG(INFO) << "forwarding " << obj->ToString() << " to " << ((RawObject*) forwarding_address)->ToString();
+   DLOG(INFO) << "forwarding " << (*obj) << " to " << (*((RawObject*) forwarding_address));
    obj->SetForwardingAddress(forwarding_address);
    PSDN_ASSERT(obj->GetForwardingAddress() == forwarding_address);
  }
@@ -140,7 +140,7 @@ namespace poseidon{
    }
 
    inline void FinalizeObject(RawObject* raw){
-     GCLOG(1) << "finalizing " << raw->ToString() << ".";
+     GCLOG(1) << "finalizing " << (*raw) << ".";
 //TODO:
 //   stats_.num_finalized_ += 1;
 //   stats_.bytes_finalized_ += obj->GetPointerSize();
@@ -302,7 +302,7 @@ namespace poseidon{
        while(address < to_.GetEndingAddress() && ((RawObject*)address)->IsNew()){
          auto ptr = (RawObject*)address;
          if(ptr->IsRemembered()){
-           DLOG(INFO) << "processing " << ptr->ToString();
+           DLOG(INFO) << "processing " << (*ptr);
            //TODO: process references from ptr
          }
          address += ptr->GetTotalSize();
