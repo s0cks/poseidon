@@ -137,11 +137,11 @@ namespace poseidon{
    ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
 
    // the object should be inside the fromspace
-   ASSERT_TRUE(fromspace.Contains(ptr));
+   ASSERT_TRUE(fromspace.Contains(*ptr));
 
    // the object should be in the first page, and the page should be marked
    auto first_page = (*zone.pages());
-   ASSERT_TRUE(first_page.Contains(ptr));
+   ASSERT_TRUE(first_page.Contains(*ptr));
    ASSERT_TRUE(first_page.marked());
    ASSERT_TRUE(zone.IsMarked(first_page.index()));
  }

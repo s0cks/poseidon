@@ -20,13 +20,17 @@ namespace poseidon{
 
  class Page : public AllocationSection {
    friend class PageTable;
-   friend class PageTest;
    friend class NewZone;
    friend class OldZone;
 
    friend class RawObject;//TODO: remove
    friend class NewPageTest; //TODO: remove
    friend class OldPageTest; //TODO: remove
+  public:
+   static inline constexpr ObjectSize
+   CalculatePageSize(const ObjectSize size) {
+     return size + kWordSize;
+   }
   protected:
    template<class T>
    class PageIterator : public RawObjectPointerIterator {
@@ -59,9 +63,9 @@ namespace poseidon{
      }
    };
   protected:
+   RelaxedAtomic<RawPageTag> tag_;
    MemoryRegion region_;
    uword current_;
-   RelaxedAtomic<RawPageTag> tag_;
 
    inline void
    SetTag(const RawPageTag tag) {

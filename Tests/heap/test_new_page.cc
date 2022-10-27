@@ -50,8 +50,7 @@ namespace poseidon {
 
  TEST_F(NewPageTest, TestConstructor) {
    static const constexpr int64_t kPageIndex = 0;
-
-   MemoryRegion region(GetNewPageSize());
+   MemoryRegion region(NewPage::CalculateNewPageSize());
    NewPage page(kPageIndex, region);
    ASSERT_EQ((const Region&)page, (const Region&)region);
    ASSERT_EQ(page.index(), kPageIndex);

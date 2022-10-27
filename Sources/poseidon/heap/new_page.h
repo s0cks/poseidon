@@ -1,6 +1,7 @@
 #ifndef POSEIDON_NEW_PAGE_H
 #define POSEIDON_NEW_PAGE_H
 
+#include "poseidon/flags.h"
 #include "poseidon/heap/page.h"
 #include "poseidon/platform/memory_region.h"
 
@@ -61,6 +62,11 @@ namespace poseidon {
 
    friend bool operator<(const NewPage& lhs, const NewPage& rhs) {
      return lhs.index() < rhs.index();
+   }
+  public:
+   static inline ObjectSize
+   CalculateNewPageSize() {
+     return CalculatePageSize(GetNewPageSize());
    }
  };
 }

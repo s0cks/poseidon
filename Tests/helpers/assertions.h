@@ -6,7 +6,7 @@
 #include "poseidon/local.h"
 #include "poseidon/raw_object.h"
 
-namespace poseidon{
+namespace poseidon{ //TODO: cleanup & organize this file
  using namespace ::testing;
 
  static inline AssertionResult

@@ -24,15 +24,19 @@ namespace poseidon {
      kBitsForOldBit = 1,
 
      kIndexTagOffset = kOldBitOffset + kBitsForOldBit,
-     kBitsForIndexTag = 32,
+     kBitsForIndexTag = 8,
 
-     kTotalBits = kBitsForMarkedBit + kBitsForNewBit + kBitsForOldBit + kBitsForIndexTag,
+     kSizeTagOffset = kIndexTagOffset + kBitsForIndexTag,
+     kBitsForSizeTag = 32,
+
+     kTotalBits = kBitsForMarkedBit + kBitsForNewBit + kBitsForOldBit + kBitsForIndexTag + kBitsForSizeTag,
    };
 
    class MarkedBit : public BitField<RawPageTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
    class NewBit : public BitField<RawPageTag, bool, kNewBitOffset, kBitsForNewBit>{};
    class OldBit : public BitField<RawPageTag, bool, kOldBitOffset, kBitsForOldBit>{};
    class IndexTag : public BitField<RawPageTag, PageIndex, kIndexTagOffset, kBitsForIndexTag>{};
+   class SizeTag : public BitField<RawPageTag, ObjectSize, kSizeTagOffset, kBitsForSizeTag>{};
   private:
    RawPageTag raw_;
 
@@ -63,6 +67,10 @@ namespace poseidon {
    inline void SetIndex(const PageIndex value) {
      raw_ = IndexTag::Update(value, raw());
    }
+
+   inline void SetSize(const ObjectSize value) {
+     raw_ = SizeTag::Update(value, raw());
+   }
   public:
    constexpr PageTag(const RawPageTag raw = kInvalidPageTag):
     raw_(raw) {
@@ -90,6 +98,10 @@ namespace poseidon {
      return IndexTag::Decode(raw());
    }
 
+   ObjectSize GetSize() const {
+     return SizeTag::Decode(raw());
+   }
+
    explicit operator RawPageTag() const {
      return raw();
    }
@@ -108,7 +120,8 @@ namespace poseidon {
      stream << "marked=" << val.IsMarked() << ", ";
      stream << "new=" << val.IsNew() << ", ";
      stream << "old=" << val.IsOld() << ", ";
-     stream << "index=" << val.GetIndex();
+     stream << "index=" << val.GetIndex() << ", ";
+     stream << "size=" << val.GetSize();
      stream << ")";
      return stream;
    }
@@ -127,23 +140,23 @@ namespace poseidon {
    }
 
    static inline constexpr RawPageTag
-   New(const PageIndex& index) {
-     return Empty() | NewBit::Encode(true) | IndexTag::Encode(index);
+   New(const PageIndex& index = 0, const ObjectSize& size = 0) {
+     return Empty() | NewBit::Encode(true) | IndexTag::Encode(index) | SizeTag::Encode(size);
    }
 
    static inline constexpr RawPageTag
-   NewMarked(const PageIndex& index) {
-     return New(index) | MarkedBit::Encode(true);
+   NewMarked(const PageIndex& index = 0, const ObjectSize size = 0) {
+     return New(index, size) | MarkedBit::Encode(true);
    }
 
    static inline constexpr RawPageTag
-   Old(const PageIndex& index) {
-     return Empty() | OldBit::Encode(true) | IndexTag::Encode(index);
+   Old(const PageIndex& index = 0, const ObjectSize size = 0) {
+     return Empty() | OldBit::Encode(true) | IndexTag::Encode(index) | SizeTag::Encode(size);
    }
 
    static inline constexpr RawPageTag
-   OldMarked(const PageIndex& index) {
-     return Old(index) | MarkedBit::Encode(true);
+   OldMarked(const PageIndex& index = 0, const ObjectSize size = 0) {
+     return Old(index, size) | MarkedBit::Encode(true);
    }
  };
 }
