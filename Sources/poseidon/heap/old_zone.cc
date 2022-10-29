@@ -3,35 +3,19 @@
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
 
- bool OldZone::VisitPages(PageVisitor* vis){
-   OldZonePageIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(!vis->VisitPage(next))
-       return false;
-   }
-   return true;
+ OldZone* OldZone::From(const MemoryRegion& region){
+   //TODO: check region size
+   return new ((void*)region.GetStartingAddressPointer())OldZone(region.GetStartingAddress() + GetHeaderSize(), region.GetSize() - GetHeaderSize(), GetNumberOfOldPages());
  }
 
- bool OldZone::VisitMarkedPages(PageVisitor* vis){
-   OldZonePageIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     DLOG(INFO) << "checking: " << (*next);
-     if(IsMarked(next->index()) && !vis->VisitPage(next))
-       return false;
-   }
-   return true;
+ bool OldZone::VisitPages(OldPageVisitor* vis){
+   NOT_IMPLEMENTED(FATAL); //TODO: implement
+   return false;
  }
 
- bool OldZone::VisitUnmarkedPages(PageVisitor* vis){
-   OldZonePageIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(!next->marked() && !vis->VisitPage(next))
-       return false;
-   }
-   return true;
+ bool OldZone::VisitMarkedPages(OldPageVisitor* vis){
+   NOT_IMPLEMENTED(FATAL); //TODO: implement
+   return false;
  }
 
  bool OldZone::VisitPointers(RawObjectVisitor* vis){
@@ -59,15 +43,17 @@ namespace poseidon{
    const auto page_size = GetOldPageSize();
    const auto num_pages = CalculateNumberOfPages(region, page_size);
    table_ = BitSet(num_pages);
-   pages_ = new OldPage[num_pages];
-   for(num_pages_ = 0; num_pages_ < num_pages; num_pages_++) {
-     const auto page_offset = num_pages_ * page_size;
-     pages_[num_pages_] = OldPage(num_pages_, MemoryRegion::Subregion(region, page_offset, page_size));
-   }
-   return num_pages_ == num_pages;
+   return false;
+//TODO: implement
+//   pages_ = new OldPage[num_pages];
+//   for(num_pages_ = 0; num_pages_ < num_pages; num_pages_++) {
+//     const auto page_offset = num_pages_ * page_size;
+//     pages_[num_pages_] = OldPage(num_pages_, MemoryRegion::Subregion(region, page_offset, page_size));
+//   }
+//   return num_pages_ == num_pages;
  }
 
- uword OldZone::TryAllocate(const ObjectSize size) { //TODO: cleanup
+ uword OldZone::TryAllocate(const ObjectSize& size) { //TODO: cleanup
    if(size <= 0 || size >= GetSize()) {
      LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
      return UNALLOCATED;

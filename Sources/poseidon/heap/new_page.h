@@ -6,6 +6,16 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
+ class NewPage;
+ class NewPageVisitor {
+  protected:
+   NewPageVisitor() = default;
+  public:
+   virtual ~NewPageVisitor() = default;
+   virtual bool VisitNewPage(NewPage* page) = 0;
+ };
+
+ class NewZone;
  class NewPage : public Page {
    friend class NewZone;
    friend class NewPageTest;
@@ -25,49 +35,35 @@ namespace poseidon {
      }
    };
   protected:
-   uword TryAllocate(ObjectSize size) override; //TODO: change visibility
-  public:
    NewPage() = default;
-   NewPage(const PageIndex index, const MemoryRegion& region):
-    Page(index, region) {
-     SetTag(PageTag::New(index));
-     LOG_IF(FATAL, !region.Protect(MemoryRegion::kReadWrite)) << "failed to protect " << region;
-   }
-   NewPage(const NewPage& rhs) = default;
-   ~NewPage() override = default;
+  public:
+   ~NewPage() override = default; //TODO: change to delete
 
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+  public:
+   int64_t GetSize() const override {
+     return GetNewPageSize();
+   }
 
-   NewPage& operator=(const NewPage& rhs) = default;
-
-   friend std::ostream& operator<<(std::ostream& stream, const NewPage& val) {
+   friend std::ostream& operator<<(std::ostream& stream, const NewPage& value) {
      stream << "NewPage(";
-     stream << "index=" << val.index() << ", ";
-     stream << "marked=" << val.marked() << ", ";
-     stream << "start=" << val.GetStartingAddressPointer() << ", ";
-     stream << "current=" << val.GetCurrentAddressPointer() << ", ";
-     stream << "size=" << Bytes(val.GetSize()) << ", ";
-     stream << "end=" << val.GetEndingAddressPointer();
-     return stream << ")";
+     stream << "start=" << value.GetStartingAddressPointer() << ", ";
+     stream << "size=" << value.GetSize();
+     stream << ")";
+     return stream;
    }
 
    friend bool operator==(const NewPage& lhs, const NewPage& rhs) {
-     return ((const Page&)lhs) == ((const Page&)rhs);
+     return lhs.GetStartingAddress() == rhs.GetStartingAddress() &&
+            lhs.GetSize() == rhs.GetSize();
    }
 
    friend bool operator!=(const NewPage& lhs, const NewPage& rhs) {
-     return ((const Page&)lhs) != ((const Page&)rhs);
+     return !operator==(lhs, rhs);
    }
 
-   friend bool operator<(const NewPage& lhs, const NewPage& rhs) {
-     return lhs.index() < rhs.index();
-   }
-  public:
-   static inline ObjectSize
-   CalculateNewPageSize() {
-     return CalculatePageSize(GetNewPageSize());
-   }
+   static NewPage* New(const MemoryRegion& region);
  };
 }
 

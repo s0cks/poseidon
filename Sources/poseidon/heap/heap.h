@@ -29,8 +29,8 @@ namespace poseidon{
    }
   private:
    MemoryRegion region_;
-   NewZone new_zone_;
-   OldZone old_zone_;
+   NewZone* new_zone_;
+   OldZone* old_zone_;
 
    uword AllocateNewObject(int64_t size);
    uword AllocateOldObject(int64_t size);
@@ -38,18 +38,18 @@ namespace poseidon{
   public:
    explicit Heap(const MemoryRegion& region):
     region_(region),
-    new_zone_(MemoryRegion::Subregion(region, 0, GetNewZoneSize())),
-    old_zone_(MemoryRegion::Subregion(region, GetNewZoneSize(), GetOldZoneSize())) {
+    new_zone_(NewZone::New(MemoryRegion::Subregion(region, 0, GetNewZoneSize()))),
+    old_zone_(OldZone::From(MemoryRegion::Subregion(region, GetNewZoneSize(), GetOldZoneSize()))) {
    }
    Heap(const Heap& rhs) = default;
    virtual ~Heap() = default;
 
    NewZone& new_zone() {
-     return new_zone_;
+     return *new_zone_;
    }
 
    OldZone& old_zone() {
-     return old_zone_;
+     return *old_zone_;
    }
 
    uword TryAllocate(int64_t size);

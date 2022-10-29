@@ -2,13 +2,13 @@
 #define POSEIDON_HEAP_NEW_ZONE_H
 
 #include "poseidon/flags.h"
+#include "poseidon/bitset.h"
 #include "poseidon/heap/zone.h"
 #include "poseidon/heap/new_page.h"
 #include "poseidon/heap/semispace.h"
-#include "poseidon/heap/page_table.h"
 
 namespace poseidon{
- class NewZone : public Zone {//TODO: pages?
+ class NewZone : public Zone { //TODO: make resizable
    template<bool Parallel>
    friend class ScavengerVisitorBase;//TODO: remove
 
@@ -30,58 +30,34 @@ namespace poseidon{
      }
    };
 
-   class NewZonePageIterator {
-    protected:
-     NewZone* zone_;
-     PageIndex current_;
-
-     inline NewZone* zone() const {
-       return zone_;
-     }
-
-     inline PageIndex current_index() const {
-       return current_;
-     }
-
-     inline NewPage* current_page() const {
-       return zone()->pages(current_index());
-     }
+   class NewZonePageIterator : public ZonePageIterator<NewZone, NewPage> {
     public:
      explicit NewZonePageIterator(NewZone* zone):
-      zone_(zone),
-      current_(0) {
+       ZonePageIterator<NewZone, NewPage>(zone, GetNumberOfNewPages()) {
      }
-     ~NewZonePageIterator() = default;
-
-     bool HasNext() const {
-       return current_index() >= 0 &&
-              current_index() < zone()->GetNumberOfPages();
-     }
-
-     NewPage* Next() {
-       auto next = current_page();
-       current_ += 1;
-       return next;
-     }
+     ~NewZonePageIterator() override = default;
    };
-  protected:
-   static inline uword
-   GetFromspaceAddress(const MemoryRegion& region) {
-     return region.GetStartingAddress();
-   }
 
-   static inline uword
-   GetTospaceAddress(const MemoryRegion& region) {
-     return region.GetStartingAddress() + GetNewZoneSemispaceSize();
+   static inline constexpr int64_t
+   GetHeaderSize() {
+     return sizeof(NewZone);
    }
   protected:
    uword current_;
    uword fromspace_;
    uword tospace_;
-   int64_t semisize_;
-   NewPage* pages_;
-   PageIndex num_pages_;
+   int64_t size_;
+   int64_t semisize_; //TODO: remove
    BitSet table_;
+
+   NewZone(const int64_t& size, const int64_t& semi_size):
+    current_(GetStartingAddress()),
+    fromspace_(GetStartingAddress()),
+    tospace_(GetStartingAddress() + semi_size),
+    size_(size),
+    semisize_(semi_size),
+    table_(GetNumberOfNewPages()) {
+   }
 
    virtual void SwapSpaces(){
      std::swap(fromspace_, tospace_);
@@ -89,7 +65,7 @@ namespace poseidon{
    }
 
    bool InitializePages(const MemoryRegion& region);
-   uword TryAllocate(int64_t size);
+   uword TryAllocate(ObjectSize size);
 
    inline MemoryRegion
    GetFromspaceRegion() const {
@@ -121,38 +97,35 @@ namespace poseidon{
      return (void*)fromspace();
    }
 
-   inline bool MarkAllIntersectedBy(const Region& region) {
-     for(auto it = pages_begin(); it != pages_end(); it++) {
-       if(it->Contains(region) && !Mark(it->index()))
-         return false;
-     }
-     return true;
+   inline uword GetPageAddressAt(const int64_t& index) const {
+     if(index < 0 || index > GetNumberOfNewPages())
+       return 0;
+     return GetStartingAddress() + (index * GetNewPageSize());
+   }
+
+   inline int64_t GetPageIndex(NewPage* page) const {
+     return static_cast<int64_t>((page->GetStartingAddress() - GetStartingAddress())) / GetNewPageSize();
    }
   public:
-   NewZone():
-     Zone(),
-     current_(0),
-     fromspace_(0),
-     tospace_(0),
-     semisize_(0),
-     pages_(nullptr),
-     num_pages_(0),
-     table_() {
-   }
-   explicit NewZone(const MemoryRegion& region):
-    Zone(region),
-    current_(region.GetStartingAddress()),
-    fromspace_(GetFromspaceAddress(region)),
-    tospace_(GetTospaceAddress(region)),
-    semisize_(GetNewZoneSemispaceSize()),
-    pages_(nullptr),
-    num_pages_(0),
-    table_() {
-     LOG_IF(FATAL, !region.Protect(MemoryRegion::kReadWrite)) << "failed to protect " << region;
-     LOG_IF(FATAL, !InitializePages(region)) << "failed to initialize pages for " << (*this);
-   }
-   NewZone(const NewZone& rhs) = default;
+   NewZone() = delete;
+   NewZone(const NewZone& rhs) = delete;
    ~NewZone() override = default;
+
+   uword GetZoneStartingAddress() const {
+     return (uword)this;
+   }
+
+   uword GetStartingAddress() const override {
+     return GetZoneStartingAddress() + GetHeaderSize();
+   }
+
+   int64_t GetSize() const override {
+     return size_;
+   }
+
+   int64_t GetTotalSize() const {
+     return GetSize() + GetHeaderSize();
+   }
 
    uword GetCurrentAddress() const {
      return current_;
@@ -174,51 +147,38 @@ namespace poseidon{
      return semisize_;
    }
 
-   PageIndex GetNumberOfPages() const {
-     return num_pages_;
-   }
-
-   NewPage* pages() const {
-     return pages_;
-   }
-
-   NewPage* pages(const PageIndex& index) const {
-     if(index < 0 || index >= num_pages_)
+   virtual NewPage* GetPageAt(const int64_t& index) const {
+     if(index < 0 || index > GetNumberOfNewPages())
        return nullptr;
-     return pages() + index;
+     return new ((void*) GetPageAddressAt(index))NewPage();
    }
 
-   NewPage* pages_begin() const {
-     return pages();
+   virtual bool IsPageMarked(const int64_t& index) const {
+     return table_.Test(index);
    }
 
-   NewPage* pages_end() const {
-     return pages() + GetNumberOfPages();
-   }
-
-   bool IsMarked(const PageIndex& index) const {
-     auto page = pages(index);
-     if(page == nullptr)
-       return false;
-     return table_.Test(index) && page->marked();
-   }
-
-   bool Mark(const PageIndex& index) {
-     auto page = pages(index);
-     if(page == nullptr)
-       return false;
-     table_.Set(index);
-     page->SetMarkedBit();
-     return IsMarked(index);
-   }
-
-   bool VisitPages(PageVisitor* vis) override;
-   bool VisitMarkedPages(PageVisitor* vis) override;
-   bool VisitUnmarkedPages(PageVisitor* vis) override;
+   bool VisitPages(NewPageVisitor* vis);
+   bool VisitMarkedPages(NewPageVisitor* vis);
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
-   NewZone& operator=(const NewZone& rhs) = default;
+   virtual void MarkAllIntersectedBy(const Region& region);
+
+   virtual inline void MarkPage(const int64_t& index) {
+     return table_.Set(index, true);
+   }
+
+   virtual inline void MarkPage(NewPage* page) {
+     return MarkPage(GetPageIndex(page));
+   }
+
+   virtual inline void UnmarkPage(const int64_t& index) {
+     return table_.Set(index, false);
+   }
+
+   virtual inline void UnmarkPage(NewPage* page) {
+     return UnmarkPage(GetPageIndex(page));
+   }
 
    friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){
      stream << "NewZone(";
@@ -230,16 +190,8 @@ namespace poseidon{
      stream << ")";
      return stream;
    }
-
-   friend bool operator==(const NewZone& lhs, const NewZone& rhs) {
-     return ((const Zone&)lhs) == ((const Zone&)rhs) &&
-            lhs.GetFromspace() == rhs.GetFromspace() &&
-            lhs.GetTospace() == rhs.GetTospace();
-   }
-
-   friend bool operator!=(const NewZone& lhs, const NewZone& rhs) {
-     return !operator==(lhs, rhs);
-   }
+  public:
+   static NewZone* New(const MemoryRegion& region);
  };
 }
 

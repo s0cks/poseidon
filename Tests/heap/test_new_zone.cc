@@ -3,38 +3,66 @@
 
 #include "helpers.h"
 #include "poseidon/heap/new_zone.h"
+#include "heap/mock_new_page_visitor.h"
 
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
 
  using namespace ::testing;
 
+ class IsNewPageMatcher {
+  protected:
+   const NewPage* expected_;
+  public:
+   using is_gtest_matcher = void;
+
+   explicit IsNewPageMatcher(const NewPage* expected):
+       expected_(expected) {
+   }
+
+   bool MatchAndExplain(NewPage* page, std::ostream*) const {
+     return (*expected_) == (*page);
+   }
+
+   void DescribeTo(std::ostream* stream) const {
+     (*stream) << "NewPage equals " << (*expected_);
+   }
+
+   void DescribeNegationTo(std::ostream* stream) const {
+     (*stream) << "NewPage does not equal " << (*expected_);
+   }
+ };
+
+ Matcher<NewPage*> NewPageEq(const NewPage* expected) {
+   return IsNewPageMatcher(expected);
+ }
+
  class NewZoneTest : public Test {
   protected:
    NewZoneTest() = default;
 
    static inline void
-   SwapSpaces(NewZone& zone) {
-     zone.SwapSpaces();
+   SwapSpaces(NewZone* zone) {
+     zone->SwapSpaces();
    }
 
    static inline Semispace
-   GetFromspace(const NewZone& zone) {
-     return zone.GetFromspace();
+   GetFromspace(const NewZone* zone) {
+     return zone->GetFromspace();
    }
 
    static inline Semispace
-   GetTospace(const NewZone& zone) {
-     return zone.GetTospace();
+   GetTospace(const NewZone* zone) {
+     return zone->GetTospace();
    }
 
    static inline uword
-   TryAllocateBytes(NewZone& zone, const ObjectSize size) {
-     return zone.TryAllocate(size);
+   TryAllocateBytes(NewZone* zone, const ObjectSize size) {
+     return zone->TryAllocate(size);
    }
 
    static inline RawObject*
-   TryAllocateWord(NewZone& zone, word value) {
+   TryAllocateWord(NewZone* zone, word value) {
      auto address = TryAllocateBytes(zone, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
@@ -44,7 +72,7 @@ namespace poseidon{
    }
 
    static inline RawObject*
-   TryAllocateMarkedWord(NewZone& zone, word value) {
+   TryAllocateMarkedWord(NewZone* zone, word value) {
      auto address = TryAllocateBytes(zone, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
@@ -57,73 +85,87 @@ namespace poseidon{
    ~NewZoneTest() override = default;
  };
 
+ static inline int64_t
+ CalculateNewZoneSize() {
+   auto size = GetNewZoneSize();
+   size += NewZone::GetHeaderSize();
+   size += (GetNumberOfNewPages() * GetNewPageSize());
+   return size;
+ }
+
  TEST_F(NewZoneTest, TestConstructor) {
-   MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
-   ASSERT_EQ((const Region&)zone, (const Region&)region);
+   MemoryRegion region(CalculateNewZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
+   ASSERT_EQ(zone->GetZoneStartingAddress(), region.GetStartingAddress());
+   ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress() + NewZone::GetHeaderSize());
+   ASSERT_EQ(zone->GetTotalSize(), region.GetSize());
+   ASSERT_EQ(zone->GetSize(), region.GetSize() - NewZone::GetHeaderSize());
+   ASSERT_EQ(zone->GetCurrentAddress(), zone->GetStartingAddress());
 
-   const int64_t semi_size = region.GetSize() / 2;
-   ASSERT_EQ(zone.semisize(), semi_size);
+   const int64_t semi_size = zone->GetSize() / 2;
+   ASSERT_EQ(zone->semisize(), semi_size);
 
-   const uword fromspace = region.GetStartingAddress();
-   ASSERT_EQ(zone.fromspace(), fromspace);
+   const uword fromspace = zone->GetStartingAddress();
+   ASSERT_EQ(zone->fromspace(), fromspace);
 
-   const uword tospace = region.GetStartingAddress() + semi_size;
-   ASSERT_EQ(zone.tospace(), tospace);
+   const uword tospace = zone->GetStartingAddress() + zone->semisize();
+   ASSERT_EQ(zone->tospace(), tospace);
 
-   const auto page_size = GetNewPageSize();
-   const auto num_pages = GetNumberOfNewPages();
-   for(auto idx = 0; idx < num_pages; idx++) {
-     auto page_start = region.GetStartingAddress() + (idx * page_size);
-     auto page = zone.pages(idx);
-     LOG(INFO) << "validating " << (*page) << " in " << zone;
-     ASSERT_EQ(page->index(), idx);
-     ASSERT_TRUE(page->IsEmpty());
-     ASSERT_FALSE(page->marked());
-     ASSERT_EQ(page->GetStartingAddress(), page_start);
-     ASSERT_EQ(page->GetSize(), page_size);
+   for(auto idx = 0; idx < GetNumberOfNewPages(); idx++) {
+     ASSERT_FALSE(zone->IsPageMarked(idx));
+     auto page = zone->GetPageAt(idx);
+     ASSERT_EQ(page->GetStartingAddress(), zone->GetStartingAddress() + (idx * GetNewPageSize()));
+     ASSERT_EQ(page->GetSize(), GetNewPageSize());
    }
  }
 
- TEST_F(NewZoneTest, TestEquals) {
-   MemoryRegion region(GetNewZoneSize());
+ //TODO: add equals & not equals tests?
 
-   NewZone a(region);
-   NewZone b(region);
-   ASSERT_EQ(a, b);
- }
-
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeLessThanZero) {
+ TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeLessThanZero) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
    auto ptr = TryAllocateBytes(zone, -1);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeEqualToZero) {
+ TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeEqualToZero) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
    auto ptr = TryAllocateBytes(zone, 0);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeEqualToZoneSize) {
+ TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeEqualToPageSize) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
+   auto ptr = TryAllocateBytes(zone, GetNewPageSize());
+   ASSERT_EQ(ptr, UNALLOCATED);
+ }
+
+ TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeEqualToZoneSize) {
+   MemoryRegion region(GetNewZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
    auto ptr = TryAllocateBytes(zone, GetNewZoneSize());
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
- TEST_F(NewZoneTest, TestTryAllocateWillFail_SizeGreaterThanZoneSize) {
+ TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeGreaterThanZoneSize) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
    auto ptr = TryAllocateBytes(zone, GetNewZoneSize() + 1);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
  TEST_F(NewZoneTest, TestTryAllocate_WillPass){
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
    Semispace fromspace = GetFromspace(zone);
 
    static const constexpr word kDefaultWordValue = 42;
@@ -140,58 +182,77 @@ namespace poseidon{
    ASSERT_TRUE(fromspace.Contains(*ptr));
 
    // the object should be in the first page, and the page should be marked
-   auto first_page = (*zone.pages());
-   ASSERT_TRUE(first_page.Contains(*ptr));
-   ASSERT_TRUE(first_page.marked());
-   ASSERT_TRUE(zone.IsMarked(first_page.index()));
+   static const int64_t kFirstPageIndex = 0;
+   ASSERT_TRUE(zone->IsPageMarked(kFirstPageIndex));
+   ASSERT_TRUE(zone->GetPageAt(kFirstPageIndex)->Contains(*ptr));
  }
 
  TEST_F(NewZoneTest, TestVisitPages) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
 
-   MockPageVisitor visitor;
-   EXPECT_CALL(visitor, VisitPage)
-    .Times(static_cast<int>(zone.GetNumberOfPages()));
-   ASSERT_NO_FATAL_FAILURE(zone.VisitPages(&visitor));
+   MockNewPageVisitor visitor;
+   EXPECT_CALL(visitor, VisitNewPage(_))
+    .Times(static_cast<int>(GetNumberOfNewPages()))
+    .WillRepeatedly(Return(true));
+   ASSERT_NO_FATAL_FAILURE(zone->VisitPages(&visitor));
  }
 
  TEST_F(NewZoneTest, TestVisitMarkedPages) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
 
-   static const constexpr int kNumberOfMarkedPages = 3;
-   ASSERT_TRUE(zone.Mark(0));
-   ASSERT_TRUE(zone.Mark(1));
-   ASSERT_TRUE(zone.Mark(2));
+   auto p1 = zone->GetPageAt(1);
+   ASSERT_NO_FATAL_FAILURE(zone->MarkPage(p1));
+   auto p2 = zone->GetPageAt(3);
+   ASSERT_NO_FATAL_FAILURE(zone->MarkPage(p2));
+   auto p3 = zone->GetPageAt(5);
+   ASSERT_NO_FATAL_FAILURE(zone->MarkPage(p3));
 
-   MockPageVisitor visitor;
-   EXPECT_CALL(visitor, VisitPage)
-       .Times(kNumberOfMarkedPages);
-   ASSERT_NO_FATAL_FAILURE(zone.VisitMarkedPages(&visitor));
+   MockNewPageVisitor visitor;
+   EXPECT_CALL(visitor, VisitNewPage(NewPageEq(p1)))
+    .Times(1)
+    .WillOnce(Return(true));
+   EXPECT_CALL(visitor, VisitNewPage(NewPageEq(p2)))
+    .Times(1)
+    .WillOnce(Return(true));
+   EXPECT_CALL(visitor, VisitNewPage(NewPageEq(p3)))
+    .Times(1)
+    .WillOnce(Return(true));
+   ASSERT_NO_FATAL_FAILURE(zone->VisitMarkedPages(&visitor));
  }
 
  TEST_F(NewZoneTest, TestVisitPointers) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
-   static const constexpr int64_t kNumberOfPointers = 3;
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
 
-   for(auto idx = 0; idx < kNumberOfPointers; idx++){
-     auto ptr = TryAllocateWord(zone, idx);
-     ASSERT_TRUE(IsAllocated(ptr));
-     ASSERT_TRUE(IsNew(ptr));
-     ASSERT_TRUE(IsWord(ptr, idx));
-   }
+   static const constexpr word kAValue = 124;
+   auto a = TryAllocateWord(zone, kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsNewWord(a, kAValue));
+
+   static const constexpr word kBValue = 512;
+   auto b = TryAllocateWord(zone, kBValue);
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsNewWord(b, kBValue));
 
    MockRawObjectVisitor visitor;
-   EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfPointers);
-   ASSERT_NO_FATAL_FAILURE(zone.VisitPointers(&visitor));
+   EXPECT_CALL(visitor, Visit(a))
+    .Times(1)
+    .WillOnce(Return(true));
+   EXPECT_CALL(visitor, Visit(b))
+    .Times(1)
+    .WillOnce(Return(true));
+   ASSERT_NO_FATAL_FAILURE(zone->VisitPointers(&visitor));
  }
 
  TEST_F(NewZoneTest, TestVisitMarkedPointers) {
    MemoryRegion region(GetNewZoneSize());
-   NewZone zone(region);
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
    static const constexpr int64_t kNumberOfPointers = 3;
    static const constexpr int64_t kNumberOfMarkedPointers = 3;
 
@@ -213,6 +274,6 @@ namespace poseidon{
    MockRawObjectVisitor visitor;
    EXPECT_CALL(visitor, Visit)
      .Times(kNumberOfMarkedPointers);
-   ASSERT_NO_FATAL_FAILURE(zone.VisitMarkedPointers(&visitor));
+   ASSERT_NO_FATAL_FAILURE(zone->VisitMarkedPointers(&visitor));
  }
 }

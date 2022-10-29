@@ -14,6 +14,8 @@ namespace poseidon{
  DECLARE_int64(old_zone_size);
  static constexpr const int64_t kDefaultOldPageSize = 16 * kMB;
  DECLARE_int64(old_page_size);
+ static constexpr const int32_t kDefaultNumberOfFreeListBuckets = 16;
+ DECLARE_int32(free_list_buckets);
 
  static constexpr const int64_t kDefaultLargeObjectSize = 1 * kMB;
  DECLARE_int64(large_object_size);
@@ -64,6 +66,11 @@ namespace poseidon{
  }
 
  static inline int64_t
+ GetNumberOfOldPages() {
+   return GetOldZoneSize() / GetOldPageSize();
+ }
+
+ static inline int64_t
  GetLargeObjectSize(){
    return FLAGS_large_object_size;
  }
@@ -81,6 +88,11 @@ namespace poseidon{
  static inline int64_t
  GetTotalInitialHeapSize(){
    return GetNewZoneSize() + GetOldZoneSize();
+ }
+
+ static inline int64_t
+ GetNumberOfFreeListBuckets() {
+   return FLAGS_free_list_buckets;
  }
 }
 

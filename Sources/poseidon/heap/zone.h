@@ -2,8 +2,8 @@
 #define POSEIDON_HEAP_ZONE_H
 
 #include "poseidon/raw_object.h"
+#include "poseidon/heap/page.h"
 #include "poseidon/heap/section.h"
-#include "poseidon/heap/page_table.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
@@ -11,14 +11,14 @@ namespace poseidon{
    friend class ZoneTest;
    friend class RawObject;
    friend class Scavenger;
-  public:
-   template<class T>
+  protected:
+   template<class Z>
    class ZoneIterator : public RawObjectPointerIterator {
     protected:
-     T* zone_;
+     Z* zone_;
      uword current_;
 
-     inline T* zone() const {
+     inline Z* zone() const {
        return zone_;
      }
 
@@ -30,7 +30,7 @@ namespace poseidon{
        return (RawObject*)current_address();
      }
     public:
-     explicit ZoneIterator(T* zone):
+     explicit ZoneIterator(Z* zone):
       RawObjectPointerIterator(),
       zone_(zone),
       current_(zone->GetStartingAddress()) {
@@ -43,61 +43,60 @@ namespace poseidon{
        return next;
      }
    };
+
+   template<class Z, class P>
+   class ZonePageIterator {
+    protected:
+     Z* zone_;
+     int64_t total_;
+     int64_t current_;
+
+     inline Z* zone() const {
+       return zone_;
+     }
+
+     inline int64_t current() const {
+       return current_;
+     }
+
+     inline int64_t total() const {
+       return total_;
+     }
+
+     explicit ZonePageIterator(Z* zone, const int64_t& total):
+      zone_(zone),
+      total_(total),
+      current_(0) {
+     }
+    public:
+     virtual ~ZonePageIterator() = default;
+
+     virtual bool HasNext() const {
+       return current() < total();
+     }
+
+     virtual P* Next() {
+       auto next = zone()->GetPageAt(current_);
+       current_ += 1;
+       return next;
+     }
+   };
+
   protected:
    static inline int64_t
    CalculateNumberOfPages(const MemoryRegion& region, const int64_t page_size) { //TODO: cleanup
      return region.GetSize() / page_size;
    }
   protected:
-   MemoryRegion region_;
-   void Clear();
+   Zone() = default;
+
+   virtual void Clear();
+
+   virtual inline void Reset() {
+     return Clear(); //TODO: refactor
+   }
   public:
-   Zone():
-    Section(),
-    region_() {
-   }
-
-   /**
-    * Create a {@link Zone} with the specified starting address and size.
-    *
-    * @param start The starting address for the {@link Zone}
-    * @param size The size of the {@link Zone}
-    */
-   Zone(const MemoryRegion& region):
-    Section(),
-    region_(region) {
-   }
-
-   Zone(const Zone& rhs) = default;
    ~Zone() override = default;
-
-   uword GetStartingAddress() const override {
-     return region_.GetStartingAddress();
-   }
-
-   int64_t GetSize() const override {
-     return region_.GetSize();
-   }
-
-   virtual bool VisitPages(PageVisitor* vis) = 0;
-   virtual bool VisitMarkedPages(PageVisitor* vis) = 0;
-   virtual bool VisitUnmarkedPages(PageVisitor* vis) = 0;
-
-   Zone& operator=(const Zone& rhs){
-     if(*this == rhs)
-       return *this;
-     Section::operator=(rhs);
-     region_ = rhs.region_;
-     return *this;
-   }
-
-   friend std::ostream& operator<<(std::ostream& stream, const Zone& zone){
-     stream << "Zone(";
-     stream << "starting_address=" << zone.GetStartingAddressPointer() << ", ";
-     stream << "total_size=" << Bytes(zone.GetSize());
-     stream << ")";
-     return stream;
-   }
  };
 }
 

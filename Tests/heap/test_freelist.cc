@@ -3,7 +3,6 @@
 #include "helpers.h"
 #include "poseidon/flags.h"
 #include "poseidon/heap/freelist.h"
-#include "poseidon/heap/freelist_printer.h"
 
 namespace poseidon {
 #define UNALLOCATED 0 //TODO: cleanup
@@ -39,41 +38,22 @@ namespace poseidon {
      (*((word*)ptr->GetObjectPointerAddress())) = value;
      return ptr;
    }
-
-   static inline bool
-   Insert(FreeList& free_list, const uword starting_address, const ObjectSize size) {
-     return free_list.Insert(starting_address, size);
-   }
-
-   static inline bool
-   Insert(FreeList& free_list, RawObject* ptr) {
-     return Insert(free_list, ptr->GetStartingAddress(), ptr->GetSize());
-   }
   public:
    ~FreeListTest() override = default;
  };
 
  TEST_F(FreeListTest, TestConstructor) {
    MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
-   ASSERT_EQ(free_list.GetNumberOfNodes(), 1);
-
-   // check head
-   auto head = free_list.GetHead();
-   ASSERT_EQ(head->GetStartingAddress(), region.GetStartingAddress());
-   ASSERT_EQ(head->GetSize(), region.GetSize());
-   ASSERT_EQ(head->GetNextAddress(), region.GetEndingAddress());
+   //TODO: ??
  }
 
- TEST_F(FreeListTest, TestEquals) {
-   MemoryRegion region(GetOldZoneSize());
-   FreeList a(region);
-   FreeList b(region);
-   ASSERT_EQ(a, b);
- }
+ //TODO: add Equals & NotEquals tests
 
  TEST_F(FreeListTest, TestTryAllocate_WillFail_SizeLessThanZero) {
    MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = TryAllocateBytes(free_list, -1);
    ASSERT_EQ(ptr, UNALLOCATED);
@@ -81,6 +61,7 @@ namespace poseidon {
 
  TEST_F(FreeListTest, TestTryAllocate_WillFail_SizeEqualsZero) {
    MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = TryAllocateBytes(free_list, 0);
    ASSERT_EQ(ptr, UNALLOCATED);
@@ -88,13 +69,72 @@ namespace poseidon {
 
  TEST_F(FreeListTest, TestTryAllocate_WillFail_SizeGreaterThanAvailable) {
    MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = TryAllocateBytes(free_list, GetOldZoneSize() + 1);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
+ TEST_F(FreeListTest, TestRemove_WillPass) {
+   MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   FreeList free_list(region);
+   ASSERT_TRUE(free_list.Remove(region.GetStartingAddress(), region.GetSize()));
+ }
+
+ TEST_F(FreeListTest, TestRemove_WillFail_NoMatchingStartingAddress) {
+   MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   FreeList free_list(region);
+   ASSERT_FALSE(free_list.Remove(region.GetStartingAddress() + kWordSize, region.GetSize()));
+ }
+
+ TEST_F(FreeListTest, TestRemove_WillFail_NoMatchingSize) {
+   MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   FreeList free_list(region);
+   ASSERT_FALSE(free_list.Remove(region.GetStartingAddress(), region.GetSize() - kWordSize));
+ }
+
+ TEST_F(FreeListTest, TestFind_WillFail_SizeLessThanZero) {
+   MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   FreeList free_list(region);
+   auto ptr = free_list.FindBestFit(-1);
+   ASSERT_EQ(ptr, nullptr);
+ }
+
+ TEST_F(FreeListTest, TestFind_WillFail_SizeEqualsZero) {
+   MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   FreeList free_list(region);
+   auto ptr = free_list.FindBestFit(0);
+   ASSERT_EQ(ptr, nullptr);
+ }
+
+ TEST_F(FreeListTest, TestFind_WillPass_SizeExact) {
+   MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   FreeList free_list(region);
+   auto ptr = free_list.FindBestFit(GetOldZoneSize());
+   ASSERT_NE(ptr, nullptr);
+   ASSERT_EQ(ptr->GetStartingAddress(), region.GetStartingAddress());
+   ASSERT_EQ(ptr->GetSize(), region.GetSize());
+ }
+
+ TEST_F(FreeListTest, TestFind_WillPass_SizeLessThanExact) {
+   MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   FreeList free_list(region);
+   auto ptr = free_list.FindBestFit(kWordSize);
+   ASSERT_NE(ptr, nullptr);
+   ASSERT_EQ(ptr->GetStartingAddress(), region.GetStartingAddress());
+   ASSERT_EQ(ptr->GetSize(), region.GetSize());
+ }
+
  TEST_F(FreeListTest, TestTryAllocate_OneObject) {
    MemoryRegion region(GetOldZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
 
    static const constexpr int64_t kDefaultWordValue = 100;
@@ -106,109 +146,43 @@ namespace poseidon {
    ASSERT_FALSE(IsRemembered(ptr));
    ASSERT_FALSE(IsForwarding(ptr));
    ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
-
-   auto new_head = free_list.GetHead();
-   ASSERT_TRUE(new_head);
-   ASSERT_EQ(new_head->GetStartingAddress(), region.GetStartingAddress() + ptr->GetTotalSize());
-   ASSERT_EQ(new_head->GetSize(), region.GetSize() - ptr->GetTotalSize());
-   ASSERT_EQ(new_head->GetNextAddress(), region.GetStartingAddress() + ptr->GetTotalSize() + new_head->GetSize());
  }
 
- TEST_F(FreeListTest, TestTryAllocate_MultipleObjects) {
-   MemoryRegion region(GetOldZoneSize());
-   FreeList free_list(region);
+//TODO:
+// TEST_F(FreeListTest, TestInsert_WillPass) {
+//   MemoryRegion region(GetOldZoneSize());
+//   FreeList free_list(region);
+//   static const constexpr int64_t kAValue = 100;
+//   auto a = TryAllocateWord(free_list, kAValue);
+//   ASSERT_TRUE(IsAllocated(a));
+//   ASSERT_FALSE(IsNew(a));
+//   ASSERT_TRUE(IsOld(a));
+//   ASSERT_FALSE(IsMarked(a));
+//   ASSERT_FALSE(IsRemembered(a));
+//   ASSERT_FALSE(IsForwarding(a));
+//   ASSERT_TRUE(IsWord(a, kAValue));
+//   ASSERT_TRUE(Insert(free_list, a));
+// }
 
-   static const constexpr int64_t kAValue = 100;
-   auto a = TryAllocateWord(free_list, kAValue);
-   ASSERT_TRUE(IsAllocated(a));
-   ASSERT_FALSE(IsNew(a));
-   ASSERT_TRUE(IsOld(a));
-   ASSERT_FALSE(IsMarked(a));
-   ASSERT_FALSE(IsRemembered(a));
-   ASSERT_FALSE(IsForwarding(a));
-   ASSERT_TRUE(IsWord(a, kAValue));
-
-   static const constexpr int64_t kBValue = 400;
-   auto b = TryAllocateWord(free_list, kBValue);
-   ASSERT_TRUE(IsAllocated(b));
-   ASSERT_FALSE(IsNew(b));
-   ASSERT_TRUE(IsOld(b));
-   ASSERT_FALSE(IsMarked(b));
-   ASSERT_FALSE(IsRemembered(b));
-   ASSERT_FALSE(IsForwarding(b));
-   ASSERT_TRUE(IsWord(b, kBValue));
-
-   auto new_head = free_list.GetHead();
-   ASSERT_TRUE(new_head);
-   ASSERT_EQ(new_head->GetStartingAddress(), region.GetStartingAddress() + a->GetTotalSize() + b->GetTotalSize());
-   ASSERT_EQ(new_head->GetSize(), region.GetSize() - a->GetTotalSize() - b->GetTotalSize());
- }
-
- TEST_F(FreeListTest, TestInsert_WillFail_SizeLessThanZero) {
-   MemoryRegion region(GetOldZoneSize());
-   FreeList free_list(region);
-   ASSERT_FALSE(Insert(free_list, region.GetStartingAddress(), -1));
- }
-
- TEST_F(FreeListTest, TestInsert_WillFail_SizeEqualsZero) {
-   MemoryRegion region(GetOldZoneSize());
-   FreeList free_list(region);
-   ASSERT_FALSE(Insert(free_list, region.GetStartingAddress(), 0));
- }
-
- TEST_F(FreeListTest, TestInsert_WillFail_SizeGreaterThanFreeList) {
-   MemoryRegion region(GetOldZoneSize());
-   FreeList free_list(region);
-   ASSERT_FALSE(Insert(free_list, region.GetStartingAddress(), region.GetSize() + 1));
- }
-
- TEST_F(FreeListTest, TestInsert_WillPass_SizeEqualsFreeList) {
-   MemoryRegion region(GetOldZoneSize());
-   FreeList free_list(region);
-
-   auto a = TryAllocateBytes(free_list, free_list.GetHead()->GetSize() - sizeof(RawObject));
-   ASSERT_NE(a, UNALLOCATED);
-   ASSERT_TRUE(Insert(free_list, a, GetOldZoneSize()));
- }
-
- TEST_F(FreeListTest, TestInsert_WillPass) {
-   MemoryRegion region(GetOldZoneSize());
-   FreeList free_list(region);
-
-   static const constexpr int64_t kAValue = 100;
-   auto a = TryAllocateWord(free_list, kAValue);
-   ASSERT_TRUE(IsAllocated(a));
-   ASSERT_FALSE(IsNew(a));
-   ASSERT_TRUE(IsOld(a));
-   ASSERT_FALSE(IsMarked(a));
-   ASSERT_FALSE(IsRemembered(a));
-   ASSERT_FALSE(IsForwarding(a));
-   ASSERT_TRUE(IsWord(a, kAValue));
-   ASSERT_TRUE(Insert(free_list, a));
- }
-
- TEST_F(FreeListTest, TestVisitNodes){
-   MemoryRegion region(GetOldZoneSize());
-   FreeList free_list(region);
-
-   static const constexpr int64_t kNumberOfPointers = 10;
-   for(auto idx = 0; idx < kNumberOfPointers; idx++) {
-     auto a = TryAllocateWord(free_list, idx);
-     ASSERT_TRUE(IsAllocated(a));
-     ASSERT_FALSE(IsNew(a));
-     ASSERT_TRUE(IsOld(a));
-     ASSERT_FALSE(IsMarked(a));
-     ASSERT_FALSE(IsRemembered(a));
-     ASSERT_FALSE(IsForwarding(a));
-     ASSERT_TRUE(IsWord(a, idx));
-     ASSERT_TRUE(Insert(free_list, a));
-   }
-
-   FreeListPrinter::Print(free_list);
-
-   MockFreeListNodeVisitor visitor;
-   EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfPointers + 1);
-   ASSERT_TRUE(free_list.VisitFreeNodes(&visitor));
- }
+//TODO:
+// TEST_F(FreeListTest, TestVisitNodes){
+//   MemoryRegion region(GetOldZoneSize());
+//   FreeList free_list(region);
+//   static const constexpr int64_t kNumberOfPointers = 10;
+//   for(auto idx = 0; idx < kNumberOfPointers; idx++) {
+//     auto a = TryAllocateWord(free_list, idx);
+//     ASSERT_TRUE(IsAllocated(a));
+//     ASSERT_FALSE(IsNew(a));
+//     ASSERT_TRUE(IsOld(a));
+//     ASSERT_FALSE(IsMarked(a));
+//     ASSERT_FALSE(IsRemembered(a));
+//     ASSERT_FALSE(IsForwarding(a));
+//     ASSERT_TRUE(IsWord(a, idx));
+//     ASSERT_TRUE(Insert(free_list, a));
+//   }
+//   MockFreeListNodeVisitor visitor;
+//   EXPECT_CALL(visitor, Visit)
+//     .Times(kNumberOfPointers + 1);
+//   ASSERT_TRUE(free_list.VisitFreeNodes(&visitor));
+// }
 }

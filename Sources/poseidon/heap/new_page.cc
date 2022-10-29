@@ -3,6 +3,10 @@
 namespace poseidon {
 #define UNALLOCATED 0 //TODO: cleanup
 
+ NewPage* NewPage::New(const MemoryRegion& region){
+   return new (region.GetStartingAddressPointer())NewPage();
+ }
+
  bool NewPage::VisitPointers(poseidon::RawObjectVisitor* vis){
    NewPageIterator iter(this);
    while(iter.HasNext()) {
@@ -21,19 +25,5 @@ namespace poseidon {
        return false;
    }
    return true;
- }
-
- uword NewPage::TryAllocate(poseidon::ObjectSize size){
-   auto total_size = static_cast<ObjectSize>(sizeof(RawObject) + size);
-   if(size <= 0 || total_size >= GetAllocatableSize()) {
-     LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
-     return UNALLOCATED;
-   }
-
-   LOG(INFO) << "allocating " << Bytes(size) << " in " << (*this);
-   SetMarkedBit();
-   auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::New(size));
-   current_ += total_size;
-   return ptr->GetStartingAddress();
  }
 }

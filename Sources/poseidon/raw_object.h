@@ -97,7 +97,7 @@ namespace poseidon{
     }
 
     bool IsForwarding() const{
-      return forwarding_ != 0;
+      return GetForwardingAddress() != 0;
     }
 
     RawObjectTag raw_tag() const{

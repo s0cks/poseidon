@@ -41,23 +41,68 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestConstructor) {
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
-   ASSERT_EQ((const Region&) semispace, (const Region&)region);
-   ASSERT_EQ(semispace.GetCurrentAddress(), semispace.GetStartingAddress());
-   ASSERT_EQ(semispace.GetNumberOfBytesAllocated(), 0);
-   ASSERT_EQ(semispace.GetNumberOfBytesRemaining(), semispace.GetSize());
+   ASSERT_EQ(semispace.GetStartingAddress(), region.GetStartingAddress());
+   ASSERT_TRUE(semispace.IsEmpty());
+   ASSERT_EQ(semispace.GetCurrentAddress(), semispace.GetCurrentAddress());
+   ASSERT_EQ(semispace.GetSize(), region.GetSize());
  }
 
  TEST_F(SemispaceTest, TestEquals) {
+   MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
 
+   Semispace a(region);
+   Semispace b(region);
+   ASSERT_TRUE(a == b);
  }
 
- TEST_F(SemispaceTest, TestCopyConstructor) {
+ TEST_F(SemispaceTest, TestSwap) {
+   // a == r1
+   MemoryRegion r1(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(r1.Protect(MemoryRegion::kReadWrite));
+   Semispace a(r1);
+   ASSERT_EQ(a.GetStartingAddress(), r1.GetStartingAddress());
+   ASSERT_EQ(a.GetCurrentAddress(), r1.GetStartingAddress());
+   ASSERT_EQ(a.GetSize(), r1.GetSize());
 
+   static constexpr const word kAValue = 1034;
+   auto ptr = TryAllocateWord(a, kAValue);
+   ASSERT_TRUE(IsAllocated(ptr));
+   ASSERT_TRUE(IsNewWord(ptr, kAValue));
+   ASSERT_TRUE(a.Contains(*ptr));
+
+   // b == r2
+   MemoryRegion r2(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(r2.Protect(MemoryRegion::kReadWrite));
+   Semispace b(r2);
+   ASSERT_EQ(b.GetStartingAddress(), r2.GetStartingAddress());
+   ASSERT_EQ(b.GetCurrentAddress(), r2.GetStartingAddress());
+   ASSERT_EQ(b.GetSize(), r2.GetSize());
+   ASSERT_FALSE(b.Contains(*ptr));
+
+   ASSERT_NE(a, b);
+   ASSERT_NO_FATAL_FAILURE(std::swap(a, b));
+   ASSERT_TRUE(IsAllocated(ptr));
+   ASSERT_TRUE(IsNewWord(ptr, kAValue));
+
+   // a == r2
+   ASSERT_EQ(a.GetStartingAddress(), r2.GetStartingAddress());
+   ASSERT_EQ(a.GetCurrentAddress(), r2.GetStartingAddress());
+   ASSERT_EQ(a.GetSize(), r2.GetSize());
+   ASSERT_FALSE(a.Contains(*ptr));
+
+   // b == r1
+   ASSERT_EQ(b.GetStartingAddress(), r1.GetStartingAddress());
+   ASSERT_EQ(b.GetCurrentAddress(), r1.GetStartingAddress() + ptr->GetTotalSize());
+   ASSERT_EQ(b.GetSize(), r1.GetSize());
+   ASSERT_TRUE(b.Contains(*ptr));
  }
 
  TEST_F(SemispaceTest, TestTryAllocateWillFailEqualToZero) {
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
    auto ptr = TryAllocateBytes(semispace, 0);
    ASSERT_EQ(ptr, UNALLOCATED);
@@ -65,6 +110,7 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestTryAllocateWillFailLessThanZero) {
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
    auto ptr = TryAllocateBytes(semispace, -1);
    ASSERT_EQ(ptr, UNALLOCATED);
@@ -72,6 +118,7 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestTryAllocateWillFailEqualToSize) {
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
    auto ptr = TryAllocateBytes(semispace, GetNewZoneSemispaceSize());
    ASSERT_EQ(ptr, UNALLOCATED);
@@ -79,6 +126,7 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestTryAllocateWillFailGreaterThanSize) {
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
    auto ptr = TryAllocateBytes(semispace, GetNewZoneSemispaceSize() + 1);
    ASSERT_EQ(ptr, UNALLOCATED);
@@ -86,6 +134,7 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestTryAllocate){
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
 
    static const constexpr word kDefaultWordValue = 42;
@@ -101,6 +150,7 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestVisitPointers){
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
 
    static const constexpr int64_t kNumberOfPointers = 3;
@@ -123,6 +173,7 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestVisitMarkedPointers){
    MemoryRegion region(GetNewZoneSemispaceSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
 
    static const constexpr int64_t kNumberOfUnmarkedPointers = 1;

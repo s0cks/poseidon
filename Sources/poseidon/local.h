@@ -317,11 +317,6 @@ namespace poseidon{
    SetLocalPageForCurrentThread(LocalPage* page){
      SetCurrentThreadLocal(kThreadKey, page);
    }
-
-   static void Initialize(){
-     InitializeThreadLocal(kThreadKey);
-     ResetLocalPageForCurrentThread();
-   }
   public:
    static inline bool
    CurrentThreadHasLocalPage(){
@@ -341,6 +336,11 @@ namespace poseidon{
      }
 
      SetLocalPageForCurrentThread(new LocalPage());
+   }
+
+   static void Initialize(){
+     InitializeThreadLocal(kThreadKey);
+     ResetLocalPageForCurrentThread();
    }
  };
 }

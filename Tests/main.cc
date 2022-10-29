@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
 
+#include "poseidon/local.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
 #include "poseidon/collector/scavenger.h"
@@ -16,6 +17,6 @@ int main(int argc, char** argv){
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
 
   Runtime::Initialize();
-  Allocator::Initialize();
+  LocalPage::Initialize();
   return RUN_ALL_TESTS();
 }

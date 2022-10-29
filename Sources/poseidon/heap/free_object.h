@@ -1,17 +1,18 @@
 #ifndef POSEIDON_FREELIST_NODE_H
 #define POSEIDON_FREELIST_NODE_H
 
+#include "poseidon/flags.h"
 #include "poseidon/region.h"
 #include "poseidon/raw_object.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
  class FreeObject;
- class FreeListNodeVisitor {
+ class FreeObjectVisitor {
   protected:
-   FreeListNodeVisitor() = default;
+   FreeObjectVisitor() = default;
   public:
-   virtual ~FreeListNodeVisitor() = default;
+   virtual ~FreeObjectVisitor() = default;
    virtual bool Visit(FreeObject* node) = 0;
  };
 
@@ -30,7 +31,7 @@ namespace poseidon {
    }
 
    inline ObjectTag tag() const {
-     return ObjectTag(raw_tag());
+     return { raw_tag() };
    }
 
    inline void set_tag(const ObjectTag& value) {
@@ -64,19 +65,16 @@ namespace poseidon {
      SetSize(0);
      SetNextAddress(0);
    }
-   explicit FreeObject(const ObjectSize size):
+   explicit FreeObject(const ObjectTag& tag):
     Region(),
-    tag_(),
-    forwarding_() {
-     SetSize(size);
-     SetNextAddress(GetStartingAddress() + GetSize());
+    tag_(tag.raw()),
+    forwarding_(0) {
    }
-   explicit FreeObject(const Region& region):
+   explicit FreeObject(const Region& region): //TODO: remove
     Region(region),
     tag_(),
     forwarding_() {
      SetSize(region.GetSize());
-     SetNextAddress(GetStartingAddress() + GetSize());
    }
    FreeObject(const FreeObject& rhs) = default;
    ~FreeObject() override = default;
@@ -110,26 +108,32 @@ namespace poseidon {
    friend std::ostream& operator<<(std::ostream& stream, const FreeObject& val) {
      stream << "FreeObject(";
      stream << "start=" <<  val.GetStartingAddressPointer() << ", ";
-     stream << "size=" << val.GetSize() << ", ";
+     stream << "size=" << Bytes(val.GetSize()) << ", ";
      stream << "next=" << val.GetNext();
      stream << ")";
      return stream;
    }
 
    friend bool operator==(const FreeObject& lhs, const FreeObject& rhs) {
-     return ((const Region&)lhs) == ((const Region&)rhs) &&
-            lhs.tag() == rhs.tag();
+     return lhs.GetStartingAddress() == rhs.GetStartingAddress() &&
+            lhs.GetSize() == rhs.GetSize() &&
+            lhs.raw_tag() == rhs.raw_tag();
    }
 
    friend bool operator!=(const FreeObject& lhs, const FreeObject& rhs) {
      return !operator==(lhs, rhs);
    }
 
-   //TODO: make comparable
-
-   static inline FreeObject* NewNode(const MemoryRegion& region) {
-     return new (region.GetStartingAddressPointer())FreeObject(region.GetSize());
+   friend bool operator<(const FreeObject& lhs, const FreeObject& rhs) {
+     return Compare(lhs, rhs) < 0;
    }
+
+   friend bool operator>(const FreeObject& lhs, const FreeObject& rhs) {
+     return Compare(lhs, rhs) > 0;
+   }
+  public:
+   static int Compare(const FreeObject& lhs, const FreeObject& rhs);
+   static FreeObject* From(const Region& region);
  };
 }
 

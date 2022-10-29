@@ -13,10 +13,10 @@
 namespace poseidon{
  using namespace ::testing;
 
- class MockFreeListNodeVisitor : public FreeListNodeVisitor {
+ class MockFreeListNodeVisitor : public FreeObjectVisitor {
   public:
    MockFreeListNodeVisitor():
-    FreeListNodeVisitor() {
+       FreeObjectVisitor() {
      ON_CALL(*this, Visit)
       .WillByDefault([](FreeObject* val) {
         return true;
@@ -38,20 +38,6 @@ namespace poseidon{
    ~MockRawObjectVisitor() override = default;
 
    MOCK_METHOD(bool, Visit, (RawObject*), (override));
- };
-
- class MockPageVisitor : public PageVisitor {
-  public:
-   MockPageVisitor():
-    PageVisitor() {
-     ON_CALL(*this, VisitPage)
-     .WillByDefault([](Page* val) {
-       return true;
-     });
-   }
-   ~MockPageVisitor() override = default;
-
-   MOCK_METHOD(bool, VisitPage, (Page*), (override));
  };
 
  static inline uword

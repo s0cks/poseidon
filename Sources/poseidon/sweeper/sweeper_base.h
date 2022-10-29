@@ -5,11 +5,11 @@
 
 namespace poseidon {
  template<bool Parallel>
- class SweeperVisitor : public RawObjectVisitor, public PageVisitor {
+ class SweeperVisitor : public RawObjectVisitor, public OldPageVisitor {
   protected:
    SweeperVisitor() = default;
 
-   bool VisitPage(Page* page) override {
+   bool VisitOldPage(OldPage* page) override {
      return SweepPage(page);
    }
   public:

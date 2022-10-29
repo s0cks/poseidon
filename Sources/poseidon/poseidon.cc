@@ -8,6 +8,7 @@ DEFINE_int64(new_page_size, kDefaultNewPageSize, "The size of the new page in by
 
 DEFINE_int64(old_zone_size, kDefaultOldZoneSize, "The size of the old zone in bytes.");
 DEFINE_int64(old_page_size, kDefaultOldPageSize, "The size of the old zone pages in bytes.");
+DEFINE_int32(free_list_buckets, kDefaultNumberOfFreeListBuckets, "The number of buckets for the free list");
 
 DEFINE_int64(large_object_size, kDefaultLargeObjectSize, "The max size of an object before it gets classified as a large object.");
 

@@ -24,7 +24,6 @@ namespace poseidon {
   public:
    virtual ~Region() = default;
    virtual uword GetStartingAddress() const = 0;
-   virtual int64_t GetSize() const = 0;
 
    virtual void* GetStartingAddressPointer() const {
      return (void*)GetStartingAddress();
@@ -37,6 +36,8 @@ namespace poseidon {
    virtual void* GetEndingAddressPointer() const {
      return (void*)GetEndingAddress();
    }
+
+   virtual int64_t GetSize() const = 0;
 
    virtual bool Contains(const uword address) const {
      return GetStartingAddress() <= address

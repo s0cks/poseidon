@@ -7,7 +7,7 @@
 
 namespace poseidon {
  template<bool Parallel>
- class MarkerVisitor : public PageVisitor, public RawObjectVisitor {
+ class MarkerVisitor : public NewPageVisitor, public RawObjectVisitor {
   protected:
    MarkerVisitor() = default;
 
@@ -19,7 +19,7 @@ namespace poseidon {
      });
    }
 
-   bool VisitPage(Page* page) override {
+   bool VisitNewPage(NewPage* page) override {
      return MarkPage(page);
    }
 
@@ -46,15 +46,17 @@ namespace poseidon {
      return true;
    }
 
-   virtual bool MarkAllPages(Zone& zone) {
+   template<class Zone>
+   bool MarkAllPages(Zone* zone) {
      TIMED_SECTION("MarkAllPages", {
-       if(!zone.VisitPages(this))
+       if(!zone->VisitPages(this))
          return false;
      });
      return true;
    }
 
-   virtual bool MarkAll(Zone& zone) {
+   template<class Zone>
+   bool MarkAll(Zone* zone) {
      TIMED_SECTION("MarkAll", {
        if(!MarkAllRoots()) {
          LOG(WARNING) << "cannot mark all roots";

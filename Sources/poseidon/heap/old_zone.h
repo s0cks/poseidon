@@ -8,7 +8,7 @@
 #include "poseidon/heap/freelist.h"
 
 namespace poseidon{
- class OldZone : public Zone{
+ class OldZone : public Zone {
    friend class OldZoneTest;
    friend class SweeperTest;
    friend class Heap;
@@ -32,130 +32,62 @@ namespace poseidon{
      }
    };
 
-   class OldZonePageIterator {
-    protected:
-     OldZone* zone_;
-     PageIndex current_;
-
-     inline OldZone* zone() const {
-       return zone_;
-     }
-
-     inline PageIndex current_index() const {
-       return current_;
-     }
-
-     inline OldPage* current_page() const {
-       return zone()->pages(current_index());
-     }
-    public:
-     explicit OldZonePageIterator(OldZone* zone):
-      zone_(zone),
-      current_(0) {
-     }
-     ~OldZonePageIterator() = default;
-
-     bool HasNext() const {
-       return current_index() >= 0 &&
-           current_index() < zone()->GetNumberOfPages();
-     }
-
-     OldPage* Next() {
-       auto next = current_page();
-       current_ += 1;
-       return next;
-     }
-   };
+   static inline ObjectSize
+   GetHeaderSize() {
+     return sizeof(OldZone);
+   }
   protected:
-   FreeList* free_list_; //TODO: change to value
-   OldPage* pages_;
-   PageIndex num_pages_;
+   //TODO: add freelist
    BitSet table_;
 
+   OldZone(const uword start_address, const int64_t& size, const int64_t& num_pages):
+    Zone(),
+    table_(num_pages) {
+   }
+
+   uword TryAllocate(const ObjectSize& size);
    bool InitializePages(const MemoryRegion& region);
-   uword TryAllocate(int64_t size);
 
    inline bool MarkAllIntersectedBy(const Region& region) {
-     for(auto it = pages_begin(); it != pages_end(); it++) {
-       if(it->Contains(region) && !Mark(it->index()))
-         return false;
-     }
-     return true;
+     NOT_IMPLEMENTED(FATAL); //TODO: implement
+     return false;
    }
   public:
-   OldZone():
-    Zone(),
-    free_list_(new FreeList()),
-    pages_(nullptr),
-    num_pages_(0),
-    table_() {
+   OldZone() = delete;
+   ~OldZone() = default; //TODO: change to delete
+
+   uword GetStartingAddress() const override {
+     return GetZoneStartingAddress() + GetHeaderSize();
    }
-   explicit OldZone(const MemoryRegion& region):
-    Zone(region),
-    free_list_(new FreeList(region)),
-    pages_(nullptr),
-    num_pages_(0),
-    table_() {
-     LOG_IF(FATAL, !region.Protect(MemoryRegion::kReadWrite)) << "failed to protect " << region;
-     LOG_IF(FATAL, !InitializePages(region)) << "failed to initialize pages for " << (*this);
+
+   uword GetZoneStartingAddress() const {
+     return (uword)this;
    }
-   OldZone(const OldZone& rhs) = default;
-   ~OldZone() override = default;
+
+   int64_t GetSize() const override {
+     return GetOldZoneSize();
+   }
+
+   int64_t GetTotalSize() const {
+     return GetHeaderSize() + GetSize();
+   }
 
    FreeList* free_list(){//TODO: visible for testing
-     return free_list_;
+     NOT_IMPLEMENTED(FATAL); //TODO: implement
+     return nullptr;
    }
 
-   OldPage* pages() const {
-     return pages_;
-   }
-
-   OldPage* pages(const PageIndex& index) const {
-     if(index < 0 || index >= num_pages_)
-       return nullptr;
-     return pages() + index;
-   }
-
-   OldPage* pages_begin() const {
-     return pages();
-   }
-
-   OldPage* pages_end() const {
-     return pages() + GetNumberOfPages();
-   }
-
-   PageIndex GetNumberOfPages() const {
-     return num_pages_;
-   }
-
-   bool IsMarked(const PageIndex& index) const {
-     auto page = pages(index);
-     if(page == nullptr)
-       return false;
-     return table_.Test(index) && page->marked();
-   }
-
-   bool Mark(const PageIndex& index) {
-     auto page = pages(index);
-     if(page == nullptr)
-       return false;
-     DLOG(INFO) << "marking " << (*page);
-     table_.Set(index);
-     page->SetMarkedBit();
-     return IsMarked(index);
-   }
-
-   bool VisitPages(PageVisitor* vis) override;
-   bool VisitMarkedPages(PageVisitor* vis) override;
-   bool VisitUnmarkedPages(PageVisitor* vis) override;
+   bool VisitPages(OldPageVisitor* vis);
+   bool VisitMarkedPages(OldPageVisitor* vis);
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
-   OldZone& operator=(const OldZone& rhs) = default;
-
    friend std::ostream& operator<<(std::ostream& stream, const OldZone& val){
-     return stream << (Zone&)val;
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     return stream;
    }
+
+   static OldZone* From(const MemoryRegion& region);
  };
 }
 

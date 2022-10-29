@@ -49,7 +49,8 @@ namespace poseidon{
      }
    };
   protected:
-   MemoryRegion region_;
+   uword start_;
+   int64_t size_;
    RelaxedAtomic<uword> current_;
 
    uword TryAllocate(ObjectSize size) override;
@@ -57,22 +58,21 @@ namespace poseidon{
   public:
    Semispace():
     AllocationSection(),
-    region_(),
-    current_(0){
+    start_(0),
+    current_(0),
+    size_(0) {
    }
    explicit Semispace(const MemoryRegion& region):
     AllocationSection(),
-    region_(region),
-    current_(region.GetStartingAddress()) {
-     if(!region.Protect(MemoryRegion::kReadWrite)) {
-       LOG(FATAL) << "failed to protect " << region;
-     }
+    start_(region.GetStartingAddress()),
+    current_(region.GetStartingAddress()),
+    size_(region.GetSize()) {
    }
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
 
    uword GetStartingAddress() const override {
-     return region_.GetStartingAddress();
+     return start_;
    }
 
    uword GetCurrentAddress() const override {
@@ -80,7 +80,7 @@ namespace poseidon{
    }
 
    int64_t GetSize() const override {
-     return region_.GetSize();
+     return size_;
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override;
@@ -89,8 +89,9 @@ namespace poseidon{
    Semispace& operator=(const Semispace& rhs){
      if(this == &rhs)
        return *this;
-     Section::operator=(rhs);
+     start_ = rhs.GetStartingAddress();
      current_ = rhs.GetCurrentAddress();
+     size_ = rhs.GetSize();
      return *this;
    }
 
@@ -104,11 +105,11 @@ namespace poseidon{
      return !operator==(lhs, rhs);
    }
 
-   friend std::ostream& operator<<(std::ostream& stream, const Semispace& space){
+   friend std::ostream& operator<<(std::ostream& stream, const Semispace& value){
      stream << "Semispace(";
-     stream << "start=" << ((void*)space.GetStartingAddress()) << ", ";
-     stream << "allocated=" << Bytes(space.GetNumberOfBytesAllocated()) << " (" << PrettyPrintPercentage(space.GetNumberOfBytesAllocated(), space.GetSize()) << "), ";
-     stream << "total_size=" << Bytes(space.GetSize());
+     stream << "start=" << value.GetStartingAddressPointer()<< ", ";
+     stream << "current=" << value.GetCurrentAddressPointer() << ", ";
+     stream << "size=" << Bytes(value.GetSize());
      stream << ")";
      return stream;
    }

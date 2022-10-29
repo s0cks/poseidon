@@ -5,41 +5,47 @@
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
 
+  void NewZone::MarkAllIntersectedBy(const Region& region){
+    NewZonePageIterator iter(this);
+    while(iter.HasNext()) {
+      auto next = iter.Next();
+      if(next->Contains(region))
+        MarkPage(GetPageIndex(next));
+    }
+  }
+
+ NewZone* NewZone::New(const poseidon::MemoryRegion& region){
+   const auto total_size = region.GetSize() - NewZone::GetHeaderSize();
+   const auto semi_size = total_size / 2;
+   return new ((void*)region.GetStartingAddressPointer())NewZone(total_size, semi_size);
+ }
+
  bool NewZone::InitializePages(const MemoryRegion& region) {
    const auto page_size = GetNewPageSize();
    const auto num_pages = CalculateNumberOfPages(region, page_size);
-   table_ = BitSet(num_pages);
-   pages_ = new NewPage[num_pages];
-   for(num_pages_ = 0; num_pages_ < num_pages; num_pages_++)
-     pages_[num_pages_] = NewPage(num_pages_, MemoryRegion::Subregion(region, num_pages_ * page_size, page_size));
-   return num_pages_ == num_pages;
+   return false;
+//TODO:
+//   pages_ = new NewPage[num_pages];
+//   for(num_pages_ = 0; num_pages_ < num_pages; num_pages_++)
+//     pages_[num_pages_] = NewPage(num_pages_, MemoryRegion::Subregion(region, num_pages_ * page_size, page_size));
+//   return num_pages_ == num_pages;
  }
 
- bool NewZone::VisitPages(PageVisitor* vis){
+ bool NewZone::VisitPages(NewPageVisitor* vis){
    NewZonePageIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
-     if(!vis->VisitPage(next))
+     if(!vis->VisitNewPage(next))
        return false;
    }
    return true;
  }
 
- bool NewZone::VisitMarkedPages(PageVisitor* vis){
+ bool NewZone::VisitMarkedPages(NewPageVisitor* vis){
    NewZonePageIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
-     if(next->marked() && !vis->VisitPage(next))
-       return false;
-   }
-   return true;
- }
-
- bool NewZone::VisitUnmarkedPages(PageVisitor* vis){
-   NewZonePageIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(!next->marked() && !vis->VisitPage(next))
+     if(IsPageMarked(GetPageIndex(next)) && !vis->VisitNewPage(next))
        return false;
    }
    return true;
@@ -66,7 +72,7 @@ namespace poseidon{
  }
 
  uword NewZone::TryAllocate(int64_t size){
-   if(size <= 0 || size >= semisize())
+   if(size <= 0 || size >= GetNewPageSize()) //TODO: cleanup
      return UNALLOCATED;
 
    LOG(INFO) << "allocating " << Bytes(size) << " in " << (*this);
@@ -82,7 +88,7 @@ namespace poseidon{
 
    auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::New(size));
    current_ += total_size;
-   MarkAllIntersectedBy((*ptr));
+   MarkAllIntersectedBy(*ptr);
    return ptr->GetStartingAddress();
  }
 }
