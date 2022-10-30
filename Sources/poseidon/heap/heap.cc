@@ -3,7 +3,14 @@
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{
+#ifndef UNALLOCATED
+#define UNALLOCATED 0 //TODO: cleanup
+#endif // UNALLOCATED
+
  Heap* Heap::From(const MemoryRegion& region){
+   if(region.GetStartingAddress() <= 0 || region.GetSize() <= 0)
+     return nullptr;
+
    auto heap = new (region.GetStartingAddressPointer())Heap(region);
    return heap;
  }
@@ -62,13 +69,27 @@ finish_allocation:
  }
 
  uword Heap::TryAllocate(int64_t size){
-   if(size < kWordSize)
-     size = kWordSize;
+   if(size < kWordSize || size > GetOldPageSize())
+     return UNALLOCATED;
 
-   if(size >= GetLargeObjectSize()){
-     DLOG(INFO) << "allocating large object of " << Bytes(size);
-     return AllocateLargeObject(size);
+   if(size < GetNewPageSize()) {
+     uword address = UNALLOCATED;
+     if((address = new_zone()->TryAllocate(size)) != UNALLOCATED)
+       return address;
+     PSDN_CANT_ALLOCATE(FATAL, size, (*this));
+     return UNALLOCATED;
    }
-   return AllocateNewObject(size);
+
+   if(size >= GetNewPageSize()) {
+     uword address = UNALLOCATED;
+     if((address = old_zone()->TryAllocate(size)) != UNALLOCATED)
+       return address;
+
+     PSDN_CANT_ALLOCATE(FATAL, size, (*this));
+     return UNALLOCATED;
+   }
+
+   PSDN_CANT_ALLOCATE(FATAL, size, (*this));
+   return UNALLOCATED;
  }
 }

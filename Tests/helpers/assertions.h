@@ -28,11 +28,10 @@ namespace poseidon{ //TODO: cleanup & organize this file
 
  static inline AssertionResult
  IsUnallocated(RawObject* val){
-   if(!val)
+   if(val == UNALLOCATED)
      return AssertionSuccess();
    if(val->GetPointerSize() != 0)
      return AssertionFailure() << (*val) << " is allocated.";
-
    return AssertionSuccess();
  }
 
