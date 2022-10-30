@@ -9,11 +9,11 @@ namespace poseidon {
   public:
    MockOldPageVisitor():
     OldPageVisitor() {
-     ON_CALL(*this, VisitOldPage)
+     ON_CALL(*this, Visit)
       .WillByDefault(::testing::Return(true));
    }
    ~MockOldPageVisitor() override = default;
-   MOCK_METHOD(bool, VisitOldPage, (OldPage*), (override));
+   MOCK_METHOD(bool, Visit, (OldPage*), (override));
  };
 }
 

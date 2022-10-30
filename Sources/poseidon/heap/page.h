@@ -8,11 +8,13 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
+ class Page;
  class PageVisitor {
   protected:
    PageVisitor() = default;
   public:
    virtual ~PageVisitor() = default;
+   virtual bool Visit(Page* page) = 0;
  };
 
  class Page : public Section {

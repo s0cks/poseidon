@@ -63,7 +63,7 @@ namespace poseidon{
        return total_;
      }
 
-     explicit ZonePageIterator(Z* zone, const int64_t& total):
+     explicit ZonePageIterator(Z* zone, const int64_t total):
       zone_(zone),
       total_(total),
       current_(0) {
@@ -81,11 +81,66 @@ namespace poseidon{
        return next;
      }
    };
-
   protected:
    static inline int64_t
    CalculateNumberOfPages(const MemoryRegion& region, const int64_t page_size) { //TODO: cleanup
      return region.GetSize() / page_size;
+   }
+
+   template<class Z, class Iterator, class Visitor>
+   static inline bool IteratePages(Z* zone, Visitor* vis) {
+     Iterator iter(zone);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(!vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator, class Visitor>
+   inline bool IterateMarkedPages(Z* zone, Visitor* vis) {
+     Iterator iter(zone);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(zone->IsPageMarked(next) && !vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator, class Visitor>
+   static inline bool IterateUnmarkedPages(Z* zone, Visitor* vis) {
+     Iterator iter(zone);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(!IsPageMarked(next) && !vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator, class Visitor>
+   static inline bool IteratePointers(Z* zone, Visitor* vis) {
+     Iterator iter(zone);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       DLOG(INFO) << "next: " << (*next);
+       if(!vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator, class Visitor>
+   static inline bool IterateMarkedPointers(Z* zone, Visitor* vis) {
+     Iterator iter(zone);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(next->IsMarked() && !vis->Visit(next))
+         return false;
+     }
+     return true;
    }
   protected:
    Zone() = default;

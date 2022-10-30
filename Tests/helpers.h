@@ -65,39 +65,6 @@ namespace poseidon{
    val->SetPointerSize(size);
    return val->GetStartingAddress();
  }
-
- template<class S>
- static inline RawObject*
- TryAllocateNewWordInSection(S* section){
-   return (RawObject*)section->TryAllocate(kWordSize);
- }
-
- template<class S>
- static inline RawObject*
- TryAllocateNewWord(S* section, word value){
-   auto val = TryAllocateNewWordInSection(section);
-   if(val != nullptr)
-     *((word*)val->GetPointer()) = value;
-   return val;
- }
-
- template<class S>
- static inline RawObject*
- TryAllocateMarkedWord(S* section, word value = 0){
-   auto val = TryAllocateNewWord(section, value);
-   if(val != nullptr)
-     val->SetMarkedBit();
-   return val;
- }
-
- template<class S>
- static inline RawObject*
- TryAllocateNewRememberedWord(S* section, word value = 0){
-   auto val = TryAllocateNewWord(section, value);
-   if(val != nullptr)
-     val->SetRememberedBit();
-   return val;
- }
 }
 
 #endif //POSEIDON_HELPERS_H

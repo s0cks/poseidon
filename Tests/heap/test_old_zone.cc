@@ -129,14 +129,13 @@ namespace poseidon {
    auto zone = OldZone::From(region);
 
    static const constexpr int kNumberOfMarkedPages = 3;
-//TODO:
-//   ASSERT_TRUE(zone.Mark(0));
-//   ASSERT_TRUE(zone.Mark(1));
-//   ASSERT_TRUE(zone.Mark(2));
+   ASSERT_TRUE(zone->MarkPage((const int64_t) 0));
+   ASSERT_TRUE(zone->MarkPage(1));
+   ASSERT_TRUE(zone->MarkPage(2));
 
    MockOldPageVisitor visitor;
-   EXPECT_CALL(visitor, VisitOldPage)
-       .Times(kNumberOfMarkedPages);
+   EXPECT_CALL(visitor, Visit)
+     .Times(kNumberOfMarkedPages);
    ASSERT_NO_FATAL_FAILURE(zone->VisitMarkedPages(&visitor));
  }
 
@@ -144,8 +143,8 @@ namespace poseidon {
    MemoryRegion region(CalculateOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
-   static const constexpr int64_t kNumberOfPointers = 3;
 
+   static const constexpr int64_t kNumberOfPointers = 3;
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
      auto ptr = TryAllocateWord(zone, idx);
      ASSERT_TRUE(IsAllocated(ptr));
@@ -155,7 +154,7 @@ namespace poseidon {
 
    MockRawObjectVisitor visitor;
    EXPECT_CALL(visitor, Visit)
-       .Times(kNumberOfPointers);
+       .Times(kNumberOfPointers + 1);
    ASSERT_NO_FATAL_FAILURE(zone->VisitPointers(&visitor));
  }
 

@@ -57,7 +57,7 @@ namespace poseidon{
 
     explicit RawObject(ObjectTag tag):
       Region(),
-      tag_((RawObjectTag)tag),
+      tag_(tag.raw()),
       forwarding_(0){
     }
    public:
@@ -179,8 +179,8 @@ namespace poseidon{
     friend std::ostream& operator<<(std::ostream& stream, const RawObject& value) {
       stream << "RawObject(";
       stream << "tag=" << value.tag() << ", ";
-      stream << "start=" << value.GetStartingAddress() << ", ";
-      stream << "size=" << value.GetSize() << ", ";
+      stream << "start=" << value.GetStartingAddressPointer() << ", ";
+      stream << "size=" << Bytes(value.GetSize()) << ", ";
       stream << "pointer=" << value.GetPointer() << ", ";
       stream << "forwarding=" << value.GetForwardingPointer();
       stream << ")";

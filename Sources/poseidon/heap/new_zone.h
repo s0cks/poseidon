@@ -43,17 +43,15 @@ namespace poseidon{
      return sizeof(NewZone);
    }
   protected:
-   uword current_;
-   uword fromspace_;
-   uword tospace_;
-   int64_t size_;
+   int64_t size_; //TODO: remove
    int64_t semisize_; //TODO: remove
    BitSet table_;
+   Semispace fromspace_;
+   Semispace tospace_;
 
    NewZone(const int64_t& size, const int64_t& semi_size):
-    current_(GetStartingAddress()),
-    fromspace_(GetStartingAddress()),
-    tospace_(GetStartingAddress() + semi_size),
+    fromspace_(GetStartingAddress(), semi_size),
+    tospace_(GetStartingAddress() + semi_size, semi_size),
     size_(size),
     semisize_(semi_size),
     table_(GetNumberOfNewPages()) {
@@ -61,40 +59,6 @@ namespace poseidon{
 
    virtual void SwapSpaces(){
      std::swap(fromspace_, tospace_);
-     current_ = tospace_;
-   }
-
-   bool InitializePages(const MemoryRegion& region);
-   uword TryAllocate(ObjectSize size);
-
-   inline MemoryRegion
-   GetFromspaceRegion() const {
-     return {fromspace(), semisize()};
-   }
-
-   inline Semispace
-   GetFromspace() const {
-     return Semispace(GetFromspaceRegion());
-   }
-
-   inline MemoryRegion
-   GetTospaceRegion() const {
-     return {tospace(), semisize()};
-   }
-
-   inline Semispace
-   GetTospace() const {
-     return Semispace(GetTospaceRegion());
-   }
-
-   inline void*
-   tospace_ptr() const {
-     return (void*)tospace();
-   }
-
-   inline void*
-   fromspace_ptr() const {
-     return (void*)fromspace();
    }
 
    inline uword GetPageAddressAt(const int64_t& index) const {
@@ -103,7 +67,7 @@ namespace poseidon{
      return GetStartingAddress() + (index * GetNewPageSize());
    }
 
-   inline int64_t GetPageIndex(NewPage* page) const {
+   inline int64_t GetPageIndex(Page* page) const {
      return static_cast<int64_t>((page->GetStartingAddress() - GetStartingAddress())) / GetNewPageSize();
    }
   public:
@@ -127,20 +91,20 @@ namespace poseidon{
      return GetSize() + GetHeaderSize();
    }
 
-   uword GetCurrentAddress() const {
-     return current_;
+   Semispace fromspace() const {
+     return fromspace_;
    }
 
-   void* GetCurrentAddressPointer() const {
-     return (void*)GetCurrentAddress();
+   Semispace& fromspace() {
+     return fromspace_;
    }
 
-   uword tospace() const{
+   Semispace tospace() const {
      return tospace_;
    }
 
-   uword fromspace() const{
-     return fromspace_;
+   Semispace& tospace() {
+     return tospace_;
    }
 
    int64_t semisize() const{
@@ -153,30 +117,57 @@ namespace poseidon{
      return new ((void*) GetPageAddressAt(index))NewPage();
    }
 
-   virtual bool IsPageMarked(const int64_t& index) const {
+   virtual bool IsPageMarked(const int64_t index) const {
      return table_.Test(index);
    }
 
-   bool VisitPages(NewPageVisitor* vis);
-   bool VisitMarkedPages(NewPageVisitor* vis);
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
-
-   virtual void MarkAllIntersectedBy(const Region& region);
-
-   virtual inline void MarkPage(const int64_t& index) {
-     return table_.Set(index, true);
+   inline bool IsPageMarked(NewPage* page) const {
+     return IsPageMarked(GetPageIndex(page));
    }
 
-   virtual inline void MarkPage(NewPage* page) {
+   virtual uword TryAllocate(ObjectSize size);
+
+   bool VisitPages(PageVisitor* vis) {
+     return IteratePages<NewZone, NewZonePageIterator, PageVisitor>(this, vis);
+   }
+
+   bool VisitPages(NewPageVisitor* vis) {
+     return IteratePages<NewZone, NewZonePageIterator, NewPageVisitor>(this, vis);
+   }
+
+   bool VisitMarkedPages(PageVisitor* vis) {
+     return IteratePages<NewZone, NewZonePageIterator, PageVisitor>(this, vis);
+   }
+
+   bool VisitMarkedPages(NewPageVisitor* vis) {
+     return IterateMarkedPages<NewZone, NewZonePageIterator, NewPageVisitor>(this, vis);
+   }
+
+   bool VisitPointers(RawObjectVisitor* vis) override {
+     return IteratePointers<NewZone, NewZoneIterator, RawObjectVisitor>(this, vis);
+   }
+
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+     return IterateMarkedPointers<NewZone, NewZoneIterator, RawObjectVisitor>(this, vis);
+   }
+
+   virtual bool MarkAllIntersectedBy(const Region& region);
+
+   virtual inline bool MarkPage(const int64_t index) {
+     table_.Set(index, true);
+     return IsPageMarked(index);
+   }
+
+   virtual inline bool MarkPage(Page* page) {
      return MarkPage(GetPageIndex(page));
    }
 
-   virtual inline void UnmarkPage(const int64_t& index) {
-     return table_.Set(index, false);
+   virtual inline bool UnmarkPage(const int64_t index) {
+     table_.Set(index, false);
+     return !IsPageMarked(index);
    }
 
-   virtual inline void UnmarkPage(NewPage* page) {
+   virtual inline bool UnmarkPage(Page* page) {
      return UnmarkPage(GetPageIndex(page));
    }
 
@@ -184,8 +175,8 @@ namespace poseidon{
      stream << "NewZone(";
      stream << "start=" << val.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
-     stream << "fromspace=" << val.fromspace_ptr() << ", ";
-     stream << "tospace=" << val.tospace_ptr() << ", ";
+     stream << "fromspace=" << val.fromspace() << ", ";
+     stream << "tospace=" << val.tospace()  << ", ";
      stream << "semi-size=" << Bytes(val.semisize());
      stream << ")";
      return stream;

@@ -2,7 +2,7 @@
 #define POSEIDON_PARALLEL_SWEEPER_H
 
 #include "poseidon/wsq.h"
-#include "poseidon/sweeper/sweeper_base.h"
+#include "poseidon/sweeper/sweeper_visitor.h"
 
 namespace poseidon {
 // class ParallelSweeperTask : public Task{

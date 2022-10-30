@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <glog/logging.h>
 #include "poseidon/object_tag.h"
 
 namespace poseidon {
@@ -11,6 +12,17 @@ namespace poseidon {
    ~ObjectTagTest() override = default;
  };
 
+ TEST_F(ObjectTagTest, TestTagSize) {
+   static constexpr const auto kRawObjectTagSize = sizeof(RawObjectTag);
+   static constexpr const auto kRawObjectTagSizeInBits = kRawObjectTagSize * kBitsPerByte;
+   static constexpr const auto kUsedBits = ObjectTag::kTotalBits;
+   static constexpr const auto kRemainingBits = kRawObjectTagSizeInBits - kUsedBits;
+   DLOG(INFO) << "sizeof(RawObjectTag): " << Bytes(kRawObjectTagSize) << " (" << kUsedBits << "/" << kRawObjectTagSizeInBits << " bits used, " << kRemainingBits << " remaining)";
+   ASSERT_EQ(sizeof(RawObjectTag), sizeof(uword));
+   ASSERT_EQ(sizeof(ObjectTag), sizeof(RawObjectTag));
+   ASSERT_LE(ObjectTag::kTotalBits, kBitsPerWord);
+ }
+
  TEST_F(ObjectTagTest, TestConstructor) {
    static const constexpr ObjectSize kObjectSize = 0;
    static const constexpr ObjectTag kTag = ObjectTag::Empty();
@@ -18,6 +30,7 @@ namespace poseidon {
    ASSERT_FALSE(kTag.IsOld());
    ASSERT_FALSE(kTag.IsMarked());
    ASSERT_FALSE(kTag.IsRemembered());
+   ASSERT_FALSE(kTag.IsFree());
    ASSERT_EQ(kTag.GetSize(), kObjectSize);
  }
 
@@ -69,6 +82,15 @@ namespace poseidon {
    ASSERT_TRUE(kTag.IsOld());
    ASSERT_NO_FATAL_FAILURE(kTag.ClearOld());
    ASSERT_FALSE(kTag.IsOld());
+ }
+
+ TEST_F(ObjectTagTest, TestFreeBit) {
+   ObjectTag kTag = ObjectTag::Empty();
+   ASSERT_FALSE(kTag.IsFree());
+   ASSERT_NO_FATAL_FAILURE(kTag.SetFreeBit(true));
+   ASSERT_TRUE(kTag.IsFree());
+   ASSERT_NO_FATAL_FAILURE(kTag.SetFreeBit(false));
+   ASSERT_FALSE(kTag.IsFree());
  }
 
  TEST_F(ObjectTagTest, TestSizeTag) {

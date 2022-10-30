@@ -48,6 +48,10 @@ namespace poseidon {
      return Contains(rhs.GetStartingAddress()) || Contains(rhs.GetEndingAddress());
    }
 
+   virtual bool Intersects(const Region& rhs) const {
+     return Contains(rhs); //TODO: cleanup
+   }
+
    friend bool operator==(const Region& lhs, const Region& rhs) {
      return Compare(lhs, rhs) == 0;
    }

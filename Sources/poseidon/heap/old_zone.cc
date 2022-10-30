@@ -1,56 +1,17 @@
 #include "poseidon/heap/old_zone.h"
+#include "poseidon/heap/page_marker.h"
+#include "poseidon/collector/collector.h"
 
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
 
+ bool OldZone::MarkAllIntersectedBy(const poseidon::Region& region){
+   return PageMarker<OldZone>::MarkAllIntersectedBy(this, region);
+ }
+
  OldZone* OldZone::From(const MemoryRegion& region){
    //TODO: check region size
    return new ((void*)region.GetStartingAddressPointer())OldZone(region.GetStartingAddress() + GetHeaderSize(), region.GetSize() - GetHeaderSize(), GetNumberOfOldPages());
- }
-
- bool OldZone::VisitPages(OldPageVisitor* vis){
-   NOT_IMPLEMENTED(FATAL); //TODO: implement
-   return false;
- }
-
- bool OldZone::VisitMarkedPages(OldPageVisitor* vis){
-   NOT_IMPLEMENTED(FATAL); //TODO: implement
-   return false;
- }
-
- bool OldZone::VisitPointers(RawObjectVisitor* vis){
-   OldZoneIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(!vis->Visit(next))
-       return false;
-   }
-   return true;
- }
-
- bool OldZone::VisitMarkedPointers(poseidon::RawObjectVisitor* vis){
-   OldZoneIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(next->IsMarked() && !vis->Visit(next))
-       return false;
-   }
-   return true;
- }
-
- bool OldZone::InitializePages(const MemoryRegion& region) {
-   DLOG(INFO) << "initializing pages";
-   const auto page_size = GetOldPageSize();
-   const auto num_pages = CalculateNumberOfPages(region, page_size);
-   table_ = BitSet(num_pages);
-   return false;
-//TODO: implement
-//   pages_ = new OldPage[num_pages];
-//   for(num_pages_ = 0; num_pages_ < num_pages; num_pages_++) {
-//     const auto page_offset = num_pages_ * page_size;
-//     pages_[num_pages_] = OldPage(num_pages_, MemoryRegion::Subregion(region, page_offset, page_size));
-//   }
-//   return num_pages_ == num_pages;
  }
 
  uword OldZone::TryAllocate(const ObjectSize& size) { //TODO: cleanup
@@ -58,12 +19,20 @@ namespace poseidon{
      LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
      return UNALLOCATED;
    }
-
-   auto ptr = (void*)free_list()->TryAllocate(size);
-   auto val = new (ptr)RawObject();
-   val->SetOldBit();
-   val->SetPointerSize(size);
-   MarkAllIntersectedBy((*val));
+   uword ptr_address = UNALLOCATED;
+   if((ptr_address = free_list_.TryAllocate(size)) == UNALLOCATED) {
+     PSDN_CANT_ALLOCATE(ERROR, size, (*this));
+     Collector::MajorCollection();
+     if((ptr_address = free_list_.TryAllocate(size)) == UNALLOCATED) {
+       PSDN_CANT_ALLOCATE(FATAL, size, (*this));
+     }
+   }
+   auto val = new ((void*) ptr_address)RawObject(ObjectTag::Old(size));
+   if(!MarkAllIntersectedBy((*val))) {
+     PSDN_CANT_ALLOCATE(ERROR, size, (*this));
+     //TODO: deallocate
+     return UNALLOCATED;
+   }
    return val->GetStartingAddress();
  }
 }

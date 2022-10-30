@@ -12,7 +12,7 @@ namespace poseidon {
    NewPageVisitor() = default;
   public:
    virtual ~NewPageVisitor() = default;
-   virtual bool VisitNewPage(NewPage* page) = 0;
+   virtual bool Visit(NewPage* page) = 0;
  };
 
  class NewZone;

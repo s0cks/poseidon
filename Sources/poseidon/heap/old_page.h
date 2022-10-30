@@ -1,6 +1,7 @@
 #ifndef POSEIDON_OLD_PAGE_H
 #define POSEIDON_OLD_PAGE_H
 
+#include "poseidon/flags.h"
 #include "poseidon/utils.h"
 #include "poseidon/bitset.h"
 #include "poseidon/common.h"
@@ -9,15 +10,16 @@
 
 namespace poseidon{
  class OldPage;
- class OldPageVisitor : public PageVisitor {
+ class OldPageVisitor {
   public:
    OldPageVisitor() = default;
-   ~OldPageVisitor() override = default;
-   virtual bool VisitOldPage(OldPage* page) = 0;
+   virtual ~OldPageVisitor() = default;
+   virtual bool Visit(OldPage* page) = 0;
  };
 
  class OldZone;
  class OldPage : public Page{
+   friend class OldZone;
    friend class OldPageTest;
    friend class SerialSweeperTest;
   public:
@@ -40,8 +42,25 @@ namespace poseidon{
   public:
    OldPage(const OldPage& rhs) = delete;
    ~OldPage() override = default;
+
+   int64_t GetSize() const override {
+     return GetOldPageSize();
+   }
+
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+
+   friend std::ostream& operator<<(std::ostream& stream, const OldPage& value) {
+     stream << "OldPage(";
+     stream << "start=" << value.GetStartingAddressPointer() << ", ";
+     stream << "size=" << value.GetSize();
+     stream << ")";
+     return stream;
+   }
+
+   static inline OldPage* From(const uword start_address) {
+     return new ((void*) start_address)OldPage();
+   }
  };
 }
 

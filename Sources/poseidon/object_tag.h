@@ -10,7 +10,7 @@ namespace poseidon {
  static const constexpr RawObjectTag kInvalidObjectTag = 0x0;
 
  class ObjectTag{
-  private:
+  public:
    enum Layout{
      // NewBit
      kNewBitOffset = 0,
@@ -28,13 +28,16 @@ namespace poseidon {
      kRememberedBitOffset = kMarkedBitOffset+kBitsForMarkedBit,
      kBitsForRememberedBit = 1,
 
+     // FreeBit
+     kFreeBitOffset = kRememberedBitOffset + kBitsForRememberedBit,
+     kBitsForFreeBit = 1,
+
      // Size
-     kSizeTagOffset = kRememberedBitOffset+kBitsForRememberedBit,
+     kSizeTagOffset = kFreeBitOffset + kBitsForFreeBit,
      kBitsForSizeTag = 32,
 
-     kTotalBits = kBitsForNewBit + kBitsForOldBit + kBitsForMarkedBit + kBitsForRememberedBit + kBitsForSizeTag,
+     kTotalBits = kBitsForNewBit + kBitsForOldBit + kBitsForMarkedBit + kBitsForRememberedBit + kBitsForFreeBit + kBitsForSizeTag,
    };
-  public:
    // The object's size.
    class SizeTag : public BitField<RawObjectTag, int64_t, kSizeTagOffset, kBitsForSizeTag>{};
    // allocated in the new heap.
@@ -45,6 +48,8 @@ namespace poseidon {
    class MarkedBit : public BitField<RawObjectTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
    // remembered by the scavenger
    class RememberedBit : public BitField<RawObjectTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
+   // is free space
+   class FreeBit : public BitField<RawObjectTag, bool, kFreeBitOffset, kBitsForFreeBit>{};
   private:
    RawObjectTag raw_;
   public:
@@ -106,6 +111,18 @@ namespace poseidon {
      return RememberedBit::Decode(raw());
    }
 
+   void SetFreeBit(const bool value = true) {
+     raw_ = FreeBit::Update(value, raw());
+   }
+
+   inline void ClearFreeBit() {
+     return SetFreeBit(false);
+   }
+
+   bool IsFree() const {
+     return FreeBit::Decode(raw());
+   }
+
    void SetSize(int64_t size){
      raw_ = SizeTag::Update(size, raw());
    }
@@ -137,7 +154,7 @@ namespace poseidon {
      stream << "old=" << val.IsOld() << ", ";
      stream << "marked=" << val.IsMarked() << ", ";
      stream << "remembered=" << val.IsRemembered() << ", ";
-     stream << "size=" << val.GetSize();
+     stream << "size=" << Bytes(val.GetSize());
      stream << ")";
      return stream;
    }
@@ -183,6 +200,11 @@ namespace poseidon {
    static inline constexpr RawObjectTag
    OldRemembered(const ObjectSize size) {
      return Old(size) | RememberedBit::Encode(true);
+   }
+
+   static inline constexpr RawObjectTag
+   OldFree(const ObjectSize size) {
+     return Old(size) | FreeBit::Encode(true);
    }
  };
 }

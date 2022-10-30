@@ -35,14 +35,16 @@ namespace poseidon {
    ASSERT_EQ(ptr, nullptr);
  }
 
- TEST_F(FreeObjectTest, TestFrom_WillPass) {
-   MemoryRegion region(1 * kMB);
+ TEST_F(FreeObjectTest, TestFrom_WillPass_EqualToWordSize) {
+   MemoryRegion region(kWordSize + sizeof(RawObject));
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto ptr = FreeObject::From(region);
    ASSERT_EQ(ptr->GetStartingAddress(), region.GetStartingAddress());
    ASSERT_EQ(ptr->GetSize(), region.GetSize());
    ASSERT_EQ(ptr->GetEndingAddress(), region.GetEndingAddress());
    ASSERT_EQ(ptr->GetNextAddress(), UNALLOCATED);
+   ASSERT_TRUE(ptr->IsFree());
+   ASSERT_TRUE(ptr->IsOld());
  }
 
  TEST_F(FreeObjectTest, TestFrom_WillPass_EqualToOldZoneSize) {
@@ -53,6 +55,8 @@ namespace poseidon {
    ASSERT_EQ(ptr->GetSize(), region.GetSize());
    ASSERT_EQ(ptr->GetEndingAddress(), region.GetEndingAddress());
    ASSERT_EQ(ptr->GetNextAddress(), UNALLOCATED);
+   ASSERT_TRUE(ptr->IsFree());
+   ASSERT_TRUE(ptr->IsOld());
  }
 
  TEST_F(FreeObjectTest, TestEquals_WillPass) {

@@ -118,15 +118,15 @@ namespace poseidon{
  class ScavengerVisitorBase : public RawObjectPointerVisitor{
   protected:
    NewZone* zone_;
-   Semispace from_;
-   Semispace to_;
+   Semispace& from_;
+   Semispace& to_;
    OldZone* promotion_;
 
    explicit ScavengerVisitorBase(Heap* heap):
     RawObjectPointerVisitor(),
     zone_(&heap->new_zone()),
-    from_(heap->new_zone().GetFromspace()),
-    to_(heap->new_zone().GetTospace()),
+    from_(heap->new_zone().fromspace()),
+    to_(heap->new_zone().tospace()),
     promotion_(&heap->old_zone()){
    }
 

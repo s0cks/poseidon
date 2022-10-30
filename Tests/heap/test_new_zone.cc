@@ -46,16 +46,6 @@ namespace poseidon{
      zone->SwapSpaces();
    }
 
-   static inline Semispace
-   GetFromspace(const NewZone* zone) {
-     return zone->GetFromspace();
-   }
-
-   static inline Semispace
-   GetTospace(const NewZone* zone) {
-     return zone->GetTospace();
-   }
-
    static inline uword
    TryAllocateBytes(NewZone* zone, const ObjectSize size) {
      return zone->TryAllocate(size);
@@ -85,7 +75,7 @@ namespace poseidon{
    ~NewZoneTest() override = default;
  };
 
- static inline int64_t
+ static inline const int64_t
  CalculateNewZoneSize() {
    auto size = GetNewZoneSize();
    size += NewZone::GetHeaderSize();
@@ -94,23 +84,33 @@ namespace poseidon{
  }
 
  TEST_F(NewZoneTest, TestConstructor) {
-   MemoryRegion region(CalculateNewZoneSize());
+   static const int64_t kHeaderSize = NewZone::GetHeaderSize();
+   static const int64_t kZoneSize = GetNewZoneSize();
+   static const int64_t kTotalZoneSize = kHeaderSize + kZoneSize;
+   static const int64_t kSemispaceSize = kZoneSize / 2;
+
+   static const int64_t kZoneOffset = kHeaderSize;
+   static const int64_t kFromspaceOffset = kZoneOffset;
+   static const int64_t kTospaceOffset = kZoneOffset + kSemispaceSize;
+
+   MemoryRegion region(kTotalZoneSize);
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = NewZone::New(region);
    ASSERT_EQ(zone->GetZoneStartingAddress(), region.GetStartingAddress());
-   ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress() + NewZone::GetHeaderSize());
-   ASSERT_EQ(zone->GetTotalSize(), region.GetSize());
-   ASSERT_EQ(zone->GetSize(), region.GetSize() - NewZone::GetHeaderSize());
-   ASSERT_EQ(zone->GetCurrentAddress(), zone->GetStartingAddress());
+   ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress() + kZoneOffset);
+   ASSERT_EQ(zone->GetTotalSize(), kTotalZoneSize);
+   ASSERT_EQ(zone->GetSize(), kZoneSize);
+   ASSERT_EQ(zone->semisize(), kSemispaceSize);
 
-   const int64_t semi_size = zone->GetSize() / 2;
-   ASSERT_EQ(zone->semisize(), semi_size);
+   Semispace& fromspace = zone->fromspace();
+   ASSERT_EQ(fromspace.GetStartingAddress(), region.GetStartingAddress() + kFromspaceOffset);
+   ASSERT_EQ(fromspace.GetSize(), kSemispaceSize);
+   ASSERT_TRUE(fromspace.IsEmpty());
 
-   const uword fromspace = zone->GetStartingAddress();
-   ASSERT_EQ(zone->fromspace(), fromspace);
-
-   const uword tospace = zone->GetStartingAddress() + zone->semisize();
-   ASSERT_EQ(zone->tospace(), tospace);
+   Semispace& tospace = zone->tospace();
+   ASSERT_EQ(tospace.GetStartingAddress(), region.GetStartingAddress() + kTospaceOffset);
+   ASSERT_EQ(tospace.GetSize(), kSemispaceSize);
+   ASSERT_TRUE(tospace.IsEmpty());
 
    for(auto idx = 0; idx < GetNumberOfNewPages(); idx++) {
      ASSERT_FALSE(zone->IsPageMarked(idx));
@@ -121,6 +121,22 @@ namespace poseidon{
  }
 
  //TODO: add equals & not equals tests?
+
+ TEST_F(NewZoneTest, TestSwapSpaces_WillPass) {
+   MemoryRegion region(GetNewZoneSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto zone = NewZone::New(region);
+
+   Semispace fromspace = zone->fromspace();
+   ASSERT_EQ(fromspace, zone->fromspace());
+   Semispace tospace = zone->tospace();
+   ASSERT_EQ(tospace, zone->tospace());
+   ASSERT_NE(fromspace, tospace);
+   ASSERT_NO_FATAL_FAILURE(SwapSpaces(zone));
+   ASSERT_NE(fromspace, tospace);
+   ASSERT_EQ(fromspace, zone->tospace());
+   ASSERT_EQ(tospace, zone->fromspace());
+ }
 
  TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeLessThanZero) {
    MemoryRegion region(GetNewZoneSize());
@@ -166,7 +182,7 @@ namespace poseidon{
    MemoryRegion region(GetNewZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = NewZone::New(region);
-   Semispace fromspace = GetFromspace(zone);
+   Semispace& fromspace = zone->fromspace();
 
    static const constexpr word kDefaultWordValue = 42;
    auto ptr = TryAllocateWord(zone, kDefaultWordValue);
@@ -193,7 +209,7 @@ namespace poseidon{
    auto zone = NewZone::New(region);
 
    MockNewPageVisitor visitor;
-   EXPECT_CALL(visitor, VisitNewPage(_))
+   EXPECT_CALL(visitor, Visit(_))
     .Times(static_cast<int>(GetNumberOfNewPages()))
     .WillRepeatedly(Return(true));
    ASSERT_NO_FATAL_FAILURE(zone->VisitPages(&visitor));
@@ -212,13 +228,13 @@ namespace poseidon{
    ASSERT_NO_FATAL_FAILURE(zone->MarkPage(p3));
 
    MockNewPageVisitor visitor;
-   EXPECT_CALL(visitor, VisitNewPage(NewPageEq(p1)))
+   EXPECT_CALL(visitor, Visit(NewPageEq(p1)))
     .Times(1)
     .WillOnce(Return(true));
-   EXPECT_CALL(visitor, VisitNewPage(NewPageEq(p2)))
+   EXPECT_CALL(visitor, Visit(NewPageEq(p2)))
     .Times(1)
     .WillOnce(Return(true));
-   EXPECT_CALL(visitor, VisitNewPage(NewPageEq(p3)))
+   EXPECT_CALL(visitor, Visit(NewPageEq(p3)))
     .Times(1)
     .WillOnce(Return(true));
    ASSERT_NO_FATAL_FAILURE(zone->VisitMarkedPages(&visitor));

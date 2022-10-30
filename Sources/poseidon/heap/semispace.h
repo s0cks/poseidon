@@ -12,6 +12,7 @@ namespace poseidon{
  class Semispace : public AllocationSection {
    friend class SemispaceTest;
 
+   friend class NewZone;
    friend class Scavenger;
   public:
    class SemispaceIterator : public RawObjectPointerIterator {
@@ -62,11 +63,14 @@ namespace poseidon{
     current_(0),
     size_(0) {
    }
-   explicit Semispace(const MemoryRegion& region):
+   explicit Semispace(const uword start, const int64_t size):
     AllocationSection(),
-    start_(region.GetStartingAddress()),
-    current_(region.GetStartingAddress()),
-    size_(region.GetSize()) {
+    start_(start),
+    current_(start),
+    size_(size) {
+   }
+   explicit Semispace(const MemoryRegion& region):
+    Semispace(region.GetStartingAddress(), region.GetSize()) {
    }
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;

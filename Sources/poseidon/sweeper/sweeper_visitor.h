@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SWEEPER_BASE_H
 #define POSEIDON_SWEEPER_BASE_H
 
-#include "poseidon/heap/page.h"
+#include "poseidon/heap/old_zone.h"
 
 namespace poseidon {
  template<bool Parallel>
@@ -9,7 +9,7 @@ namespace poseidon {
   protected:
    SweeperVisitor() = default;
 
-   bool VisitOldPage(OldPage* page) override {
+   bool Visit(OldPage* page) override {
      return SweepPage(page);
    }
   public:
@@ -21,9 +21,9 @@ namespace poseidon {
 
    virtual bool SweepPage(Page* page) = 0;
 
-   virtual bool Sweep(OldZone& zone) {
+   virtual bool Sweep(OldZone* zone) {
      TIMED_SECTION("SweepOldZone", {
-       return zone.VisitPages(this); //TODO: visit marked pages
+       return zone->VisitPages(this); //TODO: visit marked pages
      });
    }
  };

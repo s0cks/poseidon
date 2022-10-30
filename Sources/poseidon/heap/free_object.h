@@ -50,12 +50,20 @@ namespace poseidon {
      return SetNextAddress(node->GetStartingAddress());
    }
 
-   inline void SetOldBit(bool value = true) {
+   inline void SetOldBit(const bool value = true) {
      set_raw_tag(ObjectTag::OldBit::Update(value, raw_tag()));
    }
 
    inline void ClearOldBit() {
      return SetOldBit(false);
+   }
+
+   inline void SetFreeBit(const bool value = true) {
+     return set_raw_tag(ObjectTag::FreeBit::Update(value, raw_tag()));
+   }
+
+   inline void ClearFreeBit() {
+     return SetFreeBit(false);
    }
   public:
    FreeObject():
@@ -91,8 +99,16 @@ namespace poseidon {
      return ObjectTag::SizeTag::Decode(raw_tag());
    }
 
+   ObjectSize GetTotalSize() const {
+     return GetSize();
+   }
+
    bool IsOld() const {
      return ObjectTag::OldBit::Decode(raw_tag());
+   }
+
+   bool IsFree() const {
+     return ObjectTag::FreeBit::Decode(raw_tag());
    }
 
    uword GetNextAddress() const {
@@ -107,6 +123,7 @@ namespace poseidon {
 
    friend std::ostream& operator<<(std::ostream& stream, const FreeObject& val) {
      stream << "FreeObject(";
+     stream << "tag=" << val.tag() << ", ";
      stream << "start=" <<  val.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
      stream << "next=" << val.GetNext();

@@ -14,8 +14,8 @@ namespace poseidon {
      return SetSweeping(false);
    }
 
-   static bool SerialSweep(OldZone& zone);
-   static bool ParallelSweep(OldZone& zone);
+   static bool SerialSweep(OldZone* zone);
+   static bool ParallelSweep(OldZone* zone);
    static bool SweepObject(FreeList* free_list, RawObject* raw);
   public:
    Sweeper() = delete;
@@ -25,7 +25,7 @@ namespace poseidon {
    static bool IsSweeping();
 
    static inline bool
-   Sweep(OldZone& zone) {
+   Sweep(OldZone* zone) {
      if(IsSweeping()){
        DLOG(WARNING) << "already sweeping";
        return false;

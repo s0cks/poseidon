@@ -139,6 +139,15 @@ namespace poseidon{
      return *this;
    }
 
+   Local& operator=(const RawObject* ptr) {
+     if(!HasSlot()) {
+       DLOG(WARNING) << "local slot is null.";
+       return *this;
+     }
+     SetSlotAddress(ptr->GetStartingAddress());
+     return *this;
+   }
+
    Local& operator=(Local&& rhs) noexcept{
      LocalBase::operator=(rhs);
      return *this;
@@ -184,6 +193,15 @@ namespace poseidon{
    Local<U> DynamicCastTo() const{
      return dynamic_cast<U*>(operator T*());
    }
+ };
+
+ class LocalPage;
+ class LocalPageVisitor {
+  protected:
+   LocalPageVisitor() = default;
+  public:
+   virtual ~LocalPageVisitor() = default;
+   virtual bool VisitLocalPage(LocalPage* page) = 0;
  };
 
  /**
@@ -334,8 +352,18 @@ namespace poseidon{
        delete GetLocalPageForCurrentThread();
        SetLocalPageForCurrentThread(nullptr);
      }
-
      SetLocalPageForCurrentThread(new LocalPage());
+   }
+
+   static inline bool
+   VisitAllForCurrentThread(LocalPageVisitor* vis) {
+     auto page = GetLocalPageForCurrentThread();
+     while(page != nullptr) {
+       if(!vis->VisitLocalPage(page))
+         return false;
+       page = page->GetNext();
+     }
+     return true;
    }
 
    static void Initialize(){

@@ -7,11 +7,15 @@
 #include "poseidon/raw_object.h"
 
 namespace poseidon{ //TODO: cleanup & organize this file
+#ifndef UNALLOCATED
+#define UNALLOCATED 0
+#endif // UNALLOCATED
+
  using namespace ::testing;
 
  static inline AssertionResult
  IsAllocated(RawObject* val){
-   if(!val)
+   if(val == UNALLOCATED)
      return AssertionFailure() << "Expected to be allocated.";
    return AssertionSuccess();
  }
@@ -155,6 +159,12 @@ namespace poseidon{ //TODO: cleanup & organize this file
    if(!ptr->IsOld())
      return AssertionFailure() << (*ptr) << " is not old.";
    return IsWord(ptr, value);
+ }
+
+ template<class T>
+ static inline AssertionResult
+ IsOldWord(const Local<T>& ptr, const word value) {
+   return IsOldWord(ptr.raw(), value);
  }
 
  static inline AssertionResult
