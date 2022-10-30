@@ -124,10 +124,10 @@ namespace poseidon{
 
    explicit ScavengerVisitorBase(Heap* heap):
     RawObjectPointerVisitor(),
-    zone_(&heap->new_zone()),
-    from_(heap->new_zone().fromspace()),
-    to_(heap->new_zone().tospace()),
-    promotion_(&heap->old_zone()){
+    zone_(heap->new_zone()),
+    from_(heap->new_zone()->fromspace()),
+    to_(heap->new_zone()->tospace()),
+    promotion_(heap->old_zone()){
    }
 
    inline void SwapSpaces(){

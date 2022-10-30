@@ -3,17 +3,22 @@
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{
+ Heap* Heap::From(const MemoryRegion& region){
+   auto heap = new (region.GetStartingAddressPointer())Heap(region);
+   return heap;
+ }
+
  pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
 
  uword Heap::AllocateNewObject(int64_t size){
    RawObject* val = nullptr;
-   if((val = (RawObject*)new_zone().TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << Bytes(size) << ".";
    Collector::MinorCollection();
 
-   if((val = (RawObject*)new_zone().TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    LOG(FATAL) << "cannot allocate new object of " << Bytes(size) << "!";
@@ -28,14 +33,14 @@ finish_allocation:
    RawObject* val = nullptr;
 
    // 1. Try Allocation
-   if((val = (RawObject*)old_zone().TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 2. Try Major Collection
    Collector::MajorCollection();
 
    // 3. Try Allocation Again
-   if((val = (RawObject*)old_zone().TryAllocate(size)) != nullptr)
+   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 4. Try Pages w/ Grow

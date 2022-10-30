@@ -148,7 +148,7 @@ namespace poseidon{
  void Compactor::SerialCompact(){
    auto heap = Heap::GetCurrentThreadHeap();
    auto old_zone = heap->old_zone();
-   SerialCompactor compactor(&old_zone);
+   SerialCompactor compactor(old_zone);
    TIMED_SECTION("SerialCompact", {
      compactor.Compact();
    });
