@@ -12,30 +12,41 @@ namespace poseidon {
    sweeping_ = value;
  }
 
- bool Sweeper::SweepObject(FreeList* free_list, RawObject* raw) { //TODO: cleanup
-   DLOG(INFO) << "sweeping " << (*raw);
+ bool Sweeper::Sweep(RawObject* raw) { //TODO: cleanup
    NOT_IMPLEMENTED(FATAL); //TODO: implement
    return false;
    //return free_list->Insert(raw->GetStartingAddress(), raw->GetTotalSize());
  }
 
- bool Sweeper::SerialSweep(OldZone* zone){
+ bool Sweeper::SerialSweep(Sweeper* sweeper){
    if(IsSweeping()) {
      DLOG(WARNING) << "already sweeping";
      return false;
    }
 
    SetSweeping();
-   SerialSweeper sweeper;
+   SerialSweeper serial_sweeper(sweeper);
    TIMED_SECTION("SerialSweep", {
-     sweeper.Sweep(zone);
+     serial_sweeper.Sweep();
    });
    ClearSweeping();
    return true;
  }
 
- bool Sweeper::ParallelSweep(OldZone* zone){
+ bool Sweeper::ParallelSweep(Sweeper* sweeper){
    NOT_IMPLEMENTED(ERROR); //TODO: implement
    return false;
+ }
+
+ bool Sweeper::Sweep(OldZone* zone){
+   if(IsSweeping()) {
+     DLOG(WARNING) << "sweep called while already sweeping, skipping.";
+     return false;
+   }
+
+   Sweeper sweeper(zone);
+   return HasWorkers() ?
+          ParallelSweep(&sweeper) :
+          SerialSweep(&sweeper);
  }
 }

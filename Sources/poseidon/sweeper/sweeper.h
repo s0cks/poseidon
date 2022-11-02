@@ -5,8 +5,12 @@
 
 namespace poseidon {
  class Sweeper {
+   template<bool Parallel>
+   friend class SweeperVisitor;
+
    friend class SerialSweeper;
-  protected:
+   friend class ParallelSweeper;
+  private:
    static void SetSweeping(bool value = true);
 
    static inline void
@@ -14,27 +18,27 @@ namespace poseidon {
      return SetSweeping(false);
    }
 
-   static bool SerialSweep(OldZone* zone);
-   static bool ParallelSweep(OldZone* zone);
-   static bool SweepObject(FreeList* free_list, RawObject* raw);
-  public:
-   Sweeper() = delete;
-   Sweeper(const Sweeper& rhs) = delete;
-   ~Sweeper() = delete;
+   static bool SerialSweep(Sweeper* sweeper);
+   static bool ParallelSweep(Sweeper* sweeper);
+  protected:
+   OldZone* zone_;
 
-   static bool IsSweeping();
-
-   static inline bool
-   Sweep(OldZone* zone) {
-     if(IsSweeping()){
-       DLOG(WARNING) << "already sweeping";
-       return false;
-     }
-
-     return HasWorkers() ?
-            ParallelSweep(zone) :
-            SerialSweep(zone);
+   inline OldZone* zone() const {
+     return zone_;
    }
+
+   explicit Sweeper(OldZone* zone):
+    zone_(zone) {
+   }
+   virtual bool Sweep(RawObject* raw);
+  public:
+   Sweeper(const Sweeper& rhs) = delete;
+   virtual ~Sweeper() = default;
+
+   Sweeper& operator=(const Sweeper& rhs) = delete;
+  public:
+   static bool IsSweeping();
+   static bool Sweep(OldZone* zone);
  };
 }
 

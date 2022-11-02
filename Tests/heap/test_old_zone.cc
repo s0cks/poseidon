@@ -43,19 +43,12 @@ namespace poseidon {
    ~OldZoneTest() override = default;
  };
 
- static inline int64_t
- CalculateOldZoneSize() {
-   return OldZone::GetHeaderSize() + GetOldZoneSize();
- }
-
  TEST_F(OldZoneTest, TestConstructor) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
-   ASSERT_EQ(zone->GetZoneStartingAddress(), region.GetStartingAddress());
-   ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress() + OldZone::GetHeaderSize());
-   ASSERT_EQ(zone->GetTotalSize(), region.GetSize());
-   ASSERT_EQ(zone->GetSize(), region.GetSize() - OldZone::GetHeaderSize());
+   ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress());
+   ASSERT_EQ(zone->GetSize(), region.GetSize());
  }
 
  TEST_F(OldZoneTest, TestGetPageAt_WillFail_IndexLessThanZero) {
@@ -65,7 +58,7 @@ namespace poseidon {
  //TODO: add equals & not equals tests
 
  TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeLessThanZero) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
    auto ptr = TryAllocateBytes(zone, -1);
@@ -73,7 +66,7 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeEqualToZero) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
    auto ptr = TryAllocateBytes(zone, 0);
@@ -81,7 +74,7 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeEqualToZoneSize) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
    auto ptr = TryAllocateBytes(zone, GetOldZoneSize());
@@ -89,7 +82,7 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestTryAllocateWillFail_SizeGreaterThanZoneSize) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
    auto ptr = TryAllocateBytes(zone, GetOldZoneSize() + 1);
@@ -97,7 +90,7 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestTryAllocate){
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
 
@@ -124,14 +117,14 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestVisitMarkedPages) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
 
    static const constexpr int kNumberOfMarkedPages = 3;
-   ASSERT_TRUE(zone->MarkPage((const int64_t) 0));
-   ASSERT_TRUE(zone->MarkPage(1));
-   ASSERT_TRUE(zone->MarkPage(2));
+   ASSERT_NO_FATAL_FAILURE(zone->Mark((const int64_t) 0));
+   ASSERT_NO_FATAL_FAILURE(zone->Mark(1));
+   ASSERT_NO_FATAL_FAILURE(zone->Mark(2));
 
    MockOldPageVisitor visitor;
    EXPECT_CALL(visitor, Visit)
@@ -140,7 +133,7 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestVisitPointers) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
 
@@ -159,7 +152,7 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestVisitMarkedPointers) {
-   MemoryRegion region(CalculateOldZoneSize());
+   MemoryRegion region(GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = OldZone::From(region);
    static const constexpr int64_t kNumberOfPointers = 3;

@@ -12,7 +12,7 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- class Heap{
+ class Heap : public Region {
    friend class Scavenger;
    friend class Compactor;
    friend class Allocator;
@@ -28,6 +28,7 @@ namespace poseidon{
      }
    }
   private:
+   uword start_;
    int64_t size_;
    NewZone* new_zone_;
    OldZone* old_zone_;
@@ -37,39 +38,24 @@ namespace poseidon{
    uword AllocateLargeObject(int64_t size);
   public:
    explicit Heap(const MemoryRegion& region):
+    start_(region.GetStartingAddress()),
     size_(region.GetSize()),
-    new_zone_(NewZone::New(MemoryRegion::Subregion(region, GetHeaderSize(), GetNewZoneSize() + NewZone::GetHeaderSize()))),
-    old_zone_(OldZone::From(MemoryRegion::Subregion(region, GetHeaderSize() + GetNewZoneSize() + NewZone::GetHeaderSize(), GetOldZoneSize() + OldZone::GetHeaderSize()))) {
+    new_zone_(NewZone::New(MemoryRegion::Subregion(region, 0, GetNewZoneSize()))),
+    old_zone_(OldZone::From(MemoryRegion::Subregion(region, GetNewZoneSize(), GetOldZoneSize()))) {
    }
    Heap(const Heap& rhs) = default;
-   virtual ~Heap() = default;
+   ~Heap() override = default;
 
-   uword GetHeapStartingAddress() const {
-     return (uword)this;
+   uword GetStartingAddress() const override {
+     return start_;
    }
 
-   uword GetStartingAddress() const {
-     return GetHeapStartingAddress() + GetHeaderSize();
-   }
-
-   void* GetStartingAddressPointer() const {
-     return (void*)GetStartingAddress();
-   }
-
-   int64_t GetSize() const {
+   int64_t GetSize() const override {
      return size_;
    }
 
    int64_t GetTotalSize() const {
      return GetSize();
-   }
-
-   uword GetEndingAddress() const {
-     return GetStartingAddress() + GetSize();
-   }
-
-   void* GetEndingAddressPointer() const {
-     return (void*)GetEndingAddress();
    }
 
    NewZone* new_zone() const {

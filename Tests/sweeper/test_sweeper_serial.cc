@@ -1,160 +1,227 @@
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "helpers/assertions.h"
+#include "poseidon/heap/heap.h"
+#include "sweeper/mock_sweeper.h"
 #include "helpers/alloc_helpers.h"
 #include "poseidon/sweeper/sweeper_serial.h"
 
 namespace poseidon {
-#define UNALLOCATED 0 //TODO: cleanup
+ class IsPointerToMatcher {
+  protected:
+   const uword start_;
+   const ObjectSize size_;
+  public:
+   using is_gtest_matcher = void;
+
+   IsPointerToMatcher(const uword start,
+                      const ObjectSize size):
+                      start_(start),
+                      size_(size) {
+   }
+
+   uword starting_address() const {
+     return start_;
+   }
+
+   ObjectSize size() const {
+     return size_;
+   }
+
+   bool MatchAndExplain(RawObject* ptr, std::ostream*) const {
+     return ptr->GetStartingAddress() == starting_address() &&
+            ptr->GetSize() == size();
+   }
+
+   void DescribeTo(std::ostream* stream) const {
+     (*stream) << "pointer points to " << ((void*) starting_address()) << " (" << Bytes(size()) << ")";
+   }
+
+   void DescribeNegationTo(std::ostream* stream) const {
+     (*stream) << "pointer does not point to " << ((void*) starting_address()) << " (" << Bytes(size()) << ")";
+   }
+ };
+
+ static inline Matcher<RawObject*>
+ IsPointerTo(const uword start, const int64_t size) {
+   return IsPointerToMatcher(start, size);
+ }
+
+ static inline Matcher<RawObject*>
+ IsPointerTo(const RawObject* ptr) {
+   return IsPointerTo(ptr->GetStartingAddress(), ptr->GetSize());
+ }
 
  using namespace ::testing;
 
  class SerialSweeperTest : public Test {
   protected:
    SerialSweeperTest() = default;
+
+   static inline bool
+   SerialSweep(Sweeper* sweeper, Heap* heap) {
+     SerialSweeper serial_sweeper(sweeper);
+     return serial_sweeper.Sweep();
+   }
   public:
    ~SerialSweeperTest() override = default;
  };
 
- TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsNothing) {
-   static const int64_t kOldZoneHeaderSize = OldZone::GetHeaderSize();
-   static const int64_t kOldZoneSize = GetOldZoneSize();
-   static const int64_t kTotalOldZoneSize = kOldZoneHeaderSize + kOldZoneSize;
-
-   MemoryRegion region(kTotalOldZoneSize);
+ TEST_F(SerialSweeperTest, TestSweep_WillPass_SweepsNothing) {
+   MemoryRegion region(GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = OldZone::From(region);
+   auto heap = Heap::From(region);
+   auto zone = heap->old_zone();
 
    static constexpr const word kAValue = 33;
    auto a = TryAllocateMarkedWord(zone, kAValue);
    ASSERT_TRUE(IsOldWord(a, kAValue));
    ASSERT_TRUE(IsMarked(a));
 
-   SerialSweeper sweeper;
-   ASSERT_NO_FATAL_FAILURE(sweeper.Sweep(zone));
+   MockSweeper sweeper(zone);
+   ASSERT_TRUE(SerialSweep(&sweeper, heap));
+
+   EXPECT_CALL(sweeper, Sweep)
+    .Times(0);
+
+   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+     ASSERT_FALSE(zone->IsMarked(it));
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsOneObject) {
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-//   MemoryRegion region(GetOldPageSize());
-//   FreeList free_list(region);
-//   OldPage page(0, region);
-//
-//   FreeListPrinter::Print(free_list);
-//   auto p1 = TryAllocateWord(free_list, 33);
-//   ASSERT_TRUE(IsAllocated(p1));
-//   ASSERT_FALSE(IsNew(p1));
-//   ASSERT_TRUE(IsOld(p1));
-//   ASSERT_FALSE(IsMarked(p1));
-//   ASSERT_FALSE(IsRemembered(p1));
-//   ASSERT_FALSE(IsForwarding(p1));
-//
-//   FreeListPrinter::Print(free_list);
-//   SerialSweeper sweeper(&free_list);
-//   ASSERT_TRUE(sweeper.SweepPage(&page));
-//   FreeListPrinter::Print(free_list);
-//
-//   MockFreeListNodeVisitor visitor;
-//   EXPECT_CALL(visitor, Visit)
-//       .Times(2);
-//   ASSERT_TRUE(free_list.VisitFreeNodes(&visitor));
+   MemoryRegion region(GetTotalInitialHeapSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto heap = Heap::From(region);
+   auto zone = heap->old_zone();
+
+   static constexpr const word kAValue = 33;
+   auto a = TryAllocateWord(zone, kAValue);
+   ASSERT_TRUE(IsOldWord(a, kAValue));
+   ASSERT_FALSE(IsMarked(a));
+
+   MockSweeper sweeper(zone);
+   EXPECT_CALL(sweeper, Sweep(IsPointerTo(a)))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "sweeping " << (*ptr);
+      ptr->SetFreeBit();
+      memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
+      return true;
+    });
+   ASSERT_TRUE(SerialSweep(&sweeper, heap));
+
+   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+     ASSERT_FALSE(zone->IsMarked(it));
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleContiguousObjects) {
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-//   MemoryRegion region(GetOldPageSize());
-//   FreeList free_list(region);
-//   OldPage page(0, region);
-//
-//   static const constexpr int64_t kAValue = 33;
-//   auto a = TryAllocateWord(free_list, kAValue);
-//   ASSERT_TRUE(IsAllocated(a));
-//   ASSERT_FALSE(IsNew(a));
-//   ASSERT_TRUE(IsOld(a));
-//   ASSERT_FALSE(IsMarked(a));
-//   ASSERT_FALSE(IsRemembered(a));
-//   ASSERT_FALSE(IsForwarding(a));
-//
-//   static constexpr const int64_t kBValue = 55;
-//   auto b = TryAllocateWord(free_list, kBValue);
-//   ASSERT_TRUE(IsAllocated(b));
-//   ASSERT_FALSE(IsNew(b));
-//   ASSERT_TRUE(IsOld(b));
-//   ASSERT_FALSE(IsMarked(b));
-//   ASSERT_FALSE(IsRemembered(b));
-//   ASSERT_FALSE(IsForwarding(b));
-//
-//   static constexpr const int64_t kCValue = 99;
-//   auto c = TryAllocateWord(free_list, kCValue);
-//   ASSERT_TRUE(IsAllocated(c));
-//   ASSERT_FALSE(IsNew(c));
-//   ASSERT_TRUE(IsOld(c));
-//   ASSERT_FALSE(IsMarked(c));
-//   ASSERT_FALSE(IsRemembered(c));
-//   ASSERT_FALSE(IsForwarding(c));
-//
-//   SerialSweeper sweeper(&free_list);
-//   ASSERT_TRUE(sweeper.SweepPage(&page));
-//
-//   MockFreeListNodeVisitor visitor;
-//   EXPECT_CALL(visitor, Visit)
-//       .Times(4);
-//   ASSERT_TRUE(free_list.VisitFreeNodes(&visitor));
+   MemoryRegion region(GetTotalInitialHeapSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto heap = Heap::From(region);
+   auto zone = heap->old_zone();
+
+   static constexpr const word kAValue = 33;
+   auto a = TryAllocateWord(zone, kAValue);
+   ASSERT_TRUE(IsOldWord(a, kAValue));
+   ASSERT_FALSE(IsMarked(a));
+
+   static constexpr const word kBValue = 66;
+   auto b = TryAllocateWord(zone, kBValue);
+   ASSERT_TRUE(IsOldWord(b, kBValue));
+   ASSERT_FALSE(IsMarked(b));
+
+   static constexpr const word kCValue = 99;
+   auto c = TryAllocateWord(zone, kCValue);
+   ASSERT_TRUE(IsOldWord(c, kCValue));
+   ASSERT_FALSE(IsMarked(c));
+
+   MockSweeper sweeper(zone);
+   EXPECT_CALL(sweeper, Sweep(IsPointerTo(a)))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "sweeping " << (*ptr);
+      ptr->SetFreeBit();
+      memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
+      return true;
+    });
+   EXPECT_CALL(sweeper, Sweep(IsPointerTo(b)))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "sweeping " << (*ptr);
+      ptr->SetFreeBit();
+      memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
+      return true;
+    });
+   EXPECT_CALL(sweeper, Sweep(IsPointerTo(c)))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "sweeping " << (*ptr);
+      ptr->SetFreeBit();
+      memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
+      return true;
+    });
+   ASSERT_TRUE(SerialSweep(&sweeper, heap));
+
+   ASSERT_TRUE(IsFree(a));
+   ASSERT_TRUE(IsFree(b));
+   ASSERT_TRUE(IsFree(c));
+
+   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+     ASSERT_FALSE(zone->IsMarked(it));
  }
 
- TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleObjects) {
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-//   MemoryRegion region(GetOldPageSize());
-//   FreeList free_list(region);
-//   OldPage page(0, region);
-//
-//   static const constexpr int64_t kAValue = 33;
-//   auto a = TryAllocateWord(free_list, kAValue);
-//   ASSERT_TRUE(IsAllocated(a));
-//   ASSERT_FALSE(IsNew(a));
-//   ASSERT_TRUE(IsOld(a));
-//   ASSERT_FALSE(IsMarked(a));
-//   ASSERT_FALSE(IsRemembered(a));
-//   ASSERT_FALSE(IsForwarding(a));
-//
-//   static constexpr const int64_t kBValue = 55;
-//   auto b = TryAllocateMarkedWord(free_list, kBValue);
-//   ASSERT_TRUE(IsAllocated(b));
-//   ASSERT_FALSE(IsNew(b));
-//   ASSERT_TRUE(IsOld(b));
-//   ASSERT_TRUE(IsMarked(b));
-//   ASSERT_FALSE(IsRemembered(b));
-//   ASSERT_FALSE(IsForwarding(b));
-//
-//   static constexpr const int64_t kCValue = 99;
-//   auto c = TryAllocateWord(free_list, kCValue);
-//   ASSERT_TRUE(IsAllocated(c));
-//   ASSERT_FALSE(IsNew(c));
-//   ASSERT_TRUE(IsOld(c));
-//   ASSERT_FALSE(IsMarked(c));
-//   ASSERT_FALSE(IsRemembered(c));
-//   ASSERT_FALSE(IsForwarding(c));
-//
-//   SerialSweeper sweeper(&free_list);
-//   ASSERT_TRUE(sweeper.SweepPage(&page));
-//
-//   MockFreeListNodeVisitor visitor;
-//   EXPECT_CALL(visitor, Visit)
-//       .Times(3);
-//   ASSERT_TRUE(free_list.VisitFreeNodes(&visitor));
-//
-//   ASSERT_TRUE(IsAllocated(a));
-//   ASSERT_FALSE(IsWord(a, kAValue));
-//
-//   ASSERT_TRUE(IsAllocated(b));
-//   ASSERT_FALSE(IsNew(b));
-//   ASSERT_TRUE(IsOld(b));
-//   ASSERT_TRUE(IsMarked(b));
-//   ASSERT_FALSE(IsRemembered(b));
-//   ASSERT_FALSE(IsForwarding(b));
-//   ASSERT_TRUE(IsWord(b, kBValue));
-//
-//   ASSERT_TRUE(IsAllocated(a));
-//   ASSERT_FALSE(IsWord(a, kCValue));
+ TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleNoncontiguousObjects) {
+   MemoryRegion region(GetTotalInitialHeapSize());
+   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
+   auto heap = Heap::From(region);
+   auto zone = heap->old_zone();
+
+   static constexpr const word kAValue = 33;
+   auto a = TryAllocateWord(zone, kAValue);
+   ASSERT_TRUE(IsOldWord(a, kAValue));
+   ASSERT_FALSE(IsMarked(a));
+
+   static constexpr const word kBValue = 66;
+   auto b = TryAllocateMarkedWord(zone, kBValue);
+   ASSERT_TRUE(IsOldWord(b, kBValue));
+   ASSERT_TRUE(IsMarked(b));
+
+   static constexpr const word kCValue = 99;
+   auto c = TryAllocateWord(zone, kCValue);
+   ASSERT_TRUE(IsOldWord(c, kCValue));
+   ASSERT_FALSE(IsMarked(c));
+
+   MockSweeper sweeper(zone);
+   EXPECT_CALL(sweeper, Sweep(IsPointerTo(a)))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "sweeping " << (*ptr);
+      ptr->SetFreeBit();
+      memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
+      return true;
+    });
+   EXPECT_CALL(sweeper, Sweep(IsPointerTo(b)))
+    .Times(0);
+   EXPECT_CALL(sweeper, Sweep(IsPointerTo(c)))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "sweeping " << (*ptr);
+      ptr->SetFreeBit();
+      memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
+      return true;
+    });
+   ASSERT_TRUE(SerialSweep(&sweeper, heap));
+
+   ASSERT_TRUE(IsFree(a));
+
+   ASSERT_FALSE(IsFree(b));
+   ASSERT_TRUE(IsOldWord(b, kBValue));
+   ASSERT_TRUE(IsMarked(b));
+
+   ASSERT_TRUE(IsFree(c));
+
+   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+     ASSERT_FALSE(zone->IsMarked(it));
  }
 }

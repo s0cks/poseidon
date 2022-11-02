@@ -11,9 +11,9 @@ namespace poseidon{
   }
 
  NewZone* NewZone::New(const poseidon::MemoryRegion& region){
-   const auto total_size = region.GetSize() - NewZone::GetHeaderSize();
+   const auto total_size = region.GetSize();
    const auto semi_size = total_size / 2;
-   return new ((void*)region.GetStartingAddressPointer())NewZone(total_size, semi_size);
+   return new NewZone(region.GetStartingAddress(), total_size, semi_size);
  }
 
  uword NewZone::TryAllocate(int64_t size){

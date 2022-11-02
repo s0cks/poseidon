@@ -17,6 +17,9 @@ namespace poseidon {
 
  class NewZone;
  class NewPage : public Page {
+   template<class P>
+   friend class Zone;
+
    friend class NewZone;
    friend class NewPageTest;
    friend class SerialMarkerTest;
@@ -31,25 +34,31 @@ namespace poseidon {
      bool HasNext() const override {
        return current_address() > 0 &&
               current_address() < page()->GetEndingAddress() &&
-              current_ptr()->IsNew();
+              current_ptr()->IsNew() &&
+              current_ptr()->GetSize() > 0;
      }
    };
-  protected:
-   NewPage() = default;
+  public: //TODO: reduce access
+   explicit NewPage(const PageIndex index = 0, const uword start_address = 0, const PageSize size = GetNewPageSize()):
+     Page(PageTag::New(index, size), start_address) {
+   }
   public:
-   ~NewPage() override = default; //TODO: change to delete
+   NewPage(const NewPage& rhs) = default;
+   ~NewPage() override = default;
 
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
-  public:
+
    int64_t GetSize() const override {
      return GetNewPageSize();
    }
 
+   NewPage& operator=(const NewPage& rhs) = default;
+
    friend std::ostream& operator<<(std::ostream& stream, const NewPage& value) {
      stream << "NewPage(";
      stream << "start=" << value.GetStartingAddressPointer() << ", ";
-     stream << "size=" << value.GetSize();
+     stream << "size=" << Bytes(value.GetSize());
      stream << ")";
      return stream;
    }
@@ -62,8 +71,6 @@ namespace poseidon {
    friend bool operator!=(const NewPage& lhs, const NewPage& rhs) {
      return !operator==(lhs, rhs);
    }
-
-   static NewPage* New(const MemoryRegion& region);
  };
 }
 

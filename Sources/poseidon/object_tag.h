@@ -154,6 +154,7 @@ namespace poseidon {
      stream << "old=" << val.IsOld() << ", ";
      stream << "marked=" << val.IsMarked() << ", ";
      stream << "remembered=" << val.IsRemembered() << ", ";
+     stream << "free=" << val.IsFree() << ", ";
      stream << "size=" << Bytes(val.GetSize());
      stream << ")";
      return stream;

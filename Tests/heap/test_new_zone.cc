@@ -75,31 +75,16 @@ namespace poseidon{
    ~NewZoneTest() override = default;
  };
 
- static inline const int64_t
- CalculateNewZoneSize() {
-   auto size = GetNewZoneSize();
-   size += NewZone::GetHeaderSize();
-   size += (GetNumberOfNewPages() * GetNewPageSize());
-   return size;
- }
-
  TEST_F(NewZoneTest, TestConstructor) {
-   static const int64_t kHeaderSize = NewZone::GetHeaderSize();
-   static const int64_t kZoneSize = GetNewZoneSize();
-   static const int64_t kTotalZoneSize = kHeaderSize + kZoneSize;
-   static const int64_t kSemispaceSize = kZoneSize / 2;
+   static const int64_t kSemispaceSize = GetNewZoneSize() / 2;
+   static const int64_t kFromspaceOffset = 0;
+   static const int64_t kTospaceOffset = kSemispaceSize;
 
-   static const int64_t kZoneOffset = kHeaderSize;
-   static const int64_t kFromspaceOffset = kZoneOffset;
-   static const int64_t kTospaceOffset = kZoneOffset + kSemispaceSize;
-
-   MemoryRegion region(kTotalZoneSize);
+   MemoryRegion region(GetNewZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = NewZone::New(region);
-   ASSERT_EQ(zone->GetZoneStartingAddress(), region.GetStartingAddress());
-   ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress() + kZoneOffset);
-   ASSERT_EQ(zone->GetTotalSize(), kTotalZoneSize);
-   ASSERT_EQ(zone->GetSize(), kZoneSize);
+   ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress());
+   ASSERT_EQ(zone->GetSize(), region.GetSize());
    ASSERT_EQ(zone->semisize(), kSemispaceSize);
 
    Semispace& fromspace = zone->fromspace();
@@ -113,8 +98,9 @@ namespace poseidon{
    ASSERT_TRUE(tospace.IsEmpty());
 
    for(auto idx = 0; idx < GetNumberOfNewPages(); idx++) {
-     ASSERT_FALSE(zone->IsPageMarked(idx));
-     auto page = zone->GetPageAt(idx);
+     ASSERT_FALSE(zone->IsMarked(idx));
+     auto page = zone->pages(idx);
+     ASSERT_EQ(page->GetIndex(), idx);
      ASSERT_EQ(page->GetStartingAddress(), zone->GetStartingAddress() + (idx * GetNewPageSize()));
      ASSERT_EQ(page->GetSize(), GetNewPageSize());
    }
@@ -199,8 +185,8 @@ namespace poseidon{
 
    // the object should be in the first page, and the page should be marked
    static const int64_t kFirstPageIndex = 0;
-   ASSERT_TRUE(zone->IsPageMarked(kFirstPageIndex));
-   ASSERT_TRUE(zone->GetPageAt(kFirstPageIndex)->Contains(*ptr));
+   ASSERT_TRUE(zone->IsMarked(kFirstPageIndex));
+   ASSERT_TRUE(zone->pages(kFirstPageIndex)->Contains(*ptr));
  }
 
  TEST_F(NewZoneTest, TestVisitPages) {
@@ -220,12 +206,12 @@ namespace poseidon{
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = NewZone::New(region);
 
-   auto p1 = zone->GetPageAt(1);
-   ASSERT_NO_FATAL_FAILURE(zone->MarkPage(p1));
-   auto p2 = zone->GetPageAt(3);
-   ASSERT_NO_FATAL_FAILURE(zone->MarkPage(p2));
-   auto p3 = zone->GetPageAt(5);
-   ASSERT_NO_FATAL_FAILURE(zone->MarkPage(p3));
+   auto p1 = zone->pages(1);
+   ASSERT_NO_FATAL_FAILURE(zone->Mark(p1));
+   auto p2 = zone->pages(3);
+   ASSERT_NO_FATAL_FAILURE(zone->Mark(p2));
+   auto p3 = zone->pages(5);
+   ASSERT_NO_FATAL_FAILURE(zone->Mark(p3));
 
    MockNewPageVisitor visitor;
    EXPECT_CALL(visitor, Visit(NewPageEq(p1)))

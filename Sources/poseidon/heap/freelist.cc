@@ -25,7 +25,6 @@ namespace poseidon{
      return UNALLOCATED;
    }
 
-   DLOG(INFO) << "found free list item: " << (*free_ptr);
    if(!Remove(free_ptr)) {
      DLOG(ERROR) << "cannot remove " << (*free_ptr) << " from " << (*this);
      return UNALLOCATED;
@@ -79,10 +78,6 @@ namespace poseidon{
    if(entry == nullptr)
      return false;
 
-   DLOG(INFO) << "removing: " << (*entry);
-   if(previous != nullptr)
-     DLOG(INFO) << "previous: " << (*previous);
-
    auto next = entry->GetNext();
    if(previous == nullptr) {
      buckets_[bucket] = next;
@@ -97,12 +92,9 @@ namespace poseidon{
      return false;
 
    auto new_ptr = FreeObject::From(MemoryRegion(start, size));
-   DLOG(INFO) << "inserting " << (*new_ptr);
-
    auto bucket = GetBucketIndexFor(size);
    auto entry = buckets_[bucket];
    if (entry == nullptr) {
-     DLOG(INFO) << "inserting new bucket @" << bucket << " for " << (*new_ptr);
      buckets_[bucket] = new_ptr;
      return true;
    }

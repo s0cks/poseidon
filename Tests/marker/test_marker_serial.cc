@@ -19,16 +19,12 @@ namespace poseidon {
  TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass) {
    ASSERT_NO_FATAL_FAILURE(LocalPage::Initialize());
 
-   static const int64_t kNewZoneSize = GetNewZoneSize();
-   static const int64_t kNewZoneHeaderSize = NewZone::GetHeaderSize();
-   static const int64_t kNewZoneTotalSize = kNewZoneHeaderSize + kNewZoneSize;
+   static const int64_t kNewZoneTotalSize = GetNewZoneSize();
    MemoryRegion new_zone_region(kNewZoneTotalSize);
    ASSERT_TRUE(new_zone_region.Protect(MemoryRegion::kReadWrite));
    const auto new_zone = NewZone::New(new_zone_region);
 
-   static const int64_t kOldZoneSize = GetOldZoneSize();
-   static const int64_t kOldZoneHeaderSize = OldZone::GetHeaderSize();
-   static const int64_t kOldZoneTotalSize = kOldZoneHeaderSize + kOldZoneSize;
+   static const int64_t kOldZoneTotalSize = GetOldZoneSize();
    MemoryRegion old_zone_region(kOldZoneTotalSize);
    ASSERT_TRUE(old_zone_region.Protect(MemoryRegion::kReadWrite));
    const auto old_zone = OldZone::From(old_zone_region);

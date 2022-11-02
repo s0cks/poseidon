@@ -7,7 +7,7 @@
 
 namespace poseidon {
  template<class Z>
- class PageMarker : public PageVisitor {
+ class PageMarker : public NewPageVisitor, public OldPageVisitor {
    friend class NewZone;
    friend class OldZone;
   protected:
@@ -23,18 +23,23 @@ namespace poseidon {
    }
 
    explicit PageMarker(Z* zone, const Region& region):
-    PageVisitor(),
+    NewPageVisitor(),
+    OldPageVisitor(),
     zone_(zone),
     region_(region) {
    }
   public:
    ~PageMarker() override = default;
 
-   bool Visit(Page* page) override {
-     if(region().Intersects((*page))) {
-       if(!zone_->MarkPage(page))
-         return false;
-     }
+   bool Visit(NewPage* page) override {
+     if(region().Intersects((*page)))
+       zone()->Mark(page->GetIndex());
+     return true;
+   }
+
+   bool Visit(OldPage* page) override {
+     if(region().Intersects((*page)))
+       zone()->Mark(page->GetIndex());
      return true;
    }
 

@@ -1,12 +1,13 @@
 #ifndef POSEIDON_HEAP_ZONE_H
 #define POSEIDON_HEAP_ZONE_H
 
-#include "poseidon/raw_object.h"
+#include "poseidon/bitset.h"
 #include "poseidon/heap/page.h"
-#include "poseidon/heap/section.h"
+#include "poseidon/raw_object.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
+ template<class P>
  class Zone : public Section {
    friend class ZoneTest;
    friend class RawObject;
@@ -44,39 +45,39 @@ namespace poseidon{
      }
    };
 
-   template<class Z, class P>
    class ZonePageIterator {
     protected:
-     Z* zone_;
-     int64_t total_;
-     int64_t current_;
+     Zone<P>* zone_;
+     PageIndex current_;
+     PageIndex last_;
 
-     inline Z* zone() const {
+     inline Zone<P>* zone() const {
        return zone_;
      }
 
-     inline int64_t current() const {
+     inline PageIndex current_index() const {
        return current_;
      }
 
-     inline int64_t total() const {
-       return total_;
+     inline PageIndex last_index() const {
+       return last_;
      }
 
-     explicit ZonePageIterator(Z* zone, const int64_t total):
+     explicit ZonePageIterator(Zone<P>* zone):
       zone_(zone),
-      total_(total),
-      current_(0) {
+      current_(0),
+      last_(zone->GetNumberOfPages()){
      }
     public:
      virtual ~ZonePageIterator() = default;
 
      virtual bool HasNext() const {
-       return current() < total();
+       return current_index() < zone()->GetNumberOfPages() &&
+              zone()->pages(current_index()) != nullptr;
      }
 
      virtual P* Next() {
-       auto next = zone()->GetPageAt(current_);
+       auto next = zone()->pages(current_index());
        current_ += 1;
        return next;
      }
@@ -87,30 +88,8 @@ namespace poseidon{
      return region.GetSize() / page_size;
    }
 
-   template<class Z, class Iterator, class Visitor>
-   static inline bool IteratePages(Z* zone, Visitor* vis) {
-     Iterator iter(zone);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(!vis->Visit(next))
-         return false;
-     }
-     return true;
-   }
-
-   template<class Z, class Iterator, class Visitor>
-   inline bool IterateMarkedPages(Z* zone, Visitor* vis) {
-     Iterator iter(zone);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(zone->IsPageMarked(next) && !vis->Visit(next))
-         return false;
-     }
-     return true;
-   }
-
-   template<class Z, class Iterator, class Visitor>
-   static inline bool IterateUnmarkedPages(Z* zone, Visitor* vis) {
+   template<class Iterator, class Visitor>
+   static inline bool IterateUnmarkedPages(Zone<P>* zone, Visitor* vis) {
      Iterator iter(zone);
      while(iter.HasNext()) {
        auto next = iter.Next();
@@ -125,7 +104,6 @@ namespace poseidon{
      Iterator iter(zone);
      while(iter.HasNext()) {
        auto next = iter.Next();
-       DLOG(INFO) << "next: " << (*next);
        if(!vis->Visit(next))
          return false;
      }
@@ -137,21 +115,87 @@ namespace poseidon{
      Iterator iter(zone);
      while(iter.HasNext()) {
        auto next = iter.Next();
-       if(next->IsMarked() && !vis->Visit(next))
-         return false;
+       if(next->IsMarked()) {
+         if(!vis->Visit(next))
+           return false;
+       }
      }
      return true;
    }
   protected:
-   Zone() = default;
+   uword start_;
+   int64_t size_;
+   BitSet pages_table_;
+   P* pages_;
+   int64_t num_pages_;
 
-   virtual void Clear();
-
-   virtual inline void Reset() {
-     return Clear(); //TODO: refactor
+   Zone(const uword start_address, const ObjectSize size, const ObjectSize page_size):
+    start_(start_address),
+    size_(size),
+    pages_table_(size / page_size),
+    pages_(new P[size / page_size]),
+    num_pages_(size / page_size) {
+     for(auto idx = 0; idx < num_pages_; idx++) {
+       pages_[idx] = P(idx, start_address + (idx * page_size), page_size);
+     }
    }
   public:
+   Zone() = delete;
    ~Zone() override = default;
+
+   uword GetStartingAddress() const override {
+     return start_;
+   }
+
+   int64_t GetSize() const override {
+     return size_;
+   }
+
+   virtual int64_t GetNumberOfPages() const {
+     return num_pages_;
+   }
+
+   virtual P* pages() const {
+     return pages_;
+   }
+
+   virtual P* pages(const PageIndex index) {
+     if(index < 0 || index > GetNumberOfPages())
+       return nullptr;
+     return &pages_[index];
+   }
+
+   virtual P* pages_begin() {
+     return &pages_[0];
+   }
+
+   virtual P* pages_end() {
+     return &pages_[num_pages_];
+   }
+
+   virtual bool IsMarked(const PageIndex index) const {
+     return pages_table_.Test(index);
+   }
+
+   virtual bool IsMarked(const P* page) const {
+     return IsMarked(page->GetIndex());
+   }
+
+   virtual void Mark(const PageIndex index) {
+     return pages_table_.Set(index, true);
+   }
+
+   virtual void Mark(const P* page) {
+     return Mark(page->GetIndex());
+   }
+
+   virtual void Unmark(const PageIndex index) {
+     return pages_table_.Set(index, false);
+   }
+
+   virtual void Unmark(const P* page) {
+     return Unmark(page->GetIndex());
+   }
  };
 }
 

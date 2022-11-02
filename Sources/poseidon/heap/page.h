@@ -4,10 +4,11 @@
 #include <ostream>
 
 #include "poseidon/heap/section.h"
+#include "poseidon/heap/page_tag.h"
 #include "poseidon/relaxed_atomic.h"
 #include "poseidon/platform/memory_region.h"
 
-namespace poseidon{
+namespace poseidon {
  class Page;
  class PageVisitor {
   protected:
@@ -56,16 +57,55 @@ namespace poseidon{
      }
    };
   protected:
-   Page() = default;
+   RelaxedAtomic<RawPageTag> tag_;
+   uword start_;
+
+   Page():
+    Section(),
+    tag_(0),
+    start_(0) {
+   }
+
+   Page(const RawPageTag tag, const uword start):
+    Section(),
+    tag_(tag),
+    start_(start) {
+   }
+
+   inline RawPageTag raw_tag() const {
+     return (RawPageTag)tag_;
+   }
+
+   inline void set_raw_tag(const RawPageTag& value) {
+     tag_ = value;
+   }
   public:
+   Page(const Page& rhs) = default;
    ~Page() override = default;
 
    uword GetStartingAddress() const override {
-     return (uword)this;
+     return start_;
+   }
+
+   int64_t GetSize() const override {
+     return PageTag::Size::Decode(raw_tag());
+   }
+
+   PageIndex GetIndex() const {
+     return PageTag::Index::Decode(raw_tag());
    }
 
    virtual void Reset() { //TODO: refactor
      memset(GetStartingAddressPointer(), 0, GetSize());
+   }
+
+   Page& operator=(const Page& rhs) {
+     if(&rhs == this)
+       return *this;
+     Section::operator=(rhs);
+     tag_ = rhs.raw_tag();
+     start_ = rhs.GetStartingAddress();
+     return *this;
    }
  };
 }

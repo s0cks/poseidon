@@ -3,9 +3,17 @@
 
 namespace poseidon {
  bool SerialSweeper::Visit(RawObject* raw){
-   DLOG(INFO) << "visiting " << (*raw);
-   if(raw->IsMarked() || !raw->IsOld())
+   if(raw->IsMarked() || !raw->IsOld() || raw->IsFree())
      return true; // dont sweep marked objects
-   return Sweeper::SweepObject(nullptr, raw);
+   return sweeper()->Sweep(raw);
+ }
+
+ bool SerialSweeper::SweepPage(Page* page){
+   TIMED_SECTION("SweepPage", {
+     if(!page->VisitPointers(this))
+       return false;
+     zone()->Unmark(page->GetIndex());
+   });
+   return true;
  }
 }

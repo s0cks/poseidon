@@ -8,7 +8,7 @@
 #include "poseidon/heap/freelist.h"
 
 namespace poseidon{
- class OldZone : public Zone {
+ class OldZone : public Zone<OldPage> {
    friend class OldZoneTest;
    friend class SweeperTest;
    friend class Heap;
@@ -32,112 +32,51 @@ namespace poseidon{
      }
    };
 
-   class OldZonePageIterator : public ZonePageIterator<OldZone, OldPage> {
+   class OldZonePageIterator : public ZonePageIterator {
     public:
      explicit OldZonePageIterator(OldZone* zone):
-       ZonePageIterator<OldZone, OldPage>(zone, GetNumberOfOldPages()) {
+       ZonePageIterator(zone) {
      }
      ~OldZonePageIterator() override = default;
    };
-
-   static inline ObjectSize
-   GetHeaderSize() {
-     return sizeof(OldZone);
-   }
   protected:
-   BitSet table_;
    FreeList free_list_;
 
-   OldZone(const uword start_address, const int64_t size, const int64_t num_pages):
-    Zone(),
-    table_(num_pages),
+   OldZone(const uword start_address, const int64_t size):
+    Zone<OldPage>(start_address, size, GetOldPageSize()),
     free_list_(start_address, size) {
-   }
-
-   inline uword GetPageAddressAt(const int64_t index) const {
-     if(index < 0 || index > GetNumberOfOldPages())
-       return 0;
-     return GetStartingAddress() + (index * GetNewPageSize());
-   }
-
-   inline int64_t GetPageIndex(Page* page) const {
-     return static_cast<int64_t>((page->GetStartingAddress() - GetStartingAddress())) / GetNewPageSize();
    }
 
    virtual bool MarkAllIntersectedBy(const Region& region);
   public:
    OldZone() = delete;
-   ~OldZone() override = default; //TODO: change to delete
-
-   uword GetStartingAddress() const override {
-     return GetZoneStartingAddress() + GetHeaderSize();
-   }
-
-   uword GetZoneStartingAddress() const {
-     return (uword)this;
-   }
-
-   int64_t GetSize() const override {
-     return GetOldZoneSize();
-   }
-
-   int64_t GetTotalSize() const {
-     return GetHeaderSize() + GetSize();
-   }
+   ~OldZone() override = default;
 
    FreeList* free_list(){//TODO: visible for testing
      NOT_IMPLEMENTED(FATAL); //TODO: implement
      return nullptr;
    }
 
-   virtual OldPage* GetPageAt(const int64_t index) const {
-     if(index < 0 || index > GetNumberOfOldPages())
-       return nullptr;
-     return OldPage::From(GetPageAddressAt(index));
-   }
-
-   virtual bool IsPageMarked(const int64_t index) const {
-     return table_.Test(index);
-   }
-
-   inline bool IsPageMarked(OldPage* page) const {
-     return IsPageMarked(GetPageIndex(page));
-   }
-
-   virtual inline bool MarkPage(const int64_t index) {
-     table_.Set(index, true);
-     return IsPageMarked(index);
-   }
-
-   virtual inline bool MarkPage(Page* page) {
-     return MarkPage(GetPageIndex(page));
-   }
-
-   virtual inline bool UnmarkPage(const int64_t index) {
-     table_.Set(index, false);
-     return !IsPageMarked(index);
-   }
-
-   virtual inline bool UnmarkPage(Page* page) {
-     return UnmarkPage(GetPageIndex(page));
-   }
-
    uword TryAllocate(const ObjectSize& size);
 
-   virtual bool VisitPages(PageVisitor* vis) {
-     return IteratePages<OldZone, OldZonePageIterator, PageVisitor>(this, vis);
-   }
-
    virtual bool VisitPages(OldPageVisitor* vis) {
-     return IteratePages<OldZone, OldZonePageIterator, OldPageVisitor>(this, vis);
-   }
-
-   virtual bool VisitMarkedPages(PageVisitor* vis) {
-     return IteratePages<OldZone, OldZonePageIterator, PageVisitor>(this, vis);
+     OldZonePageIterator iter(this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(!vis->Visit(next))
+         return false;
+     }
+     return true;
    }
 
    virtual bool VisitMarkedPages(OldPageVisitor* vis) {
-     return IterateMarkedPages<OldZone, OldZonePageIterator, OldPageVisitor>(this, vis);
+     OldZonePageIterator iter(this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(IsMarked(next) && !vis->Visit(next))
+           return false;
+     }
+     return true;
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override {

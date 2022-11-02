@@ -10,9 +10,9 @@ namespace poseidon{
  static constexpr const int64_t kDefaultNewPageSize = 2 * kMB;
  DECLARE_int64(new_page_size);
 
- static constexpr const int64_t kDefaultOldZoneSize = 512 * kMB;
+ static constexpr const int64_t kDefaultOldZoneSize = 256 * kMB;
  DECLARE_int64(old_zone_size);
- static constexpr const int64_t kDefaultOldPageSize = 16 * kMB;
+ static constexpr const int64_t kDefaultOldPageSize = 32 * kMB;
  DECLARE_int64(old_page_size);
  static constexpr const int32_t kDefaultNumberOfFreeListBuckets = 16;
  DECLARE_int32(free_list_buckets);

@@ -16,13 +16,4 @@ namespace poseidon {
   public:
    ~NewPageTest() override = default;
  };
-
- TEST_F(NewPageTest, TestConstructor) {
-   static const constexpr int64_t kPageIndex = 0;
-   MemoryRegion region(GetNewPageSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto page = NewPage::New(region);
-   ASSERT_EQ(page->GetStartingAddress(), region.GetStartingAddress());
-   ASSERT_EQ(page->GetSize(), region.GetSize());
- }
 }

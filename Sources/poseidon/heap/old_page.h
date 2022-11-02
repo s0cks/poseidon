@@ -19,6 +19,9 @@ namespace poseidon{
 
  class OldZone;
  class OldPage : public Page{
+   template<class P>
+   friend class Zone;
+
    friend class OldZone;
    friend class OldPageTest;
    friend class SerialSweeperTest;
@@ -34,32 +37,33 @@ namespace poseidon{
        return current_address() > 0 &&
               current_address() < page()->GetEndingAddress() &&
               current_ptr()->IsOld() &&
-              current_ptr()->GetPointerSize() > 0;
+              current_ptr()->GetSize() > 0;
      }
    };
-  protected:
-   OldPage() = default;
   public:
-   OldPage(const OldPage& rhs) = delete;
+   OldPage() = default;
+   explicit OldPage(const PageIndex index, const uword start, const ObjectSize size):
+     Page(PageTag::Old(index, size), start) {
+   }
+   OldPage(const OldPage& rhs) = default;
    ~OldPage() override = default;
 
-   int64_t GetSize() const override {
-     return GetOldPageSize();
+   PageTag tag() const {
+     return (PageTag)raw_tag();
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
+   OldPage& operator=(const OldPage& rhs) = default;
+
    friend std::ostream& operator<<(std::ostream& stream, const OldPage& value) {
      stream << "OldPage(";
      stream << "start=" << value.GetStartingAddressPointer() << ", ";
-     stream << "size=" << value.GetSize();
+     stream << "size=" << Bytes(value.GetSize()) << ", ";
+     stream << "tag=" << value.tag();
      stream << ")";
      return stream;
-   }
-
-   static inline OldPage* From(const uword start_address) {
-     return new ((void*) start_address)OldPage();
    }
  };
 }

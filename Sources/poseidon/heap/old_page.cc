@@ -7,7 +7,7 @@ namespace poseidon {
    OldPageIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
-     if(!vis->Visit(next))
+     if(next->IsOld() && !next->IsFree() && !vis->Visit(next))
        return false;
    }
    return true;
@@ -17,7 +17,7 @@ namespace poseidon {
    OldPageIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
-     if(next->IsMarked() && !vis->Visit(next))
+     if(next->IsOld() && !next->IsFree() && next->IsMarked() && !vis->Visit(next))
        return false;
    }
    return true;

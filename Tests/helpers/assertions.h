@@ -152,6 +152,13 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
+ IsFree(RawObject* ptr) {
+   if(!ptr->IsFree())
+     return AssertionFailure() << (*ptr) << " is not free";
+   return AssertionSuccess();
+ }
+
+ static inline AssertionResult
  IsOldWord(RawObject* ptr, word value){
    if(!IsAllocated(ptr))
      return IsAllocated(ptr);

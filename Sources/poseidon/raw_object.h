@@ -43,7 +43,6 @@ namespace poseidon{
 
     //TODO: cleanup friends
     friend class Semispace;
-    friend class Zone;
     friend class Page;
     friend class NewPage;
     friend class OldPage;
@@ -76,12 +75,12 @@ namespace poseidon{
       return GetTotalSize(); //TODO: refactor
     }
 
-    void* GetPointer() const{
-      return (void*)(reinterpret_cast<uword>(this) + sizeof(RawObject));
-    }
-
     uword GetObjectPointerAddress() const{
       return reinterpret_cast<uword>(this) + sizeof(RawObject);
+    }
+
+    void* GetPointer() const{
+      return (void*)(reinterpret_cast<uword>(this) + sizeof(RawObject));
     }
 
     void SetForwardingAddress(uword address){
@@ -160,6 +159,18 @@ namespace poseidon{
       tag_ = ObjectTag::RememberedBit::Update(false, raw_tag());
     }
 
+    bool IsFree() const {
+      return ObjectTag::FreeBit::Decode(raw_tag());
+    }
+
+    void SetFreeBit(const bool value = true) {
+      tag_ = ObjectTag::FreeBit::Update(value, raw_tag());
+    }
+
+    inline void ClearFreeBit() {
+      return SetFreeBit(false);
+    }
+
     void ClearTag(){
       tag_ = kInvalidObjectTag;
     }
@@ -173,7 +184,7 @@ namespace poseidon{
     }
 
     int64_t GetTotalSize() const{
-      return static_cast<int64_t>(sizeof(RawObject) + GetPointerSize());
+      return static_cast<int64_t>(sizeof(RawObject)) + GetPointerSize();
     }
 
     friend std::ostream& operator<<(std::ostream& stream, const RawObject& value) {

@@ -10,9 +10,7 @@ namespace poseidon{
  Heap* Heap::From(const MemoryRegion& region){
    if(region.GetStartingAddress() <= 0 || region.GetSize() <= 0)
      return nullptr;
-
-   auto heap = new (region.GetStartingAddressPointer())Heap(region);
-   return heap;
+   return new Heap(region);
  }
 
  pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
