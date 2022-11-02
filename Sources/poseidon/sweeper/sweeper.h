@@ -30,6 +30,7 @@ namespace poseidon {
    explicit Sweeper(OldZone* zone):
     zone_(zone) {
    }
+
    virtual bool Sweep(RawObject* raw);
   public:
    Sweeper(const Sweeper& rhs) = delete;

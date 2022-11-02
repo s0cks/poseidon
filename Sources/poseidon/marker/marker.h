@@ -5,62 +5,34 @@
 #include "poseidon/heap/old_zone.h"
 
 namespace poseidon {
- class Page;
  class Marker {
-  protected:
+   template<bool Parallel>
+   friend class MarkerVisitor;
+
+   friend class SerialMarker;
+   friend class ParallelMarker;
+  private:
    static void SetMarking(bool value = true);
 
    static inline void
    ClearMarking() {
-     return SetMarking(false);
+     return SetMarking(true);
    }
 
-   static bool SerialMark(Section& section);
-   static bool ParallelMark(Section& section);
+   static bool SerialMark(Marker* marker);
+   static bool ParallelMark(Marker* marker);
+  protected:
+   Marker() = default;
 
-   static inline bool
-   Mark(Section& section) {
-     return HasWorkers() ?
-            ParallelMark(section) :
-            SerialMark(section);
-   }
+   virtual bool Mark(RawObject* ptr) = 0;
   public:
-   Marker() = delete;
    Marker(const Marker& rhs) = delete;
-   ~Marker() = delete;
-
-   static bool IsMarking();
-   static bool MarkRoots();
-
-   static inline bool
-   MarkNewPage(NewPage& page) {
-     TIMED_SECTION("MarkNewPage", {
-       return Mark(page);
-     });
-   }
-
-   static inline bool
-   MarkOldPage(OldPage& page) {
-     TIMED_SECTION("MarkOldPage", {
-       return Mark(page);
-     });
-   }
-
-   static inline bool
-   MarkNewZone(NewZone& zone) {
-     TIMED_SECTION("MarkNewZone", {
-       return Mark(zone);
-     });
-   }
-
-   static inline bool
-   MarkOldZone(OldZone& zone) {
-     TIMED_SECTION("MarkOldZone", {
-       return Mark(zone);
-     });
-   }
+   virtual ~Marker() = default;
 
    Marker& operator=(const Marker& rhs) = delete;
+  public:
+   static bool IsMarking();
+   static bool Mark();
  };
 }
 

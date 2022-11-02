@@ -103,6 +103,11 @@ namespace poseidon{
      LocalBase(rhs){
    }
 
+   explicit Local(const RawObject* ptr) noexcept:
+    Local() {
+     (*this) = ptr;
+   }
+
    template<typename U>
    explicit Local(const Local<U>& h):
      Local(h){

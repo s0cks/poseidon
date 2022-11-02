@@ -6,18 +6,16 @@
 
 namespace poseidon {
  static constexpr const int64_t kDefaultSerialMarkerWorkQueueSize = 1024;
+
+ class Marker;
  class SerialMarker : public MarkerVisitor<false> {
   protected:
    WorkStealingQueue<uword> work_;
 
-   static inline void Mark(RawObject* ptr) {
-     ptr->SetMarkedBit();
-   }
-
    bool Visit(RawObject* ptr) override;
   public:
-   SerialMarker():
-    MarkerVisitor<false>(),
+   explicit SerialMarker(Marker* marker):
+    MarkerVisitor<false>(marker),
     work_(kDefaultSerialMarkerWorkQueueSize) {
    }
    ~SerialMarker() override = default;

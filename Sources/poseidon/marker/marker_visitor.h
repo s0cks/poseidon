@@ -4,12 +4,26 @@
 #include "poseidon/local.h"
 #include "poseidon/heap/zone.h"
 #include "poseidon/heap/page.h"
+#include "poseidon/marker/marker.h"
 
 namespace poseidon {
  template<bool Parallel>
  class MarkerVisitor : public RawObjectVisitor {
   protected:
-   MarkerVisitor() = default;
+   Marker* marker_;
+
+   explicit MarkerVisitor(Marker* marker):
+    RawObjectVisitor(),
+    marker_(marker) {
+   }
+
+   inline Marker* marker() const {
+     return marker_;
+   }
+
+   inline bool Mark(RawObject* ptr) {
+     return marker()->Mark(ptr);
+   }
   public:
    ~MarkerVisitor() override = default;
 

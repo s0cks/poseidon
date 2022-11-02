@@ -2,6 +2,7 @@
 
 #include "helpers.h"
 #include "poseidon/flags.h"
+#include "marker/mock_marker.h"
 #include "helpers/alloc_helpers.h"
 #include "poseidon/heap/new_page.h"
 #include "poseidon/marker/marker_serial.h"
@@ -12,6 +13,12 @@ namespace poseidon {
  class SerialMarkerTest : public Test {
   protected:
    SerialMarkerTest() = default;
+
+   static inline bool
+   SerialMark(Marker* marker) {
+     SerialMarker serial_marker(marker);
+     return serial_marker.MarkAllRoots();
+   }
   public:
    ~SerialMarkerTest() override = default;
  };
@@ -30,28 +37,47 @@ namespace poseidon {
    const auto old_zone = OldZone::From(old_zone_region);
 
    static constexpr const word kAValue = 1394;
-   Local<word> a;
-   a = TryAllocateWord(new_zone, kAValue);
+   Local<word> a(TryAllocateWord(new_zone, kAValue));
    ASSERT_TRUE(IsAllocated(a));
    ASSERT_TRUE(IsNewWord(a, kAValue));
    ASSERT_FALSE(IsMarked(a));
 
    static constexpr const word kBValue = 595;
-   Local<word> b;
-   b = TryAllocateWord(old_zone, kBValue);
+   Local<word> b(TryAllocateWord(old_zone, kBValue));
    ASSERT_TRUE(IsAllocated(b));
    ASSERT_TRUE(IsOldWord(b, kBValue));
    ASSERT_FALSE(IsMarked(b));
 
    static constexpr const word kCValue = 3848;
-   Local<word> c;
-   c = TryAllocateWord(new_zone, kCValue);
+   Local<word> c(TryAllocateWord(new_zone, kCValue));
    ASSERT_TRUE(IsAllocated(c));
    ASSERT_TRUE(IsNewWord(c, kCValue));
    ASSERT_FALSE(IsMarked(c));
 
-   SerialMarker marker;
-   ASSERT_NO_FATAL_FAILURE(marker.MarkAllRoots());
+   MockMarker marker;
+   EXPECT_CALL(marker, Mark(IsPointerTo(a.raw())))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "marking " << (*ptr);
+      ptr->SetMarkedBit();
+      return ptr->IsMarked();
+    });
+   EXPECT_CALL(marker, Mark(IsPointerTo(b.raw())))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "marking " << (*ptr);
+      ptr->SetMarkedBit();
+      return ptr->IsMarked();
+    });
+   EXPECT_CALL(marker, Mark(IsPointerTo(c.raw())))
+    .Times(1)
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "marking " << (*ptr);
+      ptr->SetMarkedBit();
+      return ptr->IsMarked();
+    });
+
+   ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
 
    ASSERT_TRUE(IsAllocated(a));
    ASSERT_TRUE(IsNewWord(a, kAValue));

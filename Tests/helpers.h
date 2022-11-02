@@ -13,6 +13,51 @@
 namespace poseidon{
  using namespace ::testing;
 
+ class IsPointerToMatcher {
+  protected:
+   const uword start_;
+   const ObjectSize size_;
+  public:
+   using is_gtest_matcher = void;
+
+   IsPointerToMatcher(const uword start,
+                      const ObjectSize size):
+       start_(start),
+       size_(size) {
+   }
+
+   uword starting_address() const {
+     return start_;
+   }
+
+   ObjectSize size() const {
+     return size_;
+   }
+
+   bool MatchAndExplain(RawObject* ptr, std::ostream*) const {
+     return ptr->GetStartingAddress() == starting_address() &&
+         ptr->GetSize() == size();
+   }
+
+   void DescribeTo(std::ostream* stream) const {
+     (*stream) << "pointer points to " << ((void*) starting_address()) << " (" << Bytes(size()) << ")";
+   }
+
+   void DescribeNegationTo(std::ostream* stream) const {
+     (*stream) << "pointer does not point to " << ((void*) starting_address()) << " (" << Bytes(size()) << ")";
+   }
+ };
+
+ static inline Matcher<RawObject*>
+ IsPointerTo(const uword start, const int64_t size) {
+   return IsPointerToMatcher(start, size);
+ }
+
+ static inline Matcher<RawObject*>
+ IsPointerTo(const RawObject* ptr) {
+   return IsPointerTo(ptr->GetStartingAddress(), ptr->GetSize());
+ }
+
  class MockFreeListNodeVisitor : public FreeObjectVisitor {
   public:
    MockFreeListNodeVisitor():

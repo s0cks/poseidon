@@ -10,31 +10,26 @@ namespace poseidon {
    return (bool)marking_;
  }
 
- void Marker::SetMarking(bool value) {
+ void Marker::SetMarking(const bool value) {
    marking_ = value;
  }
 
- bool Marker::SerialMark(Section& section){
-   SetMarking();
+ bool Marker::SerialMark(Marker* marker){
+   if(IsMarking()) {
+     DLOG(WARNING) << "already marking, skipping.";
+     return false;
+   }
 
-   SerialMarker marker;
+   SetMarking();
+   SerialMarker serial_marker(marker);
    TIMED_SECTION("SerialMark", {
-     section.VisitPointers(&marker);
-   });
-   ClearMarking();
-   return true; //TODO: cleanup
- }
-
- bool Marker::ParallelMark(Section& section){
-   SetMarking();
-   TIMED_SECTION("ParallelMark", {
-     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     serial_marker.MarkAllRoots();
    });
    ClearMarking();
    return true;
  }
 
- bool Marker::MarkRoots() {
+ bool Marker::ParallelMark(Marker* marker){
    NOT_IMPLEMENTED(FATAL); //TODO: implement
    return false;
  }

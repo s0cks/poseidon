@@ -52,9 +52,8 @@ namespace poseidon{
    OldZone() = delete;
    ~OldZone() override = default;
 
-   FreeList* free_list(){//TODO: visible for testing
-     NOT_IMPLEMENTED(FATAL); //TODO: implement
-     return nullptr;
+   inline FreeList& free_list() { //TODO: visible for testing
+     return free_list_;
    }
 
    uword TryAllocate(const ObjectSize& size);

@@ -2,9 +2,7 @@
 
 namespace poseidon {
  bool SerialMarker::Visit(RawObject* ptr){
-   ptr->SetMarkedBit();
-   //TODO: push the pointers that ptr holds to work_
-   return ptr->IsMarked();
+   return Mark(ptr);
  }
 
  bool SerialMarker::MarkAllRoots(){
