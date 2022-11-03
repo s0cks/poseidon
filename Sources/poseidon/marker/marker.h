@@ -3,6 +3,7 @@
 
 #include "poseidon/heap/new_zone.h"
 #include "poseidon/heap/old_zone.h"
+#include "poseidon/marker/marker_stats.h"
 
 namespace poseidon {
  class Marker {
@@ -22,9 +23,15 @@ namespace poseidon {
    static bool SerialMark(Marker* marker);
    static bool ParallelMark(Marker* marker);
   protected:
+   MarkerStats stats_;
+
    Marker() = default;
 
-   virtual bool Mark(RawObject* ptr) = 0;
+   inline MarkerStats& stats() {
+     return stats_;
+   }
+
+   virtual bool Mark(RawObject* ptr);
   public:
    Marker(const Marker& rhs) = delete;
    virtual ~Marker() = default;

@@ -59,7 +59,6 @@ namespace poseidon{ //TODO: atomic support?
   protected:
    uword start_;
    int64_t total_size_;
-
    FreeObject** buckets_;
    int64_t num_nodes_;
 

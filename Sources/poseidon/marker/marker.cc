@@ -14,6 +14,13 @@ namespace poseidon {
    marking_ = value;
  }
 
+ bool Marker::Mark(RawObject* ptr) {
+   DLOG(INFO) << "marking: " << (*ptr);
+   ptr->SetMarkedBit();
+   stats().marked() += ptr;
+   return true;
+ }
+
  bool Marker::SerialMark(Marker* marker){
    if(IsMarking()) {
      DLOG(WARNING) << "already marking, skipping.";
