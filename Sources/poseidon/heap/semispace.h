@@ -45,7 +45,7 @@ namespace poseidon{
 
      RawObject* Next() override {
        auto next = current_ptr();
-       current_ += next->GetSize();
+       current_ += next->GetTotalSize();
        return next;
      }
    };

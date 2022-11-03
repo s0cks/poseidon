@@ -112,6 +112,9 @@ namespace poseidon{
      }
 
      MemoryRegion region(GetTotalInitialHeapSize());
+     if(!region.Protect(MemoryRegion::kReadWrite))
+       LOG(FATAL) << "cannot protect: " << region;
+
      auto heap = new Heap(region);
      SetCurrentThreadHeap(heap);//TODO: refactor.
      //TODO: print NewZone

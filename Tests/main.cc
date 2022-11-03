@@ -4,6 +4,7 @@
 #include "poseidon/local.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
+#include "poseidon/type/class.h"
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 
@@ -16,6 +17,8 @@ int main(int argc, char** argv){
   ::google::ParseCommandLineFlags(&argc, &argv, false);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
 
+  Heap::Initialize();
+  Class::Initialize();
   Runtime::Initialize();
   LocalPage::Initialize();
   return RUN_ALL_TESTS();
