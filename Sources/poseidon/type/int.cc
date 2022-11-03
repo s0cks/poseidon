@@ -6,10 +6,6 @@ namespace poseidon {
  Class* Int::kClass = nullptr;
  Field* Int::kValueField = nullptr;
 
-#ifndef UNALLOCATED
-#define UNALLOCATED 0 //TODO: cleanup
-#endif // UNALLOCATED
-
  void* Int::operator new(const size_t) noexcept {
    if(kClass == nullptr)
      LOG(FATAL) << "Int class not initialized";

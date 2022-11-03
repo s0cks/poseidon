@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <iostream>
 
+
+//TODO: cleanup
+
 #define NOT_IMPLEMENTED(Level) \
   LOG(Level) << __FUNCTION__ << " is not implemented!"
 
@@ -65,5 +68,9 @@ namespace poseidon{
 #define PSDN_CANT_ALLOCATE(Level, TotalSize, Section) \
   LOG(Level) << "cannot allocate " << Bytes((TotalSize)) << " in " << (Section) << ".";
 }
+
+#ifndef UNALLOCATED
+#define UNALLOCATED 0
+#endif // UNALLOCATED
 
 #endif //POSEIDON_COMMON_H

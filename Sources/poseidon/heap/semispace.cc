@@ -38,7 +38,7 @@ namespace poseidon{
      PSDN_CANT_ALLOCATE(ERROR, total_size, (*this));
    }
    auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::New(size));
-   current_ += total_size;
+   current_ += ptr->GetTotalSize();
    return ptr->GetStartingAddress();
  }
 }

@@ -1,6 +1,7 @@
 #ifndef POSEIDON_INSTANCE_H
 #define POSEIDON_INSTANCE_H
 
+#include "poseidon/raw_object.h"
 #include "poseidon/type/class.h"
 #include "poseidon/type/field.h"
 

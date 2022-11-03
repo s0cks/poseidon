@@ -76,11 +76,11 @@ namespace poseidon{
     }
 
     uword GetObjectPointerAddress() const{
-      return reinterpret_cast<uword>(this) + sizeof(RawObject);
+      return GetStartingAddress() + sizeof(RawObject);
     }
 
     void* GetPointer() const{
-      return (void*)(reinterpret_cast<uword>(this) + sizeof(RawObject));
+      return (void*)GetObjectPointerAddress();
     }
 
     void SetForwardingAddress(uword address){

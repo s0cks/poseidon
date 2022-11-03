@@ -14,8 +14,16 @@ namespace poseidon {
 
    explicit Int(RawInt value);
    void Set(RawInt value);
+
+   uword GetStartingAddress() const {
+     return (uword)this;
+   }
   public:
    ~Int() override = default;
+
+   RawObject* raw_ptr() const {
+     return (RawObject*)(GetStartingAddress() - sizeof(RawObject));
+   }
 
    RawInt Get() const;
 
