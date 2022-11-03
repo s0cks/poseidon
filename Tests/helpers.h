@@ -36,7 +36,7 @@ namespace poseidon{
 
    bool MatchAndExplain(RawObject* ptr, std::ostream*) const {
      return ptr->GetStartingAddress() == starting_address() &&
-         ptr->GetSize() == size();
+            ptr->GetSize() == size();
    }
 
    void DescribeTo(std::ostream* stream) const {
@@ -56,6 +56,12 @@ namespace poseidon{
  static inline Matcher<RawObject*>
  IsPointerTo(const RawObject* ptr) {
    return IsPointerTo(ptr->GetStartingAddress(), ptr->GetSize());
+ }
+
+ template<class T>
+ static inline Matcher<RawObject*>
+ IsPointerTo(const Local<T>& val) {
+   return IsPointerTo(val.raw());
  }
 
  class MockFreeListNodeVisitor : public FreeObjectVisitor {

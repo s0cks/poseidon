@@ -6,6 +6,11 @@
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
 
+ void NewZone::SwapSpaces() {
+   DLOG(INFO) << "swapping spaces";
+   std::swap(fromspace_, tospace_);
+ }
+
   bool NewZone::MarkAllIntersectedBy(const Region& region){
     return PageMarker<NewZone>::MarkAllIntersectedBy(this, region);
   }

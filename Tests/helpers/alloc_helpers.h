@@ -36,6 +36,18 @@ namespace poseidon {
    (*((word*)ptr->GetObjectPointerAddress())) = value;
    return ptr;
  }
+
+ template<class Z>
+ static inline RawObject*
+ TryAllocateRememberedWord(Z* zone, const word value) {
+   auto address = TryAllocateBytes<Z>(zone, kWordSize);
+   if (address == UNALLOCATED)
+     return nullptr;
+   auto ptr = (RawObject*)address;
+   ptr->SetRememberedBit();
+   (*((word*)ptr->GetObjectPointerAddress())) = value;
+   return ptr;
+ }
 }
 
 #endif // POSEIDON_ALLOC_HELPERS_H

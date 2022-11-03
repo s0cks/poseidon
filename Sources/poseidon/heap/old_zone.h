@@ -89,7 +89,8 @@ namespace poseidon{
    friend std::ostream& operator<<(std::ostream& stream, const OldZone& val){
      stream << "OldZone(";
      stream << "start=" << val.GetStartingAddressPointer() << ", ";
-     stream << "size=" << Bytes(val.GetSize());
+     stream << "size=" << Bytes(val.GetSize()) << ", ";
+     stream << "end=" << val.GetEndingAddressPointer();
      stream << ")";
      return stream;
    }

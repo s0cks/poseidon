@@ -72,7 +72,7 @@ namespace poseidon{
     }
 
     int64_t GetSize() const override {
-      return GetTotalSize(); //TODO: refactor
+      return tag().GetSize();
     }
 
     uword GetObjectPointerAddress() const{

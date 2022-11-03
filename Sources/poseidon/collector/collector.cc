@@ -33,7 +33,7 @@ namespace poseidon{
    }
 
    TIMED_SECTION("MinorCollection", {
-     Scavenger::Scavenge();
+     //TODO: Scavenger::Scavenge();
    });
  }
 

@@ -51,10 +51,6 @@ namespace poseidon{
     tospace_(GetStartingAddress() + semi_size, semi_size),
     semisize_(semi_size) {
    }
-
-   virtual void SwapSpaces(){
-     std::swap(fromspace_, tospace_);
-   }
   public:
    NewZone() = delete;
    NewZone(const NewZone& rhs) = delete;
@@ -110,12 +106,14 @@ namespace poseidon{
      return IterateMarkedPointers<NewZone, NewZoneIterator, RawObjectVisitor>(this, vis);
    }
 
+   virtual void SwapSpaces();
    virtual bool MarkAllIntersectedBy(const Region& region);
 
    friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){
      stream << "NewZone(";
      stream << "start=" << val.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
+     stream << "end=" << val.GetEndingAddressPointer() << ", ";
      stream << "fromspace=" << val.fromspace() << ", ";
      stream << "tospace=" << val.tospace()  << ", ";
      stream << "semi-size=" << Bytes(val.semisize());

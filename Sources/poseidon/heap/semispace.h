@@ -54,7 +54,6 @@ namespace poseidon{
    int64_t size_;
    RelaxedAtomic<uword> current_;
 
-   uword TryAllocate(ObjectSize size) override;
    void Clear() override;
   public:
    Semispace():
@@ -87,6 +86,7 @@ namespace poseidon{
      return size_;
    }
 
+   uword TryAllocate(ObjectSize size) override; //TODO: visible for testing
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
