@@ -2,8 +2,10 @@
 
 #include "helpers.h"
 #include "poseidon/flags.h"
+#include "poseidon/type/long.h"
 #include "marker/mock_marker.h"
 #include "helpers/alloc_helpers.h"
+#include "poseidon/local/local.h"
 #include "poseidon/heap/new_page.h"
 #include "poseidon/marker/marker_serial.h"
 
@@ -24,7 +26,9 @@ namespace poseidon {
  };
 
  TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass) {
-   ASSERT_NO_FATAL_FAILURE(LocalPage::Initialize());
+   MemoryRegion page_region(LocalPage::CalculateLocalPageSize(64));
+   ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
+   ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(new LocalPage(page_region)));
 
    static const int64_t kNewZoneTotalSize = GetNewZoneSize();
    MemoryRegion new_zone_region(kNewZoneTotalSize);
@@ -37,9 +41,9 @@ namespace poseidon {
    const auto old_zone = OldZone::From(old_zone_region);
 
    static constexpr const word kAValue = 1394;
-   Local<word> a(TryAllocateWord(new_zone, kAValue));
+   Local<Long> a(Long::New(kAValue)->raw_ptr());
    ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsNewWord(a, kAValue));
+   ASSERT_TRUE(IsNewLong(a, kAValue));
    ASSERT_FALSE(IsMarked(a));
 
    static constexpr const word kBValue = 595;
@@ -55,21 +59,20 @@ namespace poseidon {
    ASSERT_FALSE(IsMarked(c));
 
    MockMarker marker;
-   EXPECT_CALL(marker, Mark(IsPointerTo(a.raw())))
+   EXPECT_CALL(marker, Mark(IsPointerTo(a.raw_ptr())))
+    .WillOnce([](RawObject* ptr) {
+      DLOG(INFO) << "marking " << (*ptr);
+      ptr->SetMarkedBit();
+      return ptr->IsMarked();
+    });
+   EXPECT_CALL(marker, Mark(IsPointerTo(b.raw_ptr())))
     .Times(1)
     .WillOnce([](RawObject* ptr) {
       DLOG(INFO) << "marking " << (*ptr);
       ptr->SetMarkedBit();
       return ptr->IsMarked();
     });
-   EXPECT_CALL(marker, Mark(IsPointerTo(b.raw())))
-    .Times(1)
-    .WillOnce([](RawObject* ptr) {
-      DLOG(INFO) << "marking " << (*ptr);
-      ptr->SetMarkedBit();
-      return ptr->IsMarked();
-    });
-   EXPECT_CALL(marker, Mark(IsPointerTo(c.raw())))
+   EXPECT_CALL(marker, Mark(IsPointerTo(c.raw_ptr())))
     .Times(1)
     .WillOnce([](RawObject* ptr) {
       DLOG(INFO) << "marking " << (*ptr);
@@ -80,7 +83,7 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
 
    ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsNewWord(a, kAValue));
+   ASSERT_TRUE(IsNewLong(a, kAValue));
    ASSERT_TRUE(IsMarked(a));
 
    ASSERT_TRUE(IsAllocated(b));

@@ -28,7 +28,7 @@ namespace poseidon {
    RawInt Get() const;
 
    friend std::ostream& operator<<(std::ostream& stream, const Int& value) {
-     stream << "Byte(";
+     stream << "Int(";
      stream << "value=" << +value.Get();
      stream << ")";
      return stream;

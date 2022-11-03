@@ -6,44 +6,17 @@ namespace poseidon {
  }
 
  bool SerialMarker::MarkAllRoots(){
-   auto page = LocalPage::GetLocalPageForCurrentThread();
-   while(page != nullptr) {
-     LocalPage::LocalPageIterator iter(page);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(!Visit(next))
-         return false;
-     }
-     page = page->GetNext();
-   }
-   return true;
+   NOT_IMPLEMENTED(ERROR); //TODO: implement
+   return false;
  }
 
  bool SerialMarker::MarkAllNewRoots(){
-   auto page = LocalPage::GetLocalPageForCurrentThread();
-   while(page != nullptr) {
-     LocalPage::LocalPageIterator iter(page);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(next->IsNew() && !Visit(next))
-         return false;
-     }
-     page = page->GetNext();
-   }
-   return true;
+   NOT_IMPLEMENTED(ERROR); //TODO: implement
+   return false;
  }
 
  bool SerialMarker::MarkAllOldRoots(){
-   auto page = LocalPage::GetLocalPageForCurrentThread();
-   while(page != nullptr) {
-     LocalPage::LocalPageIterator iter(page);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(next->IsOld() && !Visit(next))
-         return false;
-     }
-     page = page->GetNext();
-   }
-   return true;
+   NOT_IMPLEMENTED(ERROR); //TODO: implement
+   return false;
  }
 }

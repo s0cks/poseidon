@@ -3,14 +3,10 @@
 
 #include <gtest/gtest.h>
 
-#include "poseidon/local.h"
-#include "poseidon/raw_object.h"
+#include "poseidon/type/long.h"
+#include "poseidon/local/local.h"
 
 namespace poseidon{ //TODO: cleanup & organize this file
-#ifndef UNALLOCATED
-#define UNALLOCATED 0
-#endif // UNALLOCATED
-
  using namespace ::testing;
 
  static inline AssertionResult
@@ -23,7 +19,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  template<class T>
  static inline AssertionResult
  IsAllocated(const Local<T>& val){
-   return IsAllocated(val.raw());
+   return IsAllocated(val.raw_ptr());
  }
 
  static inline AssertionResult
@@ -77,7 +73,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  template<typename T>
  static inline AssertionResult
  IsMarked(const Local<T>& val){
-   return IsMarked(val.raw());
+   return IsMarked(val.raw_ptr());
  }
 
  static inline AssertionResult
@@ -90,7 +86,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  template<typename T>
  static inline AssertionResult
  IsRemembered(const Local<T>& val){
-   return IsRemembered(val.raw());
+   return IsRemembered(val.raw_ptr());
  }
 
  static inline AssertionResult
@@ -117,7 +113,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  template<typename T>
  static inline AssertionResult
  IsForwarding(const Local<T>& val){
-   return IsForwarding(val.raw());
+   return IsForwarding(val.raw_ptr());
  }
 
  static inline AssertionResult
@@ -130,10 +126,20 @@ namespace poseidon{ //TODO: cleanup & organize this file
    return AssertionSuccess();
  }
 
+ static inline AssertionResult
+ IsLong(RawObject* ptr, RawLong value) {
+   if(ptr->GetPointerSize() != Class::kLongClass->GetAllocationSize())
+     return AssertionFailure() << (*ptr) << " is not a word.";
+   auto lhs = (Long*)ptr->GetPointer();
+   if(lhs->Get() != value)
+     return AssertionFailure() << (*ptr) << " (" << lhs->Get() << ") does not equal: " << value;
+   return AssertionSuccess();
+ }
+
  template<class T>
  static inline AssertionResult
  IsWord(const Local<T>& val, word value){
-   return IsWord(val.raw(), value);
+   return IsWord(val.raw_ptr(), value);
  }
 
  static inline AssertionResult
@@ -145,10 +151,25 @@ namespace poseidon{ //TODO: cleanup & organize this file
    return IsWord(ptr, value);
  }
 
+ static inline AssertionResult
+ IsNewLong(RawObject* ptr, RawLong value) {
+   if(IsUnallocated(ptr))
+     return AssertionFailure() << (*ptr) << " is unallocated";
+   if(!ptr->IsNew())
+     return AssertionFailure() << "expected " << (*ptr) << " to be new";
+   return IsLong(ptr, value);
+ }
+
  template<class T>
  static inline AssertionResult
  IsNewWord(const Local<T>& ptr, word value){
-   return IsNewWord(ptr.raw(), value);
+   return IsNewWord(ptr.raw_ptr(), value);
+ }
+
+ template<class T>
+ static inline AssertionResult
+ IsNewLong(const Local<T>& ptr, RawLong value) {
+   return IsNewLong(ptr.raw_ptr(), value);
  }
 
  static inline AssertionResult
@@ -170,7 +191,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  template<class T>
  static inline AssertionResult
  IsOldWord(const Local<T>& ptr, const word value) {
-   return IsOldWord(ptr.raw(), value);
+   return IsOldWord(ptr.raw_ptr(), value);
  }
 
  static inline AssertionResult
@@ -187,7 +208,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  template<class T>
  static inline AssertionResult
  IsMarkedWord(const Local<T>& ptr, word value){
-   return IsMarkedWord(ptr.raw(), value);
+   return IsMarkedWord(ptr.raw_ptr(), value);
  }
 
  static inline AssertionResult
@@ -204,7 +225,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  template<class T>
  static inline AssertionResult
  IsRememberedWord(const Local<T>& ptr, word value){
-   return IsRememberedWord(ptr.raw(), value);
+   return IsRememberedWord(ptr.raw_ptr(), value);
  }
 }
 

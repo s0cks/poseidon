@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
 
-#include "poseidon/local.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
 #include "poseidon/type/class.h"
+#include "poseidon/local/local_page.h"
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 

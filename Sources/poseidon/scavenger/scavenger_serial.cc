@@ -1,4 +1,4 @@
-#include "poseidon/local.h"
+#include "poseidon/local/local_page.h"
 #include "poseidon/scavenger/scavenger_serial.h"
 
 namespace poseidon {
@@ -29,32 +29,34 @@ namespace poseidon {
 
  bool SerialScavenger::ProcessRoots() {
    TIMED_SECTION("ProcessLocals", {
-     auto locals = LocalPage::GetLocalPageForCurrentThread();
-     locals->VisitPointers([&](RawObject** ptr){
-       auto old_val = (*ptr);
-       if(old_val->IsNew() && !old_val->IsForwarding()){
-         auto new_val = (RawObject*)Process(old_val);
-         (*ptr) = new_val;
-       }
-       return true;
-     });
+     NOT_IMPLEMENTED(FATAL); //TODO: implement
+//     auto locals = LocalPage::GetLocalPageForCurrentThread();
+//     locals->VisitPointers([&](RawObject** ptr){
+//       auto old_val = (*ptr);
+//       if(old_val->IsNew() && !old_val->IsForwarding()){
+//         auto new_val = (RawObject*)Process(old_val);
+//         (*ptr) = new_val;
+//       }
+//       return true;
+//     });
    });
-   return true;
+   return false;
  }
 
   bool SerialScavenger::NotifyLocals(){
    DTIMED_SECTION("NotifyLocals", {
-     auto locals = LocalPage::GetLocalPageForCurrentThread();
-     locals->VisitPointers([&](RawObject** ptr){
-       auto old_val = (*ptr);
-       DLOG(INFO) << "notifying " << (*old_val);
-       if(old_val->IsNew() && old_val->IsForwarding()){
-         (*ptr) = (RawObject*)old_val->GetForwardingAddress();
-       }
-       return true;
-     });
+     NOT_IMPLEMENTED(FATAL); //TODO: implement
+//     auto locals = LocalPage::GetLocalPageForCurrentThread();
+//     locals->VisitPointers([&](RawObject** ptr){
+//       auto old_val = (*ptr);
+//       DLOG(INFO) << "notifying " << (*old_val);
+//       if(old_val->IsNew() && old_val->IsForwarding()){
+//         (*ptr) = (RawObject*)old_val->GetForwardingAddress();
+//       }
+//       return true;
+//     });
    });
-   return true;
+   return false;
   }
 
  bool SerialScavenger::ProcessToSpace() {

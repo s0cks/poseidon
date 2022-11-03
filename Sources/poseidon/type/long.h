@@ -14,13 +14,21 @@ namespace poseidon {
 
    explicit Long(RawLong value);
    void Set(RawLong value);
+
+   uword GetStartingAddress() const {
+     return (uword)this;
+   }
   public:
    ~Long() override = default;
+
+   RawObject* raw_ptr() const {
+     return (RawObject*)(GetStartingAddress() - sizeof(RawObject));
+   }
 
    RawLong Get() const;
 
    friend std::ostream& operator<<(std::ostream& stream, const Long& value) {
-     stream << "Byte(";
+     stream << "Long(";
      stream << "value=" << +value.Get();
      stream << ")";
      return stream;

@@ -5,7 +5,6 @@
 #include <gmock/gmock.h>
 #include <glog/logging.h>
 
-#include "poseidon/local.h"
 #include "poseidon/heap/heap.h"
 
 #include "helpers/assertions.h"
@@ -61,7 +60,7 @@ namespace poseidon{
  template<class T>
  static inline Matcher<RawObject*>
  IsPointerTo(const Local<T>& val) {
-   return IsPointerTo(val.raw());
+   return IsPointerTo(val.raw_ptr());
  }
 
  class MockFreeListNodeVisitor : public FreeObjectVisitor {
