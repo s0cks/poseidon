@@ -3,7 +3,7 @@
 
 #include <glog/logging.h>
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 
 namespace poseidon{
  class Finalizer{
@@ -17,7 +17,7 @@ namespace poseidon{
    friend class ParallelSweeperTask;
   private:
    static void Reset();
-   static void Finalize(RawObject* ptr);
+   static void Finalize(Pointer* ptr);
    static AtomicPointerCounter& finalized();
   public:
    Finalizer() = delete;

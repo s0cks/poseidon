@@ -31,7 +31,7 @@ namespace poseidon {
      return stats_;
    }
 
-   virtual bool Mark(RawObject* ptr);
+   virtual bool Mark(Pointer* ptr);
   public:
    Marker(const Marker& rhs) = delete;
    virtual ~Marker() = default;

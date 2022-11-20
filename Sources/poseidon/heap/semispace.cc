@@ -33,11 +33,11 @@ namespace poseidon{
    if(size <= 0 || size >= GetAllocatableSize())
      return UNALLOCATED;
 
-   auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+   auto total_size = static_cast<int64_t>(sizeof(Pointer) + size);
    if((GetCurrentAddress() + total_size) > GetEndingAddress()){
      PSDN_CANT_ALLOCATE(ERROR, total_size, (*this));
    }
-   auto ptr = new (GetCurrentAddressPointer())RawObject(ObjectTag::New(size));
+   auto ptr = new (GetCurrentAddressPointer())Pointer(PointerTag::New(size));
    current_ += ptr->GetTotalSize();
    return ptr->GetStartingAddress();
  }

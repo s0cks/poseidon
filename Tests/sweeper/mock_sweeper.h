@@ -13,7 +13,7 @@ namespace poseidon {
     Sweeper(zone) {
    }
    ~MockSweeper() override = default;
-   MOCK_METHOD(bool, Sweep, (RawObject*), (override));
+   MOCK_METHOD(bool, Sweep, (Pointer*), (override));
  };
 }
 

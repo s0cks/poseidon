@@ -2,7 +2,7 @@
 #include "poseidon/flags.h"
 #include "poseidon/collector/compactor.h"
 #include "poseidon/collector/finalizer.h"
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/relaxed_atomic.h"
 
 namespace poseidon{
@@ -52,23 +52,23 @@ namespace poseidon{
      return GetStartingAddress() + GetSize();
    }
 
-   inline RawObject* live_ptr() const{
-     return (RawObject*)live_;
+   inline Pointer* live_ptr() const{
+     return (Pointer*)live_;
    }
 
-   inline RawObject* free_ptr() const{
-     return (RawObject*)free_;
+   inline Pointer* free_ptr() const{
+     return (Pointer*)free_;
    }
 
-   inline int64_t Forward(RawObject* ptr){ //TODO: need to copy object over
+   inline int64_t Forward(Pointer* ptr){ //TODO: need to copy object over
      DLOG(INFO) << "forwarding " << (*ptr) << " to " << free_ptr();
      ptr->SetForwardingAddress(free_ptr()->GetStartingAddress());
      return ptr->GetTotalSize();
    }
 
-   inline int64_t CopyObject(RawObject* src, RawObject* dst){
+   inline int64_t CopyObject(Pointer* src, Pointer* dst){
      DLOG(INFO) << "copying " << (*src) << " to " << (*dst);
-     new (dst)RawObject();
+     new (dst)Pointer();
      dst->SetPointerSize(src->GetPointerSize());
      dst->SetOldBit();
 
@@ -79,9 +79,9 @@ namespace poseidon{
      return dst->GetTotalSize();
    }
 
-   inline int64_t Copy(RawObject* val){
+   inline int64_t Copy(Pointer* val){
      auto next_address = val->GetForwardingAddress();
-     return CopyObject(val, (RawObject*)next_address);
+     return CopyObject(val, (Pointer*)next_address);
    }
 
    void ComputeForwardingAddressAndFinalizeObjects(){
@@ -98,7 +98,7 @@ namespace poseidon{
      auto next_address = GetStartingAddress();
      auto current_address = GetStartingAddress();
      while(current_address < GetEndingAddress()){
-       auto current = (RawObject*)current_address;
+       auto current = (Pointer*)current_address;
        if(current->GetPointerSize() <= 0)
          break;
 
@@ -126,7 +126,7 @@ namespace poseidon{
    }
    ~SerialCompactor() override = default;
 
-   bool Visit(RawObject** ptr) override{
+   bool Visit(Pointer** ptr) override{
      return true;
    }
 

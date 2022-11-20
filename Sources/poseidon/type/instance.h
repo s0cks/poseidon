@@ -1,7 +1,7 @@
 #ifndef POSEIDON_INSTANCE_H
 #define POSEIDON_INSTANCE_H
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/type/class.h"
 #include "poseidon/type/field.h"
 
@@ -21,8 +21,8 @@ namespace poseidon {
      return GetStartingAddress()  + offset;
    }
 
-   RawObject** FieldAddr(const Field* field) const {
-     return (RawObject**) FieldAddrAtOffset(field->GetOffset());
+   Pointer** FieldAddr(const Field* field) const {
+     return (Pointer**) FieldAddrAtOffset(field->GetOffset());
    }
   public:
    ~Instance() override = default;
@@ -42,7 +42,7 @@ namespace poseidon {
      return (Instance*) ptr->GetObjectPointerAddress();
    }
 
-   void SetField(const Field* field, RawObject* value) {
+   void SetField(const Field* field, Pointer* value) {
      *FieldAddr(field) = value;
    }
   public:

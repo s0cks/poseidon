@@ -56,9 +56,9 @@ namespace poseidon {
      return tospace_;
    }
 
-   virtual uword Scavenge(RawObject* ptr);
-   virtual uword Promote(RawObject* ptr);
-   virtual uword Process(RawObject* ptr);
+   virtual uword Scavenge(Pointer* ptr);
+   virtual uword Promote(Pointer* ptr);
+   virtual uword Process(Pointer* ptr);
   public:
    Scavenger() = delete;
    Scavenger(const Scavenger& rhs) = delete;

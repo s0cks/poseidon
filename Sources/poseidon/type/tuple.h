@@ -18,7 +18,7 @@ namespace poseidon {
   public:
    ~Tuple() override = default;
 
-   void SetCar(RawObject* ptr = UNALLOCATED) {
+   void SetCar(Pointer* ptr = UNALLOCATED) {
      return SetField(kCarField, ptr);
    }
 
@@ -31,7 +31,7 @@ namespace poseidon {
      return (T*) GetField(kCarField);
    }
 
-   void SetCdr(RawObject* ptr = UNALLOCATED) {
+   void SetCdr(Pointer* ptr = UNALLOCATED) {
      return SetField(kCdrField, ptr);
    }
 

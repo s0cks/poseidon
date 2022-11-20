@@ -24,21 +24,21 @@ namespace poseidon{
 
    static inline void*
    New(size_t size){
-     auto ptr = (RawObject*)Allocate(static_cast<int64_t>(size));
+     auto ptr = (Pointer*)Allocate(static_cast<int64_t>(size));
      return ptr != nullptr ? ptr->GetPointer() : nullptr;
    }
 
    template<typename T>
    static inline T*
    New(){
-     auto ptr = (RawObject*)Allocate(static_cast<int64_t>(sizeof(T)));
+     auto ptr = (Pointer*)Allocate(static_cast<int64_t>(sizeof(T)));
      return ptr != nullptr ? (T*)ptr->GetPointer() : nullptr;
    }
 
    template<typename T>
    static inline T*
    New(const T& value){
-     auto ptr = (RawObject*)Allocate(static_cast<int64_t>(sizeof(T)));
+     auto ptr = (Pointer*)Allocate(static_cast<int64_t>(sizeof(T)));
      if(ptr != nullptr)
        *((T*)ptr->GetPointer()) = value;
      return ptr != nullptr ? (T*)ptr->GetPointer() : nullptr;

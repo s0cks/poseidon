@@ -13,7 +13,7 @@ namespace poseidon {
    auto address = heap->TryAllocate(kClass->GetAllocationSize());
    if(address == UNALLOCATED)
      LOG(FATAL) << "cannot allocate Short";
-   return ((RawObject*)address)->GetPointer();
+   return ((Pointer*)address)->GetPointer();
  }
 
  void Short::operator delete(void* ptr) noexcept {

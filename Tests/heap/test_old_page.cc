@@ -15,22 +15,22 @@
 //     return page->TryAllocate(size);
 //   }
 //
-//   static inline RawObject*
+//   static inline Pointer*
 //   TryAllocateWord(OldPage* page, word value) {
 //     auto address = TryAllocateBytes(page, kWordSize);
 //     if (address == UNALLOCATED)
 //       return nullptr;
-//     auto ptr = (RawObject*)address;
+//     auto ptr = (Pointer*)address;
 //     (*((word*)ptr->GetObjectPointerAddress())) = value;
 //     return ptr;
 //   }
 //
-//   static inline RawObject*
+//   static inline Pointer*
 //   TryAllocateMarkedWord(OldPage* page, word value) {
 //     auto address = TryAllocateBytes(page, kWordSize);
 //     if (address == UNALLOCATED)
 //       return nullptr;
-//     auto ptr = (RawObject*)address;
+//     auto ptr = (Pointer*)address;
 //     ptr->SetMarkedBit();
 //     (*((word*)ptr->GetObjectPointerAddress())) = value;
 //     return ptr;

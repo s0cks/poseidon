@@ -16,7 +16,7 @@ namespace poseidon {
       .WillByDefault(Return(false));
    }
    ~MockMarker() override = default;
-   MOCK_METHOD(bool, Mark, (RawObject*), (override));
+   MOCK_METHOD(bool, Mark, (Pointer*), (override));
  };
 }
 

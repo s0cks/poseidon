@@ -13,17 +13,17 @@ namespace poseidon {
    explicit MockScavenger(Heap* heap):
     Scavenger(heap) {
      ON_CALL(*this, Scavenge(_))
-      .WillByDefault([](RawObject* ptr) {
+      .WillByDefault([](Pointer* ptr) {
         return UNALLOCATED;
       });
      ON_CALL(*this, Promote(_))
-      .WillByDefault([](RawObject* ptr) {
+      .WillByDefault([](Pointer* ptr) {
         return UNALLOCATED;
       });
    }
    ~MockScavenger() override = default;
-   MOCK_METHOD(uword, Promote, (RawObject*), (override));
-   MOCK_METHOD(uword, Scavenge, (RawObject*), (override));
+   MOCK_METHOD(uword, Promote, (Pointer*), (override));
+   MOCK_METHOD(uword, Scavenge, (Pointer*), (override));
  };
 }
 

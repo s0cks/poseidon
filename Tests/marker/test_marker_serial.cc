@@ -62,21 +62,21 @@ namespace poseidon {
 
    MockMarker marker;
    EXPECT_CALL(marker, Mark(IsPointerTo(a.raw_ptr())))
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "marking " << (*ptr);
       ptr->SetMarkedBit();
       return ptr->IsMarked();
     });
    EXPECT_CALL(marker, Mark(IsPointerTo(b.raw_ptr())))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "marking " << (*ptr);
       ptr->SetMarkedBit();
       return ptr->IsMarked();
     });
    EXPECT_CALL(marker, Mark(IsPointerTo(c.raw_ptr())))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "marking " << (*ptr);
       ptr->SetMarkedBit();
       return ptr->IsMarked();

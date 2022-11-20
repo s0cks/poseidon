@@ -7,18 +7,18 @@
 #include "utils.h"
 #include "common.h"
 #include "poseidon/region.h"
-#include "poseidon/object_tag.h"
+#include "poseidon/pointer_tag.h"
 
 namespace poseidon{
- typedef const std::function<bool(RawObject*)>& RawObjectVisitorFunction;
+ typedef const std::function<bool(Pointer*)>& RawObjectVisitorFunction;
 
-  class RawObject;
+  class Pointer;
   class RawObjectVisitor{
    protected:
     RawObjectVisitor() = default;
    public:
     virtual ~RawObjectVisitor() = default;
-    virtual bool Visit(RawObject* val) = 0;
+    virtual bool Visit(Pointer* val) = 0;
   };
 
   class RawObjectPointerVisitor{
@@ -26,7 +26,7 @@ namespace poseidon{
     RawObjectPointerVisitor() = default;
    public:
     virtual ~RawObjectPointerVisitor() = default;
-    virtual bool Visit(RawObject** val) = 0;
+    virtual bool Visit(Pointer** val) = 0;
   };
 
   class RawObjectPointerIterator{
@@ -35,10 +35,10 @@ namespace poseidon{
    public:
     virtual ~RawObjectPointerIterator() = default;
     virtual bool HasNext() const = 0;
-    virtual RawObject* Next() = 0;
+    virtual Pointer* Next() = 0;
   };
 
-  class RawObject : public Region {
+  class Pointer : public Region {
     friend class RawObjectTest;
 
     //TODO: cleanup friends
@@ -51,21 +51,21 @@ namespace poseidon{
     friend class Compactor;
     friend class FreeList;
    protected:
-    RelaxedAtomic<RawObjectTag> tag_;
+    RelaxedAtomic<RawPointerTag> tag_;
     RelaxedAtomic<uword> forwarding_;
 
-    explicit RawObject(ObjectTag tag):
+    explicit Pointer(PointerTag tag):
       Region(),
       tag_(tag.raw()),
       forwarding_(0){
     }
    public:
-    RawObject():
+    Pointer():
       Region(), //TODO: make private
       tag_(0),
       forwarding_(0){
     }
-    ~RawObject() override = default;
+    ~Pointer() override = default;
 
     uword GetStartingAddress() const override {
       return (uword)this;
@@ -76,7 +76,7 @@ namespace poseidon{
     }
 
     uword GetObjectPointerAddress() const{
-      return GetStartingAddress() + sizeof(RawObject);
+      return GetStartingAddress() + sizeof(Pointer);
     }
 
     void* GetPointer() const{
@@ -103,72 +103,72 @@ namespace poseidon{
       return GetForwardingAddress() != 0;
     }
 
-    RawObjectTag raw_tag() const{
-      return (RawObjectTag)tag_;
+    RawPointerTag raw_tag() const{
+      return (RawPointerTag)tag_;
     }
 
-    ObjectTag tag() const{
-      return (ObjectTag)raw_tag();
+    PointerTag tag() const{
+      return (PointerTag)raw_tag();
     }
 
-    void set_tag(const ObjectTag& val){
-      tag_ = (RawObjectTag)val;
+    void set_tag(const PointerTag& val){
+      tag_ = (RawPointerTag)val;
     }
 
     bool IsNew() const{
-      return ObjectTag::NewBit::Decode(raw_tag());
+      return PointerTag::NewBit::Decode(raw_tag());
     }
 
     void SetNewBit(){
-      tag_ = ObjectTag::NewBit::Update(true, raw_tag());
+      tag_ = PointerTag::NewBit::Update(true, raw_tag());
     }
 
     void ClearNewBit(){
-      tag_ = ObjectTag::NewBit::Update(false, raw_tag());
+      tag_ = PointerTag::NewBit::Update(false, raw_tag());
     }
 
     bool IsOld() const{
-      return ObjectTag::OldBit::Decode(raw_tag());
+      return PointerTag::OldBit::Decode(raw_tag());
     }
 
     void SetOldBit(){
-      tag_ = ObjectTag::OldBit::Update(true, raw_tag());
+      tag_ = PointerTag::OldBit::Update(true, raw_tag());
     }
 
     void ClearOldBit(){
-      tag_ = ObjectTag::OldBit::Update(false, raw_tag());
+      tag_ = PointerTag::OldBit::Update(false, raw_tag());
     }
 
     bool IsMarked() const{
-      return ObjectTag::MarkedBit::Decode(raw_tag());
+      return PointerTag::MarkedBit::Decode(raw_tag());
     }
 
     void SetMarkedBit(){
-      tag_ = ObjectTag::MarkedBit::Update(true, raw_tag());
+      tag_ = PointerTag::MarkedBit::Update(true, raw_tag());
     }
 
     void ClearMarkedBit(){
-      tag_ = ObjectTag::MarkedBit::Update(false, raw_tag());
+      tag_ = PointerTag::MarkedBit::Update(false, raw_tag());
     }
 
     bool IsRemembered() const{
-      return ObjectTag::RememberedBit::Decode(raw_tag());
+      return PointerTag::RememberedBit::Decode(raw_tag());
     }
 
     void SetRememberedBit(){
-      tag_ = ObjectTag::RememberedBit::Update(true, raw_tag());
+      tag_ = PointerTag::RememberedBit::Update(true, raw_tag());
     }
 
     void ClearRememberedBit(){
-      tag_ = ObjectTag::RememberedBit::Update(false, raw_tag());
+      tag_ = PointerTag::RememberedBit::Update(false, raw_tag());
     }
 
     bool IsFree() const {
-      return ObjectTag::FreeBit::Decode(raw_tag());
+      return PointerTag::FreeBit::Decode(raw_tag());
     }
 
     void SetFreeBit(const bool value = true) {
-      tag_ = ObjectTag::FreeBit::Update(value, raw_tag());
+      tag_ = PointerTag::FreeBit::Update(value, raw_tag());
     }
 
     inline void ClearFreeBit() {
@@ -176,23 +176,23 @@ namespace poseidon{
     }
 
     void ClearTag(){
-      tag_ = kInvalidObjectTag;
+      tag_ = kInvalidPointerTag;
     }
 
     uint32_t GetPointerSize() const{
-      return ObjectTag::SizeTag::Decode(raw_tag());
+      return PointerTag::SizeTag::Decode(raw_tag());
     }
 
     void SetPointerSize(const uint32_t& val){
-      tag_ = ObjectTag::SizeTag::Update(val, raw_tag());
+      tag_ = PointerTag::SizeTag::Update(val, raw_tag());
     }
 
     int64_t GetTotalSize() const{
-      return static_cast<int64_t>(sizeof(RawObject)) + GetPointerSize();
+      return static_cast<int64_t>(sizeof(Pointer)) + GetPointerSize();
     }
 
-    friend std::ostream& operator<<(std::ostream& stream, const RawObject& value) {
-      stream << "RawObject(";
+    friend std::ostream& operator<<(std::ostream& stream, const Pointer& value) {
+      stream << "Pointer(";
       stream << "tag=" << value.tag() << ", ";
       stream << "start=" << value.GetStartingAddressPointer() << ", ";
       stream << "size=" << Bytes(value.GetSize()) << ", ";
@@ -207,12 +207,12 @@ namespace poseidon{
     template<class T>
     static inline uword
     TryAllocateIn(T* area, int64_t size){
-      auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+      auto total_size = static_cast<int64_t>(sizeof(Pointer) + size);
       if((area->GetCurrentAddress() + total_size) > area->GetEndingAddress()){
         PSDN_CANT_ALLOCATE(ERROR, total_size, (*area));
       }
 
-      auto ptr = new (area->GetCurrentAddressPointer())RawObject();
+      auto ptr = new (area->GetCurrentAddressPointer())Pointer();
       area->current_ += total_size;
       ptr->SetPointerSize(size);
       return ptr->GetStartingAddress();
@@ -221,12 +221,12 @@ namespace poseidon{
     template<class T>
     static inline uword
     TryAllocateNewIn(T* area, int64_t size){
-      auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+      auto total_size = static_cast<int64_t>(sizeof(Pointer) + size);
       if((area->GetCurrentAddress() + total_size) > area->GetEndingAddress()){
         PSDN_CANT_ALLOCATE(ERROR, total_size, (*area));
       }
 
-      auto ptr = new (area->GetCurrentAddressPointer())RawObject(ObjectTag::New(size));
+      auto ptr = new (area->GetCurrentAddressPointer())Pointer(PointerTag::New(size));
       area->current_ += total_size;
       return ptr->GetStartingAddress();
     }
@@ -234,12 +234,12 @@ namespace poseidon{
     template<class T>
     static inline uword
     TryAllocateOldIn(T* area, int64_t size){
-      auto total_size = static_cast<int64_t>(sizeof(RawObject) + size);
+      auto total_size = static_cast<int64_t>(sizeof(Pointer) + size);
       if((area->GetCurrentAddress() + total_size) > area->GetEndingAddress()){
         PSDN_CANT_ALLOCATE(ERROR, total_size, (*area));
       }
 
-      auto ptr = new (area->GetCurrentAddressPointer())RawObject(ObjectTag::Old(size));
+      auto ptr = new (area->GetCurrentAddressPointer())Pointer(PointerTag::Old(size));
       area->current_ += total_size;
       return ptr->GetStartingAddress();
     }

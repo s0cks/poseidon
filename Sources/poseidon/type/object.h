@@ -2,7 +2,7 @@
 #define POSEIDON_OBJECT_H
 
 #include "poseidon/type/type.h"
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 
 namespace poseidon {
  class Object{
@@ -16,8 +16,8 @@ namespace poseidon {
      return (uword)this;
    }
 
-   RawObject* raw_ptr() const {
-     return (RawObject*)(GetStartingAddress() - sizeof(RawObject));
+   Pointer* raw_ptr() const {
+     return (Pointer*)(GetStartingAddress() - sizeof(Pointer));
    }
  };
 

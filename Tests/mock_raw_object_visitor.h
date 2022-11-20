@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 
 namespace poseidon {
  class MockRawObjectVisitor : public RawObjectVisitor{
@@ -16,7 +16,7 @@ namespace poseidon {
    }
    ~MockRawObjectVisitor() override = default;
 
-   MOCK_METHOD(bool, Visit, (RawObject*), (override));
+   MOCK_METHOD(bool, Visit, (Pointer*), (override));
  };
 }
 

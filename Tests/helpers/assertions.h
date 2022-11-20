@@ -10,7 +10,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  using namespace ::testing;
 
  static inline AssertionResult
- IsAllocated(RawObject* val){
+ IsAllocated(Pointer* val){
    if(val == UNALLOCATED)
      return AssertionFailure() << "Expected to be allocated.";
    return AssertionSuccess();
@@ -23,7 +23,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsUnallocated(RawObject* val){
+ IsUnallocated(Pointer* val){
    if(val == UNALLOCATED)
      return AssertionSuccess();
    if(val->GetPointerSize() != 0)
@@ -38,7 +38,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsNew(RawObject* val){
+ IsNew(Pointer* val){
    if(!val->IsNew())
      return AssertionFailure() << "Expected " << (*val) << " to be new.";
    return AssertionSuccess();
@@ -51,7 +51,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsOld(RawObject* val){
+ IsOld(Pointer* val){
    if(!val->IsOld())
      return AssertionFailure() << "Expected " << (*val) << " to be old.";
    return AssertionSuccess();
@@ -64,7 +64,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsMarked(RawObject* val){
+ IsMarked(Pointer* val){
    if(!val->IsMarked())
      return AssertionFailure() << "Expected " << (*val) << " to marked.";
    return AssertionSuccess();
@@ -77,7 +77,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsRemembered(RawObject* val){
+ IsRemembered(Pointer* val){
    if(!val->IsRemembered())
      return AssertionFailure() << "Expected " << (*val) << " to be remembered.";
    return AssertionSuccess();
@@ -90,14 +90,14 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsForwarding(RawObject* val){
+ IsForwarding(Pointer* val){
    if(!val->IsForwarding())
      return AssertionFailure() << "Expected " << (*val) << " to be forwarding.";
    return AssertionSuccess();
  }
 
  static inline AssertionResult
- IsForwardingTo(RawObject* val, uword address){
+ IsForwardingTo(Pointer* val, uword address){
    if(!val->IsForwarding())
      return AssertionFailure() << "Expected " << (*val) << " to be forwarding.";
    if(val->GetForwardingAddress() != address)
@@ -106,7 +106,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsForwardingTo(RawObject* val, RawObject* dst){
+ IsForwardingTo(Pointer* val, Pointer* dst){
    return IsForwardingTo(val, dst->GetStartingAddress());
  }
 
@@ -117,7 +117,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsWord(RawObject* ptr, word value){
+ IsWord(Pointer* ptr, word value){
    if(ptr->GetPointerSize() != kWordSize)
      return AssertionFailure() << (*ptr) << " is not a word.";
    auto lhs = *((word*)ptr->GetPointer());
@@ -127,7 +127,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsLong(RawObject* ptr, RawLong value) {
+ IsLong(Pointer* ptr, RawLong value) {
    if(ptr->GetPointerSize() != Class::kLongClass->GetAllocationSize())
      return AssertionFailure() << (*ptr) << " is not a word.";
    auto lhs = (Long*)ptr->GetPointer();
@@ -143,7 +143,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsNewWord(RawObject* ptr, word value){
+ IsNewWord(Pointer* ptr, word value){
    if(!IsAllocated(ptr))
      return IsAllocated(ptr);
    if(!ptr->IsNew())
@@ -152,7 +152,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsNewLong(RawObject* ptr, RawLong value) {
+ IsNewLong(Pointer* ptr, RawLong value) {
    if(IsUnallocated(ptr))
      return AssertionFailure() << (*ptr) << " is unallocated";
    if(!ptr->IsNew())
@@ -173,14 +173,14 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsFree(RawObject* ptr) {
+ IsFree(Pointer* ptr) {
    if(!ptr->IsFree())
      return AssertionFailure() << (*ptr) << " is not free";
    return AssertionSuccess();
  }
 
  static inline AssertionResult
- IsOldWord(RawObject* ptr, word value){
+ IsOldWord(Pointer* ptr, word value){
    if(!IsAllocated(ptr))
      return IsAllocated(ptr);
    if(!ptr->IsOld())
@@ -195,7 +195,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsMarkedWord(RawObject* ptr, word value){
+ IsMarkedWord(Pointer* ptr, word value){
    if(!IsAllocated(ptr))
      return IsAllocated(ptr);
    if(!IsOld(ptr))
@@ -212,7 +212,7 @@ namespace poseidon{ //TODO: cleanup & organize this file
  }
 
  static inline AssertionResult
- IsRememberedWord(RawObject* ptr, word value){
+ IsRememberedWord(Pointer* ptr, word value){
    if(!IsAllocated(ptr))
      return IsAllocated(ptr);
    if(!IsNew(ptr))

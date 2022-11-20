@@ -94,11 +94,11 @@
 //     semispace->Clear();
 //   }
 //
-//   static void CopyObject(RawObject* src, RawObject* dst);
-//   static void ForwardObject(RawObject* ptr, uword forwarding_address);
-//   static uword PromoteObject(OldZone* zone, RawObject* ptr);
-//   static uword ScavengeObject(Semispace* zone, RawObject* ptr);
-//   static uword ProcessObject(Semispace* tospace, OldZone* old_zone, RawObject* ptr);
+//   static void CopyObject(Pointer* src, Pointer* dst);
+//   static void ForwardObject(Pointer* ptr, uword forwarding_address);
+//   static uword PromoteObject(OldZone* zone, Pointer* ptr);
+//   static uword ScavengeObject(Semispace* zone, Pointer* ptr);
+//   static uword ProcessObject(Semispace* tospace, OldZone* old_zone, Pointer* ptr);
 //  public:
 //   Scavenger() = delete;
 //   Scavenger(const Scavenger& rhs) = delete;

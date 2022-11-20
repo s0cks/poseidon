@@ -16,7 +16,7 @@ namespace poseidon {
    auto ptr = heap->TryAllocate(kClass->GetAllocationSize());
    if(ptr == UNALLOCATED)
      LOG(FATAL) << "cannot allocate Bool";
-   return ((RawObject*)ptr)->GetPointer();
+   return ((Pointer*)ptr)->GetPointer();
  }
 
  void Bool::operator delete(void* ptr) noexcept {

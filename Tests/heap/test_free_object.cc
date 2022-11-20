@@ -36,7 +36,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeObjectTest, TestFrom_WillPass_EqualToWordSize) {
-   MemoryRegion region(kWordSize + sizeof(RawObject));
+   MemoryRegion region(kWordSize + sizeof(Pointer));
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto ptr = FreeObject::From(region);
    ASSERT_EQ(ptr->GetStartingAddress(), region.GetStartingAddress());

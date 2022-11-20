@@ -130,21 +130,21 @@ namespace poseidon {
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "scavenging: " << (*ptr);
          auto new_ptr = TryAllocateWord(&tospace, kAValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(b)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "scavenging: " << (*ptr);
          auto new_ptr = TryAllocateWord(&tospace, kBValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(c)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "scavenging: " << (*ptr);
          auto new_ptr = TryAllocateWord(&tospace, kCValue);
          new_ptr->SetRememberedBit();
@@ -193,7 +193,7 @@ namespace poseidon {
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Promote(IsPointerTo(a)))
        .Times(1)
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          auto new_ptr = TryAllocateRememberedWord(old_zone, kAValue);
          DLOG(INFO) << "promoting " << (*ptr) << " to " << (*new_ptr);
          return new_ptr->GetStartingAddress();
@@ -252,19 +252,19 @@ namespace poseidon {
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Promote(IsPointerTo(a)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "promoting " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(old_zone, kAValue);
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Promote(IsPointerTo(b)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "promoting " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(old_zone, kBValue);
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Promote(IsPointerTo(c)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "promoting " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(old_zone, kCValue);
          return new_ptr->GetStartingAddress();
@@ -318,14 +318,14 @@ namespace poseidon {
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "scavenging " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(&tospace, kAValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Promote(IsPointerTo(b)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "promoting " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(old_zone, kBValue);
          new_ptr->SetRememberedBit();
@@ -409,42 +409,42 @@ namespace poseidon {
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "scavenging: " << (*ptr);
          auto new_ptr = TryAllocateWord(&tospace, kAValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Promote(IsPointerTo(b)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "promoting " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(old_zone, kBValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(c)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "scavenging: " << (*ptr);
          auto new_ptr = TryAllocateWord(&tospace, kCValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Promote(IsPointerTo(d)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "promoting " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(old_zone, kDValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(e)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "scavenging: " << (*ptr);
          auto new_ptr = TryAllocateWord(&tospace, kEValue);
          new_ptr->SetRememberedBit();
          return new_ptr->GetStartingAddress();
        });
    EXPECT_CALL(scavenger, Promote(IsPointerTo(f)))
-       .WillOnce([&](RawObject* ptr) {
+       .WillOnce([&](Pointer* ptr) {
          DLOG(INFO) << "promoting " << (*ptr);
          auto new_ptr = TryAllocateRememberedWord(old_zone, kFValue);
          return new_ptr->GetStartingAddress();

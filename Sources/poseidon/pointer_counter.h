@@ -1,7 +1,7 @@
 #ifndef POSEIDON_POINTER_COUNTER_H
 #define POSEIDON_POINTER_COUNTER_H
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/relaxed_atomic.h"
 
 namespace poseidon {
@@ -22,7 +22,7 @@ namespace poseidon {
      return (int64_t)bytes_;
    }
 
-   PointerCounter& operator+=(const RawObject* ptr) {
+   PointerCounter& operator+=(const Pointer* ptr) {
      count_ += 1;
      bytes_ += ptr->GetSize();
      return *this;
@@ -34,7 +34,7 @@ namespace poseidon {
      return *this;
    }
 
-   PointerCounter& operator-=(const RawObject* ptr) {
+   PointerCounter& operator-=(const Pointer* ptr) {
      count_ -= 1;
      bytes_ -= ptr->GetSize();
      return *this;

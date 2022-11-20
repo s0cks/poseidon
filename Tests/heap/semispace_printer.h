@@ -2,7 +2,7 @@
 #define POSEIDON_SEMISPACE_PRINTER_H
 
 #include <glog/logging.h>
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon {
@@ -16,7 +16,7 @@ namespace poseidon {
      return Severity;
    }
 
-   bool Visit(RawObject* raw) override {
+   bool Visit(Pointer* raw) override {
      LOG_AT_LEVEL(GetSeverity()) << " - " << (*raw);
      return true;
    }

@@ -18,22 +18,22 @@ namespace poseidon{
      return semispace.TryAllocate(size);
    }
 
-   static inline RawObject*
+   static inline Pointer*
    TryAllocateWord(Semispace& semispace, const word value) {
      auto address = TryAllocateBytes(semispace, kWordSize);
      if(address == 0)
        return nullptr;
-     auto ptr = (RawObject*)address;
+     auto ptr = (Pointer*)address;
      (*((uword*)ptr->GetObjectPointerAddress())) = value;
      return ptr;
    }
 
-   static inline RawObject*
+   static inline Pointer*
    TryAllocateMarkedWord(Semispace& semispace, const word value) {
      auto address = TryAllocateBytes(semispace, kWordSize);
      if(address == 0)
        return nullptr;
-     auto ptr = (RawObject*)address;
+     auto ptr = (Pointer*)address;
      ptr->SetMarkedBit();
      (*((uword*)ptr->GetObjectPointerAddress())) = value;
      return ptr;

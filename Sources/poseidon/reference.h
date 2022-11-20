@@ -1,7 +1,7 @@
 #ifndef POSEIDON_REFERENCE_H
 #define POSEIDON_REFERENCE_H
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 
 namespace poseidon{
 #define FOR_EACH_REFERENCE_TYPE(V) \
@@ -24,7 +24,7 @@ namespace poseidon{
      PSDN_ASSERT(target > 0);
    }
 
-   Reference(RawObject* owner, RawObject* target):
+   Reference(Pointer* owner, Pointer* target):
     Reference(owner->GetStartingAddress(), target->GetStartingAddress()){
    }
   public:
@@ -40,8 +40,8 @@ namespace poseidon{
      return (void*)GetOwnerAddress();
    }
 
-   RawObject* GetOwner() const{
-     return (RawObject*)GetOwnerAddress();
+   Pointer* GetOwner() const{
+     return (Pointer*)GetOwnerAddress();
    }
 
    uword GetTargetAddress() const{
@@ -52,8 +52,8 @@ namespace poseidon{
      return (void*)GetTargetAddress();
    }
 
-   RawObject* GetTarget() const{
-     return (RawObject*)GetTargetAddress();
+   Pointer* GetTarget() const{
+     return (Pointer*)GetTargetAddress();
    }
 
 #define DEFINE_TYPE_CHECK(Name) \

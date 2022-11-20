@@ -53,22 +53,22 @@ namespace poseidon{
      return zone->TryAllocate(size);
    }
 
-   static inline RawObject*
+   static inline Pointer*
    TryAllocateWord(NewZone* zone, word value) {
      auto address = TryAllocateBytes(zone, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
-     auto ptr = (RawObject*)address;
+     auto ptr = (Pointer*)address;
      (*((word*)ptr->GetObjectPointerAddress())) = value;
      return ptr;
    }
 
-   static inline RawObject*
+   static inline Pointer*
    TryAllocateMarkedWord(NewZone* zone, word value) {
      auto address = TryAllocateBytes(zone, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
-     auto ptr = (RawObject*)address;
+     auto ptr = (Pointer*)address;
      ptr->SetMarkedBit();
      (*((word*)ptr->GetObjectPointerAddress())) = value;
      return ptr;

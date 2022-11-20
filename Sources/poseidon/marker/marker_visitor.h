@@ -20,7 +20,7 @@ namespace poseidon {
      return marker_;
    }
 
-   inline bool Mark(RawObject* ptr) {
+   inline bool Mark(Pointer* ptr) {
      return marker()->Mark(ptr);
    }
   public:

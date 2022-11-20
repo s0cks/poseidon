@@ -1,7 +1,7 @@
 #ifndef POSEIDON_ALLOC_HELPERS_H
 #define POSEIDON_ALLOC_HELPERS_H
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 
 namespace poseidon {
 #ifndef UNALLOCATED
@@ -15,35 +15,35 @@ namespace poseidon {
  }
 
  template<class Z>
- static inline RawObject*
+ static inline Pointer*
  TryAllocateWord(Z* zone, const word value) {
    auto address = TryAllocateBytes<Z>(zone, kWordSize);
    if (address == UNALLOCATED)
      return nullptr;
-   auto ptr = (RawObject*)address;
+   auto ptr = (Pointer*)address;
    (*((word*)ptr->GetObjectPointerAddress())) = value;
    return ptr;
  }
 
  template<class Z>
- static inline RawObject*
+ static inline Pointer*
  TryAllocateMarkedWord(Z* zone, const word value) {
    auto address = TryAllocateBytes<Z>(zone, kWordSize);
    if (address == UNALLOCATED)
      return nullptr;
-   auto ptr = (RawObject*)address;
+   auto ptr = (Pointer*)address;
    ptr->SetMarkedBit();
    (*((word*)ptr->GetObjectPointerAddress())) = value;
    return ptr;
  }
 
  template<class Z>
- static inline RawObject*
+ static inline Pointer*
  TryAllocateRememberedWord(Z* zone, const word value) {
    auto address = TryAllocateBytes<Z>(zone, kWordSize);
    if (address == UNALLOCATED)
      return nullptr;
-   auto ptr = (RawObject*)address;
+   auto ptr = (Pointer*)address;
    ptr->SetRememberedBit();
    (*((word*)ptr->GetObjectPointerAddress())) = value;
    return ptr;

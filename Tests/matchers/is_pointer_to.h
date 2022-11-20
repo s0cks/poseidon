@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/local/local.h"
 
 namespace poseidon {
@@ -28,7 +28,7 @@ namespace poseidon {
      return size_;
    }
 
-   bool MatchAndExplain(RawObject* ptr, std::ostream*) const {
+   bool MatchAndExplain(Pointer* ptr, std::ostream*) const {
      return ptr->GetStartingAddress() == starting_address() &&
             ptr->GetSize() == size();
    }
@@ -42,26 +42,26 @@ namespace poseidon {
    }
  };
 
- static inline ::testing::Matcher<RawObject*>
+ static inline ::testing::Matcher<Pointer*>
  IsPointerTo(const uword start, const int64_t size) {
    return IsPointerToMatcher(start, size);
  }
 
- static inline ::testing::Matcher<RawObject*>
- IsPointerTo(RawObject* ptr) {
+ static inline ::testing::Matcher<Pointer*>
+ IsPointerTo(Pointer* ptr) {
    return IsPointerTo(ptr->GetStartingAddress(), ptr->GetSize());
  }
 
  template<class T>
- static inline ::testing::Matcher<RawObject*>
+ static inline ::testing::Matcher<Pointer*>
  IsPointerTo(const Local<T>& val) {
    return IsPointerTo(val.raw_ptr());
  }
 
  template<class T>
- static inline ::testing::Matcher<RawObject*>
+ static inline ::testing::Matcher<Pointer*>
  IsPointerTo(T* val) {
-   return IsPointerTo((RawObject*) val->raw_ptr());
+   return IsPointerTo((Pointer*) val->raw_ptr());
  }
 }
 

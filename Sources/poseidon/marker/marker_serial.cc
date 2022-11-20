@@ -2,7 +2,7 @@
 #include "poseidon/marker/marker_serial.h"
 
 namespace poseidon {
- bool SerialMarker::Visit(RawObject* ptr){
+ bool SerialMarker::Visit(Pointer* ptr){
    return Mark(ptr);
  }
 

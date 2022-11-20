@@ -3,7 +3,7 @@
 
 #include "poseidon/flags.h"
 #include "poseidon/region.h"
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
@@ -19,27 +19,27 @@ namespace poseidon {
  class FreeObject : public Region {
    friend class FreeList;
   protected:
-   RelaxedAtomic<RawObjectTag> tag_;
+   RelaxedAtomic<RawPointerTag> tag_;
    RelaxedAtomic<uword> forwarding_;
 
-   inline RawObjectTag raw_tag() const {
-     return (RawObjectTag)tag_;
+   inline RawPointerTag raw_tag() const {
+     return (RawPointerTag)tag_;
    }
 
-   inline void set_raw_tag(const RawObjectTag& value) {
+   inline void set_raw_tag(const RawPointerTag& value) {
      tag_ = value;
    }
 
-   inline ObjectTag tag() const {
+   inline PointerTag tag() const {
      return { raw_tag() };
    }
 
-   inline void set_tag(const ObjectTag& value) {
+   inline void set_tag(const PointerTag& value) {
      set_raw_tag(value.raw());
    }
 
    inline void SetSize(const ObjectSize size) {
-     set_raw_tag(ObjectTag::SizeTag::Update(size, raw_tag())); //TODO: cleanup
+     set_raw_tag(PointerTag::SizeTag::Update(size, raw_tag())); //TODO: cleanup
    }
 
    inline void SetNextAddress(const uword value) {
@@ -51,7 +51,7 @@ namespace poseidon {
    }
 
    inline void SetOldBit(const bool value = true) {
-     set_raw_tag(ObjectTag::OldBit::Update(value, raw_tag()));
+     set_raw_tag(PointerTag::OldBit::Update(value, raw_tag()));
    }
 
    inline void ClearOldBit() {
@@ -59,7 +59,7 @@ namespace poseidon {
    }
 
    inline void SetFreeBit(const bool value = true) {
-     return set_raw_tag(ObjectTag::FreeBit::Update(value, raw_tag()));
+     return set_raw_tag(PointerTag::FreeBit::Update(value, raw_tag()));
    }
 
    inline void ClearFreeBit() {
@@ -73,7 +73,7 @@ namespace poseidon {
      SetSize(0);
      SetNextAddress(0);
    }
-   explicit FreeObject(const ObjectTag& tag):
+   explicit FreeObject(const PointerTag& tag):
     Region(),
     tag_(tag.raw()),
     forwarding_(0) {
@@ -96,7 +96,7 @@ namespace poseidon {
    }
 
    ObjectSize GetSize() const override {
-     return ObjectTag::SizeTag::Decode(raw_tag());
+     return PointerTag::SizeTag::Decode(raw_tag());
    }
 
    ObjectSize GetTotalSize() const {
@@ -104,11 +104,11 @@ namespace poseidon {
    }
 
    bool IsOld() const {
-     return ObjectTag::OldBit::Decode(raw_tag());
+     return PointerTag::OldBit::Decode(raw_tag());
    }
 
    bool IsFree() const {
-     return ObjectTag::FreeBit::Decode(raw_tag());
+     return PointerTag::FreeBit::Decode(raw_tag());
    }
 
    uword GetNextAddress() const {

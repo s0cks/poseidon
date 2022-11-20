@@ -14,7 +14,7 @@ namespace poseidon {
      SweeperVisitor<false>(sweeper) {
    }
 
-   bool Visit(RawObject* raw) override;
+   bool Visit(Pointer* raw) override;
   public:
    ~SerialSweeper() override = default;
 

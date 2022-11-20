@@ -31,7 +31,7 @@ namespace poseidon {
     zone_(zone) {
    }
 
-   virtual bool Sweep(RawObject* raw);
+   virtual bool Sweep(Pointer* raw);
   public:
    Sweeper(const Sweeper& rhs) = delete;
    virtual ~Sweeper() = default;

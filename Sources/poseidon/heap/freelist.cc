@@ -18,7 +18,7 @@ namespace poseidon{
    if(size <= 0 || size > GetOldZoneSize())
      return UNALLOCATED;
 
-   auto total_size = size + static_cast<ObjectSize>(sizeof(RawObject));
+   auto total_size = size + static_cast<ObjectSize>(sizeof(Pointer));
    auto free_ptr = FindFirstFit(total_size);
    if(free_ptr == UNALLOCATED) {
      DLOG(ERROR) << "cannot find free list item for " << Bytes(total_size);
@@ -37,7 +37,7 @@ namespace poseidon{
      }
    }
 
-   auto ptr = new (free_ptr->GetStartingAddressPointer())RawObject(ObjectTag::Old(size));
+   auto ptr = new (free_ptr->GetStartingAddressPointer())Pointer(PointerTag::Old(size));
    //TODO: mark all pages in old zone
    return ptr->GetStartingAddress();
  }

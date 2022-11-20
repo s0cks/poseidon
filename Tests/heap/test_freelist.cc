@@ -48,22 +48,22 @@ namespace poseidon {
      return free_list.TryAllocate(size);
    }
 
-   static inline RawObject*
+   static inline Pointer*
    TryAllocateWord(FreeList& free_list, word value) {
      auto address = TryAllocateBytes(free_list, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
-     auto ptr = (RawObject*)address;
+     auto ptr = (Pointer*)address;
      (*((word*)ptr->GetObjectPointerAddress())) = value;
      return ptr;
    }
 
-   static inline RawObject*
+   static inline Pointer*
    TryAllocateMarkedWord(FreeList& free_list, word value) {
      auto address = TryAllocateBytes(free_list, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
-     auto ptr = (RawObject*)address;
+     auto ptr = (Pointer*)address;
      ptr->SetMarkedBit();
      (*((word*)ptr->GetObjectPointerAddress())) = value;
      return ptr;
@@ -179,11 +179,11 @@ namespace poseidon {
    FreeList free_list(region);
    ASSERT_TRUE(free_list.Remove(region.GetStartingAddress(), region.GetSize()));
 
-   ASSERT_TRUE(free_list.Insert(region.GetStartingAddress(), kWordSize + sizeof(RawObject)));
-   ASSERT_TRUE(free_list.Insert(region.GetStartingAddress() + (kWordSize + sizeof(RawObject)), kWordSize + sizeof(RawObject)));
+   ASSERT_TRUE(free_list.Insert(region.GetStartingAddress(), kWordSize + sizeof(Pointer)));
+   ASSERT_TRUE(free_list.Insert(region.GetStartingAddress() + (kWordSize + sizeof(Pointer)), kWordSize + sizeof(Pointer)));
 
    MockFreeListNodeVisitor visitor;
-   EXPECT_CALL(visitor, Visit(IsFreePointerTo(region.GetStartingAddress(), (kWordSize + sizeof(RawObject)) * 2)))
+   EXPECT_CALL(visitor, Visit(IsFreePointerTo(region.GetStartingAddress(), (kWordSize + sizeof(Pointer)) * 2)))
     .Times(1)
     .WillRepeatedly(Return(true));
    ASSERT_NO_FATAL_FAILURE(free_list.VisitFreePointers(&visitor));
@@ -254,7 +254,7 @@ namespace poseidon {
    ASSERT_FALSE(IsForwarding(ptr));
    ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
 
-   static const int64_t kRemainingBytes = free_list.GetSize() - (kWordSize + sizeof(RawObject));
+   static const int64_t kRemainingBytes = free_list.GetSize() - (kWordSize + sizeof(Pointer));
    DLOG(INFO) << "remaining bytes: " << Bytes(kRemainingBytes);
    auto free_ptr = free_list.FindFirstFit(kRemainingBytes);
    ASSERT_NE(free_ptr, nullptr);

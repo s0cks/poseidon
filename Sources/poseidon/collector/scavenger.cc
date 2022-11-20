@@ -68,24 +68,24 @@
 //   return (int64_t)last_scavenge_promoted_.bytes;
 // }
 //
-// uword Scavenger::ScavengeObject(Semispace* tospace, RawObject* ptr){
+// uword Scavenger::ScavengeObject(Semispace* tospace, Pointer* ptr){
 //   DLOG(INFO) << "scavenging " << (*ptr);
-//   auto new_ptr = (RawObject*)tospace->TryAllocate(ptr->GetPointerSize());
+//   auto new_ptr = (Pointer*)tospace->TryAllocate(ptr->GetPointerSize());
 //   new_ptr->SetPointerSize(ptr->GetPointerSize());
 //   CopyObject(ptr, new_ptr);
 //   last_scavenge_scavenged_ += ptr;
 //   return new_ptr->GetStartingAddress();
 // }
 //
-// uword Scavenger::PromoteObject(OldZone* zone, RawObject* ptr){
+// uword Scavenger::PromoteObject(OldZone* zone, Pointer* ptr){
 //   DLOG(INFO) << "promoting " << (*ptr) << " to new zone.";
-//   auto new_ptr = (RawObject*)zone->TryAllocate(ptr->GetPointerSize());
+//   auto new_ptr = (Pointer*)zone->TryAllocate(ptr->GetPointerSize());
 //   CopyObject(ptr, new_ptr);
 //   last_scavenge_promoted_ += ptr;
 //   return new_ptr->GetStartingAddress();
 // }
 //
-// uword Scavenger::ProcessObject(Semispace* tospace, OldZone* old_zone, RawObject* ptr){
+// uword Scavenger::ProcessObject(Semispace* tospace, OldZone* old_zone, Pointer* ptr){
 //   DLOG(INFO) << "processing " << (*ptr);
 //   if(!ptr->IsForwarding()){
 //     if(ptr->IsRemembered()){
@@ -98,18 +98,18 @@
 //   }
 //
 //   PSDN_ASSERT(ptr->IsForwarding());
-//   auto new_ptr = (RawObject*)ptr->GetForwardingAddress();
+//   auto new_ptr = (Pointer*)ptr->GetForwardingAddress();
 //   new_ptr->SetRememberedBit();
 //   return new_ptr->GetStartingAddress();
 // }
 //
-// void Scavenger::ForwardObject(RawObject* obj, uword forwarding_address){
-//   DLOG(INFO) << "forwarding " << (*obj) << " to " << (*((RawObject*) forwarding_address));
+// void Scavenger::ForwardObject(Pointer* obj, uword forwarding_address){
+//   DLOG(INFO) << "forwarding " << (*obj) << " to " << (*((Pointer*) forwarding_address));
 //   obj->SetForwardingAddress(forwarding_address);
 //   PSDN_ASSERT(obj->GetForwardingAddress() == forwarding_address);
 // }
 //
-// void Scavenger::CopyObject(RawObject* src, RawObject* dst){//TODO: create a better copy
+// void Scavenger::CopyObject(Pointer* src, Pointer* dst){//TODO: create a better copy
 //   //   PSDN_ASSERT(src->GetTotalSize() == dst->GetTotalSize());
 //   memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
 // }
@@ -139,7 +139,7 @@
 //
 //   }
 //
-//   inline void FinalizeObject(RawObject* raw){
+//   inline void FinalizeObject(Pointer* raw){
 //     GCLOG(1) << "finalizing " << (*raw) << ".";
 ////TODO:
 ////   stats_.num_finalized_ += 1;
@@ -161,10 +161,10 @@
 //   void ProcessLocals(){
 //     TIMED_SECTION("ProcessLocals", {
 //       auto locals = LocalPage::GetLocalPageForCurrentThread();
-//       locals->VisitPointers([&](RawObject** ptr){
+//       locals->VisitPointers([&](Pointer** ptr){
 //         auto old_val = (*ptr);
 //         if(old_val->IsNew() && !old_val->IsForwarding()){
-//           auto new_val = (RawObject*)Scavenger::ProcessObject(&to_, promotion_, old_val);
+//           auto new_val = (Pointer*)Scavenger::ProcessObject(&to_, promotion_, old_val);
 //           (*ptr) = new_val;
 //         }
 //         return true;
@@ -193,10 +193,10 @@
 //   void NotifyLocals(){
 //     DTIMED_SECTION("NotifyLocals", {
 //       auto locals = LocalPage::GetLocalPageForCurrentThread();
-//       locals->VisitPointers([&](RawObject** ptr){
+//       locals->VisitPointers([&](Pointer** ptr){
 //         auto old_val = (*ptr);
 //         if(old_val->IsNew() && old_val->IsForwarding()){
-//           (*ptr) = (RawObject*)old_val->GetForwardingAddress();
+//           (*ptr) = (Pointer*)old_val->GetForwardingAddress();
 //         }
 //         return true;
 //       });
@@ -208,7 +208,7 @@
 //   }
 //   ~SerialScavenger() override = default;
 //
-//   bool Visit(RawObject** ptr) override{
+//   bool Visit(Pointer** ptr) override{
 //     return true;
 //   }
 //
@@ -234,7 +234,7 @@
 //   }
 //
 //   uword GetNext();
-//   uword ProcessObject(RawObject* raw);
+//   uword ProcessObject(Pointer* raw);
 //  public:
 //   explicit ParallelScavengerTask(ParallelScavenger* scavenger);
 //   ~ParallelScavengerTask() override = default;
@@ -251,8 +251,8 @@
 //         uword next;
 //         if((next = GetNext()) != 0){
 //           processing += 1;
-//           auto old_val = (RawObject*)next;
-//           auto new_val = (RawObject*)ProcessObject(old_val);
+//           auto old_val = (Pointer*)next;
+//           auto new_val = (Pointer*)ProcessObject(old_val);
 //           new_val->SetRememberedBit();
 //           processing -= 1;
 //         }
@@ -277,7 +277,7 @@
 //   void ProcessLocals(){
 //     DTIMED_SECTION("ProcessLocals", {
 //       auto locals = LocalPage::GetLocalPageForCurrentThread();
-//       locals->VisitPointers([&](RawObject** ptr){
+//       locals->VisitPointers([&](Pointer** ptr){
 //         auto old_val = (*ptr);
 //         if(old_val->IsNew() && !old_val->IsForwarding())
 //           work_->Push(old_val->GetStartingAddress());
@@ -299,8 +299,8 @@
 //   void ProcessToSpace() override{
 //     DTIMED_SECTION("ProcessToSpace", {
 //       auto address = to_.GetStartingAddress();
-//       while(address < to_.GetEndingAddress() && ((RawObject*)address)->IsNew()){
-//         auto ptr = (RawObject*)address;
+//       while(address < to_.GetEndingAddress() && ((Pointer*)address)->IsNew()){
+//         auto ptr = (Pointer*)address;
 //         if(ptr->IsRemembered()){
 //           DLOG(INFO) << "processing " << (*ptr);
 //           //TODO: process references from ptr
@@ -321,10 +321,10 @@
 //   void NotifyLocals(){//TODO: serialize
 //     DTIMED_SECTION("NotifyLocals", {
 //       auto locals = LocalPage::GetLocalPageForCurrentThread();
-//       locals->VisitPointers([&](RawObject** ptr){
+//       locals->VisitPointers([&](Pointer** ptr){
 //         auto old_val = (*ptr);
 //         if(old_val->IsNew() && old_val->IsForwarding()){
-//           (*ptr) = (RawObject*)old_val->GetForwardingAddress();
+//           (*ptr) = (Pointer*)old_val->GetForwardingAddress();
 //         }
 //         return true;
 //       });
@@ -339,7 +339,7 @@
 //     delete work_;
 //   }
 //
-//   bool Visit(RawObject** ptr) override{
+//   bool Visit(Pointer** ptr) override{
 //     auto old_val = (*ptr);
 //     if(old_val != nullptr)
 //       work_->Push((uword) ptr);
@@ -370,7 +370,7 @@
 //   return work()->Steal();
 // }
 //
-// uword ParallelScavengerTask::ProcessObject(RawObject* raw){//TODO: refactor ->zone_ & ->promotion_
+// uword ParallelScavengerTask::ProcessObject(Pointer* raw){//TODO: refactor ->zone_ & ->promotion_
 //   return Scavenger::ProcessObject(&scavenger_->to_, scavenger_->promotion_, raw);
 // }
 //

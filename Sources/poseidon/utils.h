@@ -281,7 +281,7 @@ namespace poseidon{
  typedef RelaxedAtomic<int64_t> AtomicLong;
  typedef RelaxedAtomic<Timestamp> AtomicTimestamp;
 
- class RawObject;
+ class Pointer;
  struct AtomicPointerCounter{
    AtomicLong count;
    AtomicLong bytes;
@@ -292,8 +292,8 @@ namespace poseidon{
 
    AtomicPointerCounter& operator=(const AtomicPointerCounter& rhs) = default;
 
-   AtomicPointerCounter& operator+=(RawObject* val);
-   AtomicPointerCounter& operator-=(RawObject* val);
+   AtomicPointerCounter& operator+=(Pointer* val);
+   AtomicPointerCounter& operator-=(Pointer* val);
 
    AtomicPointerCounter& operator=(const int64_t& val){
      count = val;

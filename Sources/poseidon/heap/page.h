@@ -22,7 +22,7 @@ namespace poseidon {
    friend class NewZone;
    friend class OldZone;
 
-   friend class RawObject;//TODO: remove
+   friend class Pointer;//TODO: remove
    friend class NewPageTest; //TODO: remove
    friend class OldPageTest; //TODO: remove
   protected:
@@ -40,8 +40,8 @@ namespace poseidon {
        return current_address_;
      }
 
-     inline RawObject* current_ptr() const {
-       return (RawObject*)current_address();
+     inline Pointer* current_ptr() const {
+       return (Pointer*)current_address();
      }
     public:
      explicit PageIterator(T* page):
@@ -50,7 +50,7 @@ namespace poseidon {
      }
      ~PageIterator() override = default;
 
-     RawObject* Next() override {
+     Pointer* Next() override {
        auto next = current_ptr();
        current_address_ += next->GetTotalSize();
        return next;

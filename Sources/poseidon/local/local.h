@@ -20,8 +20,8 @@ namespace poseidon {
      return (void*)address();
    }
 
-   RawObject** GetLocalPointer() const {
-     return (RawObject**)address();
+   Pointer** GetLocalPointer() const {
+     return (Pointer**)address();
    }
   public:
    Local():
@@ -35,7 +35,7 @@ namespace poseidon {
      LOG_IF(FATAL, IsEmpty()) << "cannot allocate Local on the " << GetCurrentThreadName() << " thread.";
    }
 
-   explicit Local(RawObject* ptr):
+   explicit Local(Pointer* ptr):
     Local() {
      (*GetLocalPointer()) = ptr;
    }
@@ -57,7 +57,7 @@ namespace poseidon {
      return address() == UNALLOCATED;
    }
 
-   RawObject* raw_ptr() const {
+   Pointer* raw_ptr() const {
      return (*GetLocalPointer());
    }
 
@@ -67,7 +67,7 @@ namespace poseidon {
      return raw_ptr()->GetPointer();
    }
 
-   Local& operator=(RawObject* ptr) {
+   Local& operator=(Pointer* ptr) {
      if(!IsEmpty() && (*GetLocalPointer())->GetStartingAddress() == ptr->GetStartingAddress() && (*GetLocalPointer())->GetSize() == ptr->GetSize())
        return *this;
      (*GetLocalPointer()) = ptr;

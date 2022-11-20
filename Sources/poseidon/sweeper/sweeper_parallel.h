@@ -39,7 +39,7 @@ namespace poseidon {
 //       do{
 //         uword next;
 //         if((next = GetNext()) != 0){
-//           Sweeper::SweepObject(free_list(), (RawObject*)next);
+//           Sweeper::SweepObject(free_list(), (Pointer*)next);
 //         }
 //       } while(HasWork());
 //     } while(Sweeper::IsSweeping());
@@ -54,7 +54,7 @@ namespace poseidon {
      return false;
    }
 
-   bool Visit(RawObject* ptr) override {
+   bool Visit(Pointer* ptr) override {
      NOT_IMPLEMENTED(FATAL);//TODO: implement
      return false;
    }

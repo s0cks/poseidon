@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "poseidon/object_tag.h"
+#include "poseidon/pointer_tag.h"
 
 namespace poseidon {
  class ObjectTagMatcher {

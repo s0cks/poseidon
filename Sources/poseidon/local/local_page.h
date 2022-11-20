@@ -2,7 +2,7 @@
 #define POSEIDON_LOCAL_PAGE_H
 
 #include "poseidon/bitset.h"
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
@@ -22,7 +22,7 @@ namespace poseidon {
        return current_;
      }
 
-     inline RawObject* current_ptr() const {
+     inline Pointer* current_ptr() const {
        return page()->GetLocal(current());
      }
 
@@ -41,7 +41,7 @@ namespace poseidon {
               current_ptr() != nullptr; //TODO: need to handle gaps in local page slots
      }
 
-     RawObject* Next() {
+     Pointer* Next() {
        auto next = current_ptr();
        current_ += 1;
        return next;
@@ -59,8 +59,8 @@ namespace poseidon {
      return GetStartingAddress() + (index * kWordSize);
    }
 
-   RawObject** GetLocalAt(const int64_t index) const {
-     return (RawObject**) GetLocalAddressAt(index);
+   Pointer** GetLocalAt(const int64_t index) const {
+     return (Pointer**) GetLocalAddressAt(index);
    }
   public:
    LocalPage() = default;
@@ -97,11 +97,11 @@ namespace poseidon {
      return GetSize() / kWordSize;
    }
 
-   RawObject* GetLocal(const int64_t index) const {
+   Pointer* GetLocal(const int64_t index) const {
      return *GetLocalAt(index);
    }
 
-   void SetLocal(const int64_t index, RawObject* ptr) {
+   void SetLocal(const int64_t index, Pointer* ptr) {
      *GetLocalAt(index) = ptr;
    }
 

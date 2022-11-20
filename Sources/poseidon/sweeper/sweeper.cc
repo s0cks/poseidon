@@ -12,7 +12,7 @@ namespace poseidon {
    sweeping_ = value;
  }
 
- bool Sweeper::Sweep(RawObject* raw) { //TODO: cleanup
+ bool Sweeper::Sweep(Pointer* raw) { //TODO: cleanup
    NOT_IMPLEMENTED(FATAL); //TODO: implement
    return false;
    //return free_list->Insert(raw->GetStartingAddress(), raw->GetTotalSize());

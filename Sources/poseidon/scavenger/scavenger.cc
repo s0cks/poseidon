@@ -47,12 +47,12 @@ namespace poseidon {
  }
 
  static inline void
- CopyObject(RawObject* src, RawObject* dst) {
+ CopyObject(Pointer* src, Pointer* dst) {
    VLOG_IF(10, PSDN_DEBUG) << "copying " << (*src) << " to " << (*dst);
    memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
  }
 
- uword Scavenger::Promote(RawObject* ptr) {
+ uword Scavenger::Promote(Pointer* ptr) {
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
    PSDN_ASSERT(ptr->IsRemembered());
@@ -64,14 +64,14 @@ namespace poseidon {
      return UNALLOCATED;
    }
 
-   auto new_ptr = (RawObject*)new_address;
+   auto new_ptr = (Pointer*)new_address;
    CopyObject(ptr, new_ptr);
    VLOG_IF(10, google::DEBUG_MODE) << "promoted " << (*ptr) << " to " << (*new_ptr);
    //TODO: set new tag
    return new_ptr->GetStartingAddress();
  }
 
- uword Scavenger::Scavenge(RawObject* ptr) {
+ uword Scavenger::Scavenge(Pointer* ptr) {
    DLOG(INFO) << "scavenging " << (*ptr);
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
@@ -83,7 +83,7 @@ namespace poseidon {
      return UNALLOCATED;
    }
 
-   auto new_ptr = (RawObject*)new_address;
+   auto new_ptr = (Pointer*)new_address;
    CopyObject(ptr, new_ptr);
    VLOG_IF(10, google::DEBUG_MODE) << "scavenged " << (*ptr) << " to " << (*new_ptr);
    //TODO: set new tag
@@ -91,7 +91,7 @@ namespace poseidon {
  }
 
  static inline uword
- Forward(RawObject* src, RawObject* dst) {
+ Forward(Pointer* src, Pointer* dst) {
    if(dst == UNALLOCATED)
      return src->GetStartingAddress();
    PSDN_ASSERT(!src->IsForwarding());
@@ -101,7 +101,7 @@ namespace poseidon {
    return src->GetForwardingAddress();
  }
 
- uword Scavenger::Process(RawObject* ptr) {
+ uword Scavenger::Process(Pointer* ptr) {
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
    DLOG(INFO) << "processing " << (*ptr);
@@ -110,12 +110,12 @@ namespace poseidon {
      return ptr->GetForwardingAddress();
 
    if(ptr->IsRemembered()) {
-     auto new_ptr = (RawObject*) Promote(ptr);
+     auto new_ptr = (Pointer*) Promote(ptr);
      new_ptr->SetRememberedBit();
      return Forward(ptr, new_ptr);
    } else {
      DLOG(INFO) << "scavenging " << (*ptr);
-     auto new_ptr = (RawObject*) Scavenge(ptr);
+     auto new_ptr = (Pointer*) Scavenge(ptr);
      new_ptr->SetRememberedBit();
      return Forward(ptr, new_ptr);
    }

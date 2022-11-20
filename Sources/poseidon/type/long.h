@@ -21,8 +21,8 @@ namespace poseidon {
   public:
    ~Long() override = default;
 
-   RawObject* raw_ptr() const {
-     return (RawObject*)(GetStartingAddress() - sizeof(RawObject));
+   Pointer* raw_ptr() const {
+     return (Pointer*)(GetStartingAddress() - sizeof(Pointer));
    }
 
    RawLong Get() const;

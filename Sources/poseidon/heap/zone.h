@@ -3,14 +3,14 @@
 
 #include "poseidon/bitset.h"
 #include "poseidon/heap/page.h"
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
  template<class P>
  class Zone : public Section {
    friend class ZoneTest;
-   friend class RawObject;
+   friend class Pointer;
    friend class Scavenger;
   protected:
    template<class Z>
@@ -27,8 +27,8 @@ namespace poseidon{
        return current_;
      }
 
-     inline RawObject* current_ptr() const {
-       return (RawObject*)current_address();
+     inline Pointer* current_ptr() const {
+       return (Pointer*)current_address();
      }
     public:
      explicit ZoneIterator(Z* zone):
@@ -38,7 +38,7 @@ namespace poseidon{
      }
      ~ZoneIterator() override = default;
 
-     RawObject* Next() override {
+     Pointer* Next() override {
        auto next = current_ptr();
        current_ += next->GetTotalSize();
        return next;

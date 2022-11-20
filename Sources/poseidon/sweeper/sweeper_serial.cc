@@ -2,7 +2,7 @@
 #include "poseidon/sweeper/sweeper_serial.h"
 
 namespace poseidon {
- bool SerialSweeper::Visit(RawObject* raw){
+ bool SerialSweeper::Visit(Pointer* raw){
    if(raw->IsMarked() || !raw->IsOld() || raw->IsFree())
      return true; // dont sweep marked objects
    return sweeper()->Sweep(raw);

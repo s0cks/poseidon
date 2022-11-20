@@ -8,7 +8,7 @@
 #include "poseidon/flags.h"
 #include "poseidon/utils.h"
 #include "poseidon/bitset.h"
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/platform/platform.h"
 #include "poseidon/heap/section.h"
 #include "poseidon/heap/free_object.h"
@@ -85,7 +85,7 @@ namespace poseidon{ //TODO: atomic support?
 
    static inline bool
    CanSplitAfter(const FreeObject* ptr, const ObjectSize& size) {
-     return ptr->GetSize() - (size + sizeof(RawObject)) > kWordSize; //TODO: cleanup
+     return ptr->GetSize() - (size + sizeof(Pointer)) > kWordSize; //TODO: cleanup
    }
 
    static inline bool
@@ -97,7 +97,7 @@ namespace poseidon{ //TODO: atomic support?
      // we need to split from the end
      const auto next_address = parent->GetStartingAddress() + size;
      const auto new_size = parent->GetSize() - size;
-     const auto new_ptr = new ((void*) next_address)FreeObject(ObjectTag::Old(new_size));
+     const auto new_ptr = new ((void*) next_address)FreeObject(PointerTag::Old(new_size));
      return Insert(new_ptr->GetStartingAddress(), new_ptr->GetSize());
    }
   public:
@@ -153,7 +153,7 @@ namespace poseidon{ //TODO: atomic support?
      return Contains(start_address) && Contains(end_address);
    }
 
-   inline bool Contains(RawObject* raw_ptr) const {
+   inline bool Contains(Pointer* raw_ptr) const {
      return Contains(raw_ptr->GetStartingAddress(), raw_ptr->GetSize());
    }
 
@@ -166,7 +166,7 @@ namespace poseidon{ //TODO: atomic support?
      return Contains(start_address) || Contains(end_address);
    }
 
-   inline bool IntersectedBy(const RawObject* ptr) const {
+   inline bool IntersectedBy(const Pointer* ptr) const {
      return IntersectedBy(ptr->GetStartingAddress(), ptr->GetTotalSize());
    }
 
@@ -176,7 +176,7 @@ namespace poseidon{ //TODO: atomic support?
 
    virtual bool Insert(uword start, ObjectSize size);
 
-   inline bool Insert(RawObject* raw_ptr) {
+   inline bool Insert(Pointer* raw_ptr) {
      return Insert(raw_ptr->GetStartingAddress(), raw_ptr->GetTotalSize());
    }
 

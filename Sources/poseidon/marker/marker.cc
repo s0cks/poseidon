@@ -14,7 +14,7 @@ namespace poseidon {
    marking_ = value;
  }
 
- bool Marker::Mark(RawObject* ptr) {
+ bool Marker::Mark(Pointer* ptr) {
    DLOG(INFO) << "marking: " << (*ptr);
    ptr->SetMarkedBit();
    stats().marked() += ptr;

@@ -18,7 +18,7 @@ namespace poseidon {
        if((*ptr) != nullptr) {
          DLOG(INFO) << "checking: " << (**ptr);
          if((*ptr)->IsNew() && (*ptr)->IsMarked() && !(*ptr)->IsForwarding()){
-           (*ptr) = (RawObject*) scavenger()->Process((*ptr));
+           (*ptr) = (Pointer*) scavenger()->Process((*ptr));
          }
        }
      }

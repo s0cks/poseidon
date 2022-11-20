@@ -7,7 +7,7 @@ namespace poseidon{
    finalized_ = 0;
  }
 
- void Finalizer::Finalize(RawObject* ptr){
+ void Finalizer::Finalize(Pointer* ptr){
    DLOG(INFO) << "finalizing " << (*ptr) << ".";
    memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
 

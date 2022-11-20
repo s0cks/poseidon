@@ -1,14 +1,14 @@
-#include "raw_object.h"
+#include "pointer.h"
 #include "type/instance.h"
 #include "heap/heap.h"
 
 namespace poseidon{
- ObjectSize RawObject::VisitPointers(RawObjectVisitor* vis) {
+ ObjectSize Pointer::VisitPointers(RawObjectVisitor* vis) {
    auto instance_size = GetPointerSize();
 
    auto current = GetObjectPointerAddress() + sizeof(Instance);
    while(current < GetEndingAddress()) {
-     auto ptr = (RawObject**)current;
+     auto ptr = (Pointer**)current;
      if((*ptr) != UNALLOCATED && !vis->Visit((*ptr)))
        return instance_size;
      current += kWordSize;

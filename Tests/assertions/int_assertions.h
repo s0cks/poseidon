@@ -10,7 +10,7 @@
 
 namespace poseidon {
  static inline ::testing::AssertionResult
- IsInt(RawObject* ptr) {
+ IsInt(Pointer* ptr) {
    if(ptr == UNALLOCATED)
      return ::testing::AssertionFailure() << "not allocated";
    if(ptr->GetSize() != Int::GetClass()->GetAllocationSize())

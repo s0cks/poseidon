@@ -28,7 +28,7 @@ namespace poseidon{
      }
    }
 
-   auto val = new ((void*) ptr_address)RawObject(ObjectTag::Old(size));
+   auto val = new ((void*) ptr_address)Pointer(PointerTag::Old(size));
    if(!MarkAllIntersectedBy((*val))) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
      //TODO: deallocate

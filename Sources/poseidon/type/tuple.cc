@@ -11,7 +11,7 @@ namespace poseidon {
   auto heap = Heap::GetCurrentThreadHeap();
   auto address = heap->TryAllocate(kClass->GetAllocationSize());
   LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate Tuple";
-  return ((RawObject*)address)->GetPointer();
+  return ((Pointer*)address)->GetPointer();
  }
 
  void Tuple::operator delete(void*) noexcept {

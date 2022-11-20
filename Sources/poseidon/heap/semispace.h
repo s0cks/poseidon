@@ -4,7 +4,7 @@
 #include <ostream>
 #include <glog/logging.h>
 
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/heap/section.h"
 #include "poseidon/platform/memory_region.h"
 
@@ -28,8 +28,8 @@ namespace poseidon{
        return current_;
      }
 
-     inline RawObject* current_ptr() const {
-       return (RawObject*)current_address();
+     inline Pointer* current_ptr() const {
+       return (Pointer*)current_address();
      }
     public:
      explicit SemispaceIterator(Semispace* semispace):
@@ -43,7 +43,7 @@ namespace poseidon{
        return current_address() < semispace()->GetCurrentAddress();
      }
 
-     RawObject* Next() override {
+     Pointer* Next() override {
        auto next = current_ptr();
        current_ += next->GetTotalSize();
        return next;

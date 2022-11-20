@@ -17,7 +17,7 @@ namespace poseidon {
    auto address = heap->TryAllocate(kClass->GetAllocationSize());
    if(address == UNALLOCATED)
      LOG(FATAL) << "cannot allocate Byte";
-   return ((RawObject*)address)->GetPointer();
+   return ((Pointer*)address)->GetPointer();
  }
 
  void Byte::operator delete(void* ptr) noexcept {

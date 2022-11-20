@@ -33,7 +33,7 @@ namespace poseidon{
        PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      }
    }
-   auto ptr = new ((void*) ptr_address)RawObject(ObjectTag::New(size));
+   auto ptr = new ((void*) ptr_address)Pointer(PointerTag::New(size));
    MarkAllIntersectedBy(*ptr);
    return ptr->GetStartingAddress();
  }

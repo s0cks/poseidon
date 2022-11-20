@@ -12,7 +12,7 @@ namespace poseidon {
   protected:
    WorkStealingQueue<uword> work_;
 
-   bool Visit(RawObject* ptr) override;
+   bool Visit(Pointer* ptr) override;
   public:
    explicit SerialMarker(Marker* marker):
     MarkerVisitor<false>(marker),

@@ -60,7 +60,7 @@ namespace poseidon {
    MockSweeper sweeper(zone);
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(a)))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "sweeping " << (*ptr);
       ptr->SetFreeBit();
       memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
@@ -98,7 +98,7 @@ namespace poseidon {
    MockSweeper sweeper(zone);
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(a)))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "sweeping " << (*ptr);
       ptr->SetFreeBit();
       memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
@@ -106,7 +106,7 @@ namespace poseidon {
     });
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(b)))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "sweeping " << (*ptr);
       ptr->SetFreeBit();
       memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
@@ -114,7 +114,7 @@ namespace poseidon {
     });
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(c)))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "sweeping " << (*ptr);
       ptr->SetFreeBit();
       memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
@@ -154,7 +154,7 @@ namespace poseidon {
    MockSweeper sweeper(zone);
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(a)))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "sweeping " << (*ptr);
       ptr->SetFreeBit();
       memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());
@@ -164,7 +164,7 @@ namespace poseidon {
     .Times(0);
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(c)))
     .Times(1)
-    .WillOnce([](RawObject* ptr) {
+    .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "sweeping " << (*ptr);
       ptr->SetFreeBit();
       memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->tag().GetSize());

@@ -5,11 +5,11 @@
 #include "poseidon/platform/platform.h"
 
 namespace poseidon {
- typedef uword RawObjectTag;
+ typedef uword RawPointerTag;
 
- static const constexpr RawObjectTag kInvalidObjectTag = 0x0;
+ static const constexpr RawPointerTag kInvalidPointerTag = 0x0;
 
- class ObjectTag{
+ class PointerTag{
   public:
    enum Layout{
      // NewBit
@@ -39,27 +39,27 @@ namespace poseidon {
      kTotalBits = kBitsForNewBit + kBitsForOldBit + kBitsForMarkedBit + kBitsForRememberedBit + kBitsForFreeBit + kBitsForSizeTag,
    };
    // The object's size.
-   class SizeTag : public BitField<RawObjectTag, int64_t, kSizeTagOffset, kBitsForSizeTag>{};
+   class SizeTag : public BitField<RawPointerTag, int64_t, kSizeTagOffset, kBitsForSizeTag>{};
    // allocated in the new heap.
-   class NewBit : public BitField<RawObjectTag, bool, kNewBitOffset, kBitsForNewBit>{};
+   class NewBit : public BitField<RawPointerTag, bool, kNewBitOffset, kBitsForNewBit>{};
    // allocated in the old heap.
-   class OldBit : public BitField<RawObjectTag, bool, kOldBitOffset, kBitsForOldBit>{};
+   class OldBit : public BitField<RawPointerTag, bool, kOldBitOffset, kBitsForOldBit>{};
    // marked by the scavenger
-   class MarkedBit : public BitField<RawObjectTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
+   class MarkedBit : public BitField<RawPointerTag, bool, kMarkedBitOffset, kBitsForMarkedBit>{};
    // remembered by the scavenger
-   class RememberedBit : public BitField<RawObjectTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
+   class RememberedBit : public BitField<RawPointerTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
    // is free space
-   class FreeBit : public BitField<RawObjectTag, bool, kFreeBitOffset, kBitsForFreeBit>{};
+   class FreeBit : public BitField<RawPointerTag, bool, kFreeBitOffset, kBitsForFreeBit>{};
   private:
-   RawObjectTag raw_;
+   RawPointerTag raw_;
   public:
-   constexpr ObjectTag(const RawObjectTag raw = kInvalidObjectTag):
+   constexpr PointerTag(const RawPointerTag raw = kInvalidPointerTag):
      raw_(raw) {
    }
-   ObjectTag(const ObjectTag& rhs) = default;
-   ~ObjectTag() = default;
+   PointerTag(const PointerTag& rhs) = default;
+   ~PointerTag() = default;
 
-   RawObjectTag raw() const{
+   RawPointerTag raw() const{
      return raw_;
    }
 
@@ -135,21 +135,21 @@ namespace poseidon {
      return SizeTag::Decode(raw());
    }
 
-   explicit operator RawObjectTag() const{
+   explicit operator RawPointerTag() const{
      return raw();
    }
 
-   ObjectTag& operator=(const ObjectTag& rhs) = default;
+   PointerTag& operator=(const PointerTag& rhs) = default;
 
-   ObjectTag& operator=(const RawObjectTag& rhs){
+   PointerTag& operator=(const RawPointerTag& rhs){
      if(raw_ == rhs)
        return *this;
      raw_ = rhs;
      return *this;
    }
 
-   friend std::ostream& operator<<(std::ostream& stream, const ObjectTag& val){
-     stream << "ObjectTag(";
+   friend std::ostream& operator<<(std::ostream& stream, const PointerTag& val){
+     stream << "PointerTag(";
      stream << "new=" << val.IsNew() << ", ";
      stream << "old=" << val.IsOld() << ", ";
      stream << "marked=" << val.IsMarked() << ", ";
@@ -160,50 +160,50 @@ namespace poseidon {
      return stream;
    }
 
-   friend bool operator==(const ObjectTag& lhs, const ObjectTag& rhs) {
+   friend bool operator==(const PointerTag& lhs, const PointerTag& rhs) {
      return lhs.raw() == rhs.raw();
    }
 
-   friend bool operator!=(const ObjectTag& lhs, const ObjectTag& rhs) {
+   friend bool operator!=(const PointerTag& lhs, const PointerTag& rhs) {
      return lhs.raw() != rhs.raw();
    }
   public:
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    Empty() {
-     return kInvalidObjectTag;
+     return kInvalidPointerTag;
    }
 
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    New(const ObjectSize size) {
      return Empty() | NewBit::Encode(true) | SizeTag::Encode(size);
    }
 
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    NewMarked(const ObjectSize size) {
      return New(size) | MarkedBit::Encode(true);
    }
 
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    NewRemembered(const ObjectSize size) {
      return New(size) | RememberedBit::Encode(true);
    }
 
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    Old(const ObjectSize size) {
      return Empty() | OldBit::Encode(true) | SizeTag::Encode(size);
    }
 
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    OldMarked(const ObjectSize size) {
      return Old(size) | MarkedBit::Encode(true);
    }
 
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    OldRemembered(const ObjectSize size) {
      return Old(size) | RememberedBit::Encode(true);
    }
 
-   static inline constexpr RawObjectTag
+   static inline constexpr RawPointerTag
    OldFree(const ObjectSize size) {
      return Old(size) | FreeBit::Encode(true);
    }

@@ -17,7 +17,7 @@ namespace poseidon {
    bool ProcessRoots();
    bool ProcessToSpace();
 
-   bool Visit(RawObject* vis) override {
+   bool Visit(Pointer* vis) override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;
    }

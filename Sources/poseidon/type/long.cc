@@ -17,7 +17,7 @@ namespace poseidon {
    auto address = heap->TryAllocate(kClass->GetAllocationSize());
    if(address == UNALLOCATED)
      LOG(FATAL) << "cannot allocate Long";
-   return ((RawObject*)address)->GetPointer();
+   return ((Pointer*)address)->GetPointer();
  }
 
  void Long::operator delete(void* ptr) noexcept {

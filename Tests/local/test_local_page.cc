@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "poseidon/raw_object.h"
+#include "poseidon/pointer.h"
 #include "poseidon/local/local_page.h"
 
 #include "poseidon/heap/heap.h"

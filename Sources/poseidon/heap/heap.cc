@@ -16,14 +16,14 @@ namespace poseidon{
  pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
 
  uword Heap::AllocateNewObject(int64_t size){
-   RawObject* val = nullptr;
-   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
+   Pointer* val = nullptr;
+   if((val = (Pointer*)new_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << Bytes(size) << ".";
    Collector::MinorCollection();
 
-   if((val = (RawObject*)new_zone()->TryAllocate(size)) != nullptr)
+   if((val = (Pointer*)new_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    LOG(FATAL) << "cannot allocate new object of " << Bytes(size) << "!";
@@ -35,17 +35,17 @@ finish_allocation:
  }
 
  uword Heap::AllocateOldObject(int64_t size){
-   RawObject* val = nullptr;
+   Pointer* val = nullptr;
 
    // 1. Try Allocation
-   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
+   if((val = (Pointer*)old_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 2. Try Major Collection
    Collector::MajorCollection();
 
    // 3. Try Allocation Again
-   if((val = (RawObject*)old_zone()->TryAllocate(size)) != nullptr)
+   if((val = (Pointer*)old_zone()->TryAllocate(size)) != nullptr)
      goto finish_allocation;
 
    // 4. Try Pages w/ Grow
