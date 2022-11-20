@@ -10,54 +10,21 @@ namespace poseidon {
    return ProcessRoots() && ProcessToSpace();
  }
 
- static inline uword Forward(RawObject* src, uword dst) {
-   if(src->IsForwarding())
-     return src->GetForwardingAddress();
-   src->SetForwardingAddress(dst);
-   return src->GetForwardingAddress();
- }
-
- uword SerialScavenger::Process(RawObject* ptr) {
-   DLOG(INFO) << "processing " << (*ptr);
-   if(ptr->IsForwarding())
-     return ptr->GetForwardingAddress();
-
-   if(ptr->IsNew() && ptr->IsRemembered())
-     return Forward(ptr, scavenger()->Promote(ptr));
-   return Forward(ptr, scavenger()->Scavenge(ptr));
- }
-
  bool SerialScavenger::ProcessRoots() {
-   TIMED_SECTION("ProcessLocals", {
-     NOT_IMPLEMENTED(FATAL); //TODO: implement
-//     auto locals = LocalPage::GetLocalPageForCurrentThread();
-//     locals->VisitPointers([&](RawObject** ptr){
-//       auto old_val = (*ptr);
-//       if(old_val->IsNew() && !old_val->IsForwarding()){
-//         auto new_val = (RawObject*)Process(old_val);
-//         (*ptr) = new_val;
-//       }
-//       return true;
-//     });
+   TIMED_SECTION("ProcessRoots", {
+     auto page = LocalPage::GetForCurrentThread();
+     for(auto idx = 0; idx < page->GetNumberOfLocals(); idx++) {
+       auto ptr = page->GetLocalAt(idx);
+       if((*ptr) != nullptr) {
+         DLOG(INFO) << "checking: " << (**ptr);
+         if((*ptr)->IsNew() && (*ptr)->IsMarked() && !(*ptr)->IsForwarding()){
+           (*ptr) = (RawObject*) scavenger()->Process((*ptr));
+         }
+       }
+     }
    });
-   return false;
+   return true;
  }
-
-  bool SerialScavenger::NotifyLocals(){
-   DTIMED_SECTION("NotifyLocals", {
-     NOT_IMPLEMENTED(FATAL); //TODO: implement
-//     auto locals = LocalPage::GetLocalPageForCurrentThread();
-//     locals->VisitPointers([&](RawObject** ptr){
-//       auto old_val = (*ptr);
-//       DLOG(INFO) << "notifying " << (*old_val);
-//       if(old_val->IsNew() && old_val->IsForwarding()){
-//         (*ptr) = (RawObject*)old_val->GetForwardingAddress();
-//       }
-//       return true;
-//     });
-   });
-   return false;
-  }
 
  bool SerialScavenger::ProcessToSpace() {
    NOT_IMPLEMENTED(FATAL); //TODO: implement
@@ -66,16 +33,6 @@ namespace poseidon {
 
  bool SerialScavenger::Scavenge() {
    SwapSpaces();
-
-   if(!ProcessRoots()) {
-     DLOG(ERROR) << "cannot process roots";
-     return false;
-   }
-
-   if(!NotifyLocals()) {
-     DLOG(ERROR) << "cannot notify locals";
-     return false;
-   }
-   return true;
+   return ProcessRoots();
  }
 }

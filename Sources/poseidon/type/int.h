@@ -14,16 +14,8 @@ namespace poseidon {
 
    explicit Int(RawInt value);
    void Set(RawInt value);
-
-   uword GetStartingAddress() const {
-     return (uword)this;
-   }
   public:
    ~Int() override = default;
-
-   RawObject* raw_ptr() const {
-     return (RawObject*)(GetStartingAddress() - sizeof(RawObject));
-   }
 
    RawInt Get() const;
 
@@ -34,10 +26,36 @@ namespace poseidon {
      return stream;
    }
 
+   friend bool operator==(const Int& lhs, const Int& rhs) {
+     return Compare(lhs, rhs) == 0;
+   }
+
+   friend bool operator!=(const Int& lhs, const Int& rhs) {
+     return Compare(lhs, rhs) != 0;
+   }
+
+   friend bool operator<(const Int& lhs, const Int& rhs) {
+     return Compare(lhs, rhs) < 0;
+   }
+
+   friend bool operator>(const Int& lhs, const Int& rhs) {
+     return Compare(lhs, rhs) > 0;
+   }
+
    DEFINE_OBJECT(Int);
   public:
    void* operator new(size_t) noexcept;
    void operator delete(void*) noexcept;
+
+   static inline int
+   Compare(const Int& lhs, const Int& rhs) {
+     if(lhs.Get() < rhs.Get())
+       return -1;
+     else if(lhs.Get() > rhs.Get())
+       return +1;
+     PSDN_ASSERT(lhs.Get() == rhs.Get());
+     return 0;
+   }
 
    static inline Int* New(const RawInt value) {
      return new Int(value);

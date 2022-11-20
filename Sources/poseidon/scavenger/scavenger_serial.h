@@ -15,17 +15,10 @@ namespace poseidon {
    void SwapSpaces();
    bool ProcessAll();
    bool ProcessRoots();
-   bool NotifyLocals();
    bool ProcessToSpace();
-   uword Process(RawObject* ptr);
 
-   bool Visit(RawObject* ptr) override {
-     NOT_IMPLEMENTED(FATAL);
-     return false;
-   }
-
-   bool Visit(NewPage* page) override {
-     NOT_IMPLEMENTED(FATAL);
+   bool Visit(RawObject* vis) override {
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;
    }
   public:

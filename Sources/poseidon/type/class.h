@@ -61,6 +61,7 @@ namespace poseidon {
    static Class* kIntClass;
    static Class* kLongClass;
    static Class* kNumberClass;
+   static Class* kTupleClass;
 
    static void Initialize();
  };

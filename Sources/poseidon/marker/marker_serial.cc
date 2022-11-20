@@ -1,3 +1,4 @@
+#include "poseidon/local/local_page.h"
 #include "poseidon/marker/marker_serial.h"
 
 namespace poseidon {
@@ -5,9 +6,9 @@ namespace poseidon {
    return Mark(ptr);
  }
 
- bool SerialMarker::MarkAllRoots(){
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-   return false;
+ bool SerialMarker::MarkAllRoots() {
+   auto page = LocalPage::GetForCurrentThread();
+   return page->VisitPointers(this);
  }
 
  bool SerialMarker::MarkAllNewRoots(){

@@ -2,6 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "helpers.h"
+#include "matchers/is_pointer_to.h"
 #include "helpers/assertions.h"
 #include "poseidon/heap/heap.h"
 #include "sweeper/mock_sweeper.h"

@@ -12,8 +12,11 @@ namespace poseidon {
    template<bool Parallel>
    friend class ScavengerVisitor;
 
+   friend class ScavengerTest;
    friend class SerialScavenger;
+   friend class SerialScavengerTest;
    friend class ParallelScavenger;
+   friend class ParallelScavengerTest;
   private:
    static void SetScavenging(bool value = true);
 
@@ -25,33 +28,37 @@ namespace poseidon {
    static bool SerialScavenge(Scavenger* scavenger);
    static bool ParallelScavenge(Scavenger* scavenger);
   protected:
-   Heap* heap_;
+   NewZone* new_zone_;
+   OldZone* old_zone_;
+   Semispace fromspace_;
+   Semispace tospace_;
 
    explicit Scavenger(Heap* heap):
-    heap_(heap) {
-   }
-
-   inline Heap* heap() const {
-     return heap_;
+    new_zone_(heap->new_zone()),
+    old_zone_(heap->old_zone()),
+    fromspace_(heap->new_zone()->fromspace()),
+    tospace_(heap->new_zone()->tospace()) {
    }
 
    inline NewZone* new_zone() const {
-     return heap()->new_zone();
+     return new_zone_;
    }
 
    inline OldZone* old_zone() const {
-     return heap()->old_zone();
+     return old_zone_;
    }
 
-   virtual uword Scavenge(RawObject* ptr) {
-     NOT_IMPLEMENTED(FATAL); //TODO: implement
-     return UNALLOCATED;
+   inline Semispace& fromspace() {
+     return fromspace_;
    }
 
-   virtual uword Promote(RawObject* ptr) {
-     NOT_IMPLEMENTED(FATAL); //TODO: implement
-     return UNALLOCATED;
+   inline Semispace& tospace() {
+     return tospace_;
    }
+
+   virtual uword Scavenge(RawObject* ptr);
+   virtual uword Promote(RawObject* ptr);
+   virtual uword Process(RawObject* ptr);
   public:
    Scavenger() = delete;
    Scavenger(const Scavenger& rhs) = delete;

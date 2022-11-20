@@ -9,6 +9,8 @@
 #include "poseidon/heap/new_page.h"
 #include "poseidon/marker/marker_serial.h"
 
+#include "matchers/is_pointer_to.h"
+
 namespace poseidon {
  using namespace ::testing;
 

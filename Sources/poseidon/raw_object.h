@@ -50,7 +50,7 @@ namespace poseidon{
     friend class OldZone;
     friend class Compactor;
     friend class FreeList;
-   private:
+   protected:
     RelaxedAtomic<RawObjectTag> tag_;
     RelaxedAtomic<uword> forwarding_;
 
@@ -93,6 +93,10 @@ namespace poseidon{
 
     void* GetForwardingPointer() const{
       return (void*)GetForwardingAddress();
+    }
+
+    uword GetEndingAddress() const override {
+      return GetStartingAddress() + GetTotalSize();
     }
 
     bool IsForwarding() const{
@@ -197,6 +201,8 @@ namespace poseidon{
       stream << ")";
       return stream;
     }
+
+    ObjectSize VisitPointers(RawObjectVisitor* vis);
    public:
     template<class T>
     static inline uword

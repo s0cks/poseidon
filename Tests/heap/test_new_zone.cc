@@ -5,6 +5,8 @@
 #include "poseidon/heap/new_zone.h"
 #include "heap/mock_new_page_visitor.h"
 
+#include "mock_raw_object_visitor.h"
+
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
 

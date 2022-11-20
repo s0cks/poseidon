@@ -1,16 +1,18 @@
 #include "raw_object.h"
+#include "type/instance.h"
+#include "heap/heap.h"
 
 namespace poseidon{
-// uint64_t RawObject::VisitPointers(RawObjectPointerVisitor* vis) const{
-//   uint64_t instance_size = GetPointerSize();
-//   auto from = (uword)(GetObjectPointerAddress() + sizeof(Instance) + sizeof(uword));
-//   auto to = from + instance_size;
-//   auto first = (RawObject**)from;
-//   auto last = (RawObject**)to;
-//   for(auto current = first; current <= last; current++){
-//     if(Allocator::GetHeap()->Contains((uword)*current) && !vis->VisitPage(current))
-//       break;
-//   }
-//   return instance_size;
-// }
+ ObjectSize RawObject::VisitPointers(RawObjectVisitor* vis) {
+   auto instance_size = GetPointerSize();
+
+   auto current = GetObjectPointerAddress() + sizeof(Instance);
+   while(current < GetEndingAddress()) {
+     auto ptr = (RawObject**)current;
+     if((*ptr) != UNALLOCATED && !vis->Visit((*ptr)))
+       return instance_size;
+     current += kWordSize;
+   }
+   return instance_size;
+ }
 }

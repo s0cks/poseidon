@@ -18,11 +18,11 @@ namespace poseidon {
    }
 
    uword FieldAddrAtOffset(int64_t offset) const {
-     return ((uword)this) + offset;
+     return GetStartingAddress()  + offset;
    }
 
-   Instance** FieldAddr(const Field* field) const {
-     return (Instance**)FieldAddrAtOffset(field->GetOffset());
+   RawObject** FieldAddr(const Field* field) const {
+     return (RawObject**) FieldAddrAtOffset(field->GetOffset());
    }
   public:
    ~Instance() override = default;
@@ -36,10 +36,13 @@ namespace poseidon {
    }
 
    Instance* GetField(const Field* field) const {
-     return *FieldAddr(field);
+     auto ptr = (*FieldAddr(field));
+     if(ptr == UNALLOCATED)
+       return UNALLOCATED;
+     return (Instance*) ptr->GetObjectPointerAddress();
    }
 
-   void SetField(const Field* field, Instance* value) {
+   void SetField(const Field* field, RawObject* value) {
      *FieldAddr(field) = value;
    }
   public:

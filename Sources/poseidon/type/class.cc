@@ -6,6 +6,7 @@
 #include "poseidon/type/byte.h"
 #include "poseidon/type/long.h"
 #include "poseidon/type/short.h"
+#include "poseidon/type/tuple.h"
 #include "poseidon/type/number.h"
 
 namespace poseidon {
@@ -17,6 +18,7 @@ namespace poseidon {
  Class* Class::kIntClass = nullptr;
  Class* Class::kLongClass = nullptr;
  Class* Class::kNumberClass = nullptr;
+ Class* Class::kTupleClass = nullptr;
 
  void Class::Initialize(){
    if(kObjectClass != nullptr) { //TODO: handle better
@@ -31,6 +33,7 @@ namespace poseidon {
    kShortClass = Short::CreateClass();
    kIntClass = Int::CreateClass();
    kLongClass = Long::CreateClass();
+   kTupleClass = Tuple::CreateClass();
  }
 
  Field* Class::CreateField(std::string name, Class* type) {

@@ -6,7 +6,7 @@
 
 namespace poseidon {
  template<bool Parallel>
- class ScavengerVisitor : public RawObjectVisitor, public NewPageVisitor {
+ class ScavengerVisitor : public RawObjectVisitor {
   protected:
    Scavenger* scavenger_;
 

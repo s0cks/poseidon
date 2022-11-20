@@ -14,7 +14,8 @@ namespace poseidon {
  V(Long)                 \
  V(Class)                \
  V(Field)                \
- V(Number)
+ V(Number)               \
+ V(Tuple)
 
 #define DEFINE_TYPE_ID(Name) k##Name##TypeId,
  enum class TypeId : word {

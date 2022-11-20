@@ -6,10 +6,6 @@ namespace poseidon {
  Class* Short::kClass = nullptr;
  Field* Short::kValueField = nullptr;
 
-#ifndef UNALLOCATED
-#define UNALLOCATED 0 //TODO: cleanup
-#endif // UNALLOCATED
-
  void* Short::operator new(const size_t) noexcept {
    if(kClass == nullptr)
      LOG(FATAL) << "Short class not initialized";

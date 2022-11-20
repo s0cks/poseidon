@@ -1,5 +1,8 @@
 #include "helpers.h"
 #include "helpers/assertions.h"
+#include "heap/semispace_printer.h"
+
+#include "mock_raw_object_visitor.h"
 
 namespace poseidon{
 #define UNALLOCATED 0 //TODO: cleanup
@@ -146,6 +149,8 @@ namespace poseidon{
    ASSERT_FALSE(IsRemembered(ptr));
    ASSERT_FALSE(IsForwarding(ptr));
    ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
+
+   ASSERT_TRUE(SemispacePrinter<>::PrintFromspace(semispace));
  }
 
  TEST_F(SemispaceTest, TestVisitPointers){

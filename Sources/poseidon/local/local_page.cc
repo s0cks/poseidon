@@ -13,6 +13,26 @@ namespace poseidon {
    return true;
  }
 
+ bool LocalPage::VisitNewPointers(RawObjectVisitor* vis){
+   LocalPageIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(next->IsNew() && !vis->Visit(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool LocalPage::VisitOldPointers(RawObjectVisitor* vis){
+   LocalPageIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(next->IsOld() && !vis->Visit(next))
+       return false;
+   }
+   return true;
+ }
+
  bool LocalPage::VisitMarkedPointers(RawObjectVisitor* vis){
    LocalPageIterator iter(this);
    while(iter.HasNext()) {

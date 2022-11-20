@@ -2,6 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "helpers.h"
+#include "mock_raw_object_visitor.h"
 #include "poseidon/heap/old_zone.h"
 #include "heap/mock_old_page_visitor.h"
 

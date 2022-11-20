@@ -7,6 +7,7 @@
 
 namespace poseidon {
  class LocalPage : public Region {
+   friend class SerialScavenger;
   public:
    class LocalPageIterator {
     private:
@@ -21,6 +22,10 @@ namespace poseidon {
        return current_;
      }
 
+     inline RawObject* current_ptr() const {
+       return page()->GetLocal(current());
+     }
+
      inline int64_t total() const {
        return page()->GetNumberOfLocals();
      }
@@ -32,11 +37,12 @@ namespace poseidon {
      ~LocalPageIterator() = default;
 
      bool HasNext() const {
-       return current() < total();
+       return current() < total() &&
+              current_ptr() != nullptr; //TODO: need to handle gaps in local page slots
      }
 
      RawObject* Next() {
-       auto next = page()->GetLocal(current());
+       auto next = current_ptr();
        current_ += 1;
        return next;
      }
@@ -101,6 +107,8 @@ namespace poseidon {
 
    uword TryAllocate();
    bool VisitPointers(RawObjectVisitor* vis);
+   bool VisitNewPointers(RawObjectVisitor* vis);
+   bool VisitOldPointers(RawObjectVisitor* vis);
    bool VisitMarkedPointers(RawObjectVisitor* vis);
 
    void Clear() {

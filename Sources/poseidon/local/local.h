@@ -2,6 +2,7 @@
 #define POSEIDON_LOCAL_H
 
 #include "poseidon/local/local_page.h"
+#include "poseidon/platform/os_thread.h"
 
 namespace poseidon {
  template<typename T>
