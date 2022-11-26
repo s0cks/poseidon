@@ -44,12 +44,8 @@ namespace poseidon {
          && GetEndingAddress() >= address;
    }
 
-   virtual bool Contains(const Region& rhs) const {
-     return Contains(rhs.GetStartingAddress()) || Contains(rhs.GetEndingAddress());
-   }
-
    virtual bool Intersects(const Region& rhs) const {
-     return Contains(rhs); //TODO: cleanup
+     return Contains(rhs.GetStartingAddress()) || Contains(rhs.GetEndingAddress());
    }
 
    friend bool operator==(const Region& lhs, const Region& rhs) {
@@ -58,6 +54,10 @@ namespace poseidon {
 
    friend bool operator!=(const Region& lhs, const Region& rhs) {
      return Compare(lhs, rhs) != 0;
+   }
+
+   friend bool operator<(const Region& lhs, const Region& rhs) {
+     return Compare(lhs, rhs) < 0;
    }
  };
 }

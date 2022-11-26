@@ -9,10 +9,28 @@ namespace poseidon{
  class Section : public Region {
   protected:
    Section() = default;
+
+   void Protect(MemoryRegion::ProtectionMode mode);
   public:
    ~Section() override = default;
    virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
    virtual bool VisitMarkedPointers(RawObjectVisitor* vis) = 0;
+
+   inline void SetReadOnly() {
+     return Protect(MemoryRegion::kReadOnly);
+   }
+
+   inline void SetWritable() {
+     return Protect(MemoryRegion::kReadWrite);
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const Section& rhs) {
+     stream << "Section(";
+     stream << "start=" << rhs.GetStartingAddress() << ", ";
+     stream << "size=" << rhs.GetSize();
+     stream << ")";
+     return stream;
+   }
  };
 
  class AllocationSection : public Section {

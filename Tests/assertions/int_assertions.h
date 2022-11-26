@@ -30,6 +30,17 @@ namespace poseidon {
      return ::testing::AssertionFailure() << "expected " << (*expected) << " but was " << (*actual);
    return ::testing::AssertionSuccess();
  }
+
+ static inline ::testing::AssertionResult
+ IntEq(const RawInt expected, const Int* actual) {
+   if(expected == UNALLOCATED && actual == UNALLOCATED)
+     return ::testing::AssertionSuccess();
+   if(actual == UNALLOCATED)
+     return ::testing::AssertionFailure() << "expected " << expected << " but was UNALLOCATED";
+   if(expected != actual->Get())
+     return ::testing::AssertionFailure() << "expected " << expected << " but was " << (*actual);
+   return ::testing::AssertionSuccess();
+ }
 }
 
 #endif // POSEIDON_INT_ASSERTIONS_H

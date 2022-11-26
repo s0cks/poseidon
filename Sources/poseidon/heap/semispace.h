@@ -9,6 +9,7 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
+ class Class;
  class Semispace : public AllocationSection {
    friend class SemispaceTest;
 
@@ -55,6 +56,11 @@ namespace poseidon{
    RelaxedAtomic<uword> current_;
 
    void Clear() override;
+
+   static inline constexpr ObjectSize
+   GetTotalSizeNeededFor(const ObjectSize size) {
+     return size + static_cast<ObjectSize>(sizeof(Pointer));
+   }
   public:
    Semispace():
     AllocationSection(),
@@ -71,6 +77,9 @@ namespace poseidon{
    explicit Semispace(const MemoryRegion& region):
     Semispace(region.GetStartingAddress(), region.GetSize()) {
    }
+   explicit Semispace(const int64_t size):
+    Semispace(MemoryRegion(size)) {
+   }
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
 
@@ -86,9 +95,17 @@ namespace poseidon{
      return size_;
    }
 
-   uword TryAllocate(ObjectSize size) override; //TODO: visible for testing
+   uword TryAllocateBytes(ObjectSize size);
+   uword TryAllocateClassBytes(Class* cls);
+
+   uword TryAllocate(ObjectSize size) override {
+     return TryAllocateBytes(size); //TODO: remove
+   }
+
    bool VisitPointers(RawObjectVisitor* vis) override;
+   bool VisitPointers(std::function<bool(Pointer*)>& function);
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   bool VisitMarkedPointers(std::function<bool(Pointer*)>& function);
 
    Semispace& operator=(const Semispace& rhs){
      if(this == &rhs)
@@ -116,6 +133,16 @@ namespace poseidon{
      stream << "size=" << Bytes(value.GetSize());
      stream << ")";
      return stream;
+   }
+  public:
+   static inline constexpr ObjectSize
+   GetMinimumObjectSize() { //TODO: refactor
+     return kMinimumObjectSize;
+   }
+
+   static inline constexpr ObjectSize
+   GetMaximumObjectSize() { //TODO: refactor
+     return 1 * kMB;
    }
  };
 }

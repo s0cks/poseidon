@@ -59,6 +59,8 @@ namespace poseidon{
  static constexpr int64_t kWordSizeInBits = kWordSize * kBitsPerWord;
 
  static constexpr uword kUWordOne = 1U;
+
+ static const constexpr ObjectSize kMinimumObjectSize = kWordSize;
 }
 
 #endif //POSEIDON_PLATFORM_H

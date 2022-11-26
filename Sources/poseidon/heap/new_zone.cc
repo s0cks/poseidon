@@ -25,11 +25,11 @@ namespace poseidon{
    if(size <= 0 || size >= GetNewPageSize()) //TODO: cleanup
      return UNALLOCATED;
    uword ptr_address = UNALLOCATED;
-   if((ptr_address = fromspace_.TryAllocate(size)) == UNALLOCATED) {
+   if((ptr_address = fromspace_.TryAllocateBytes(size)) == UNALLOCATED) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
      Collector::MinorCollection();
 
-     if((ptr_address = fromspace_.TryAllocate(size)) == UNALLOCATED) {
+     if((ptr_address = fromspace_.TryAllocateBytes(size)) == UNALLOCATED) {
        PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      }
    }

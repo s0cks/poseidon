@@ -135,7 +135,7 @@
 //   for(auto idx = 0; idx < kNumberOfUnmarkedPointers; idx++){
 //     auto ptr = TryAllocateWord(page, idx);
 //     ASSERT_TRUE(IsAllocated(ptr));
-//     ASSERT_TRUE(page->Contains(ptr->GetStartingAddress()));
+//     ASSERT_TRUE(page->Intersects(ptr->GetStartingAddress()));
 //     ASSERT_TRUE(IsOld(ptr));
 //     ASSERT_TRUE(IsWord(ptr, idx));
 //     ASSERT_FALSE(IsMarked(ptr));
@@ -144,7 +144,7 @@
 //   for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
 //     auto ptr = TryAllocateMarkedWord(page, idx);
 //     ASSERT_TRUE(IsAllocated(ptr));
-//     ASSERT_TRUE(page->Contains(ptr->GetStartingAddress()));
+//     ASSERT_TRUE(page->Intersects(ptr->GetStartingAddress()));
 //     ASSERT_TRUE(IsOld(ptr));
 //     ASSERT_TRUE(IsWord(ptr, idx));
 //     ASSERT_TRUE(IsMarked(ptr));

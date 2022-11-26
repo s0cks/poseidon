@@ -83,13 +83,13 @@ namespace poseidon {
    ASSERT_TRUE(IsNewWord(a, kAValue));
    ASSERT_TRUE(IsMarked(a));
    ASSERT_FALSE(IsRemembered(a));
-   ASSERT_FALSE(tospace.Contains(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
 
    ASSERT_TRUE(SerialScavenge(heap));
 
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(a, kAValue));
-   ASSERT_TRUE(tospace.Contains((*a.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*a.raw_ptr())));
 
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
  }
@@ -112,21 +112,21 @@ namespace poseidon {
    DLOG(INFO) << "a: " << (*a.raw_ptr());
    ASSERT_TRUE(IsNewWord(a, kAValue));
    ASSERT_FALSE(IsRemembered(a));
-   ASSERT_FALSE(tospace.Contains(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
 
    static constexpr const word kBValue = 66;
    Local<word> b(TryAllocateMarkedWord(zone, kBValue));
    DLOG(INFO) << "b: " << (*b.raw_ptr());
    ASSERT_TRUE(IsNewWord(b, kBValue));
    ASSERT_FALSE(IsRemembered(b));
-   ASSERT_FALSE(tospace.Contains(*b.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*b.raw_ptr()));
 
    static constexpr const word kCValue = 99;
    Local<word> c(TryAllocateMarkedWord(zone, kCValue));
    DLOG(INFO) << "c: " << (*c.raw_ptr());
    ASSERT_TRUE(IsNewWord(c, kCValue));
    ASSERT_FALSE(IsRemembered(c));
-   ASSERT_FALSE(tospace.Contains(*c.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*c.raw_ptr()));
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
@@ -154,15 +154,15 @@ namespace poseidon {
 
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(a, kAValue));
-   ASSERT_TRUE(tospace.Contains((*a.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*a.raw_ptr())));
 
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(b, kBValue));
-   ASSERT_TRUE(tospace.Contains((*b.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*b.raw_ptr())));
 
    ASSERT_TRUE(c.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(c, kCValue));
-   ASSERT_TRUE(tospace.Contains((*c.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*c.raw_ptr())));
 
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
  }
@@ -188,7 +188,7 @@ namespace poseidon {
 
    ASSERT_TRUE(IsNewWord(a, kAValue));
    ASSERT_TRUE(IsRemembered(a));
-   ASSERT_FALSE(tospace.Contains(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Promote(IsPointerTo(a)))
@@ -207,9 +207,9 @@ namespace poseidon {
    DLOG(INFO) << "a: " << (*a.raw_ptr());
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(a, kAValue));
-   ASSERT_TRUE(old_zone->Contains(*a.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*a.raw_ptr()));
 
-   //TODO: ASSERT_FALSE(new_zone->Contains(*a.raw_ptr()));
+   //TODO: ASSERT_FALSE(new_zone->Intersects(*a.raw_ptr()));
 
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
  }
@@ -234,21 +234,21 @@ namespace poseidon {
    a.raw_ptr()->SetMarkedBit();
    ASSERT_TRUE(IsNewWord(a, kAValue));
    ASSERT_TRUE(IsRemembered(a));
-   ASSERT_FALSE(tospace.Contains(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
 
    static constexpr const word kBValue = 66;
    Local<word> b(TryAllocateRememberedWord(new_zone, kBValue));
    b.raw_ptr()->SetMarkedBit();
    ASSERT_TRUE(IsNewWord(b, kBValue));
    ASSERT_TRUE(IsRemembered(b));
-   ASSERT_FALSE(tospace.Contains(*b.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*b.raw_ptr()));
 
    static constexpr const word kCValue = 66;
    Local<word> c(TryAllocateRememberedWord(new_zone, kCValue));
    c.raw_ptr()->SetMarkedBit();
    ASSERT_TRUE(IsNewWord(c, kCValue));
    ASSERT_TRUE(IsRemembered(c));
-   ASSERT_FALSE(tospace.Contains(*c.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*c.raw_ptr()));
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Promote(IsPointerTo(a)))
@@ -274,15 +274,15 @@ namespace poseidon {
 
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(a, kAValue));
-   ASSERT_TRUE(old_zone->Contains(*a.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*a.raw_ptr()));
 
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(b, kBValue));
-   ASSERT_TRUE(old_zone->Contains(*b.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*b.raw_ptr()));
 
    ASSERT_TRUE(c.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(c, kCValue));
-   ASSERT_TRUE(old_zone->Contains(*c.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*c.raw_ptr()));
 
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
  }
@@ -307,14 +307,14 @@ namespace poseidon {
    a.raw_ptr()->SetMarkedBit();
    ASSERT_TRUE(IsNewWord(a, kAValue));
    ASSERT_FALSE(IsRemembered(a));
-   ASSERT_FALSE(tospace.Contains(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
 
    static constexpr const word kBValue = 66;
    Local<word> b(TryAllocateRememberedWord(new_zone, kBValue));
    b.raw_ptr()->SetMarkedBit();
    ASSERT_TRUE(IsNewWord(b, kBValue));
    ASSERT_TRUE(IsRemembered(b));
-   ASSERT_FALSE(tospace.Contains(*b.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*b.raw_ptr()));
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
@@ -336,11 +336,11 @@ namespace poseidon {
 
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(a, kAValue));
-   ASSERT_TRUE(tospace.Contains((*a.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*a.raw_ptr())));
 
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(b, kBValue));
-   ASSERT_TRUE(old_zone->Contains(*b.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*b.raw_ptr()));
 
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
  }
@@ -365,7 +365,7 @@ namespace poseidon {
    DLOG(INFO) << "a: " << (*a.raw_ptr());
    ASSERT_TRUE(IsNewWord(a, kAValue));
    ASSERT_FALSE(IsRemembered(a));
-   ASSERT_FALSE(tospace.Contains(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
 
    static constexpr const word kBValue = 22;
    Local<word> b(TryAllocateRememberedWord(new_zone, kBValue));
@@ -373,7 +373,7 @@ namespace poseidon {
    DLOG(INFO) << "b: " << (*b.raw_ptr());
    ASSERT_TRUE(IsNewWord(b, kBValue));
    ASSERT_TRUE(IsRemembered(b));
-   ASSERT_FALSE(tospace.Contains(*b.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*b.raw_ptr()));
 
    static constexpr const word kCValue = 33;
    Local<word> c(TryAllocateWord(new_zone, kCValue));
@@ -381,7 +381,7 @@ namespace poseidon {
    DLOG(INFO) << "c: " << (*c.raw_ptr());
    ASSERT_TRUE(IsNewWord(c, kCValue));
    ASSERT_FALSE(IsRemembered(c));
-   ASSERT_FALSE(tospace.Contains(*c.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*c.raw_ptr()));
 
    static constexpr const word kDValue = 44;
    Local<word> d(TryAllocateRememberedWord(new_zone, kDValue));
@@ -389,7 +389,7 @@ namespace poseidon {
    DLOG(INFO) << "d: " << (*d.raw_ptr());
    ASSERT_TRUE(IsNewWord(d, kDValue));
    ASSERT_TRUE(IsRemembered(d));
-   ASSERT_FALSE(tospace.Contains(*d.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*d.raw_ptr()));
 
    static constexpr const word kEValue = 55;
    Local<word> e(TryAllocateWord(new_zone, kEValue));
@@ -397,7 +397,7 @@ namespace poseidon {
    DLOG(INFO) << "e: " << (*e.raw_ptr());
    ASSERT_TRUE(IsNewWord(e, kEValue));
    ASSERT_FALSE(IsRemembered(e));
-   ASSERT_FALSE(tospace.Contains(*e.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*e.raw_ptr()));
 
    static constexpr const word kFValue = 66;
    Local<word> f(TryAllocateRememberedWord(new_zone, kFValue));
@@ -405,7 +405,7 @@ namespace poseidon {
    DLOG(INFO) << "f: " << (*f.raw_ptr());
    ASSERT_TRUE(IsNewWord(f, kFValue));
    ASSERT_TRUE(IsRemembered(f));
-   ASSERT_FALSE(tospace.Contains(*f.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects(*f.raw_ptr()));
 
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
@@ -453,27 +453,27 @@ namespace poseidon {
 
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(a, kAValue));
-   ASSERT_TRUE(tospace.Contains((*a.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*a.raw_ptr())));
 
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(b, kBValue));
-   ASSERT_TRUE(old_zone->Contains(*b.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*b.raw_ptr()));
 
    ASSERT_TRUE(c.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(c, kCValue));
-   ASSERT_TRUE(tospace.Contains((*c.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*c.raw_ptr())));
 
    ASSERT_TRUE(d.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(d, kDValue));
-   ASSERT_TRUE(old_zone->Contains(*d.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*d.raw_ptr()));
 
    ASSERT_TRUE(e.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsNewWord(e, kEValue));
-   ASSERT_TRUE(tospace.Contains((*e.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects((*e.raw_ptr())));
 
    ASSERT_TRUE(f.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsOldWord(f, kFValue));
-   ASSERT_TRUE(old_zone->Contains(*f.raw_ptr()));
+   ASSERT_TRUE(old_zone->Intersects(*f.raw_ptr()));
 
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
  }

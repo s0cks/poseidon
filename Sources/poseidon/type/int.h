@@ -1,6 +1,7 @@
 #ifndef POSEIDON_INT_H
 #define POSEIDON_INT_H
 
+#include "poseidon/heap/heap.h"
 #include "poseidon/type/instance.h"
 
 namespace poseidon {
@@ -44,6 +45,16 @@ namespace poseidon {
 
    DEFINE_OBJECT(Int);
   public:
+   template<class Z>
+   void* operator new(size_t, Z* zone) noexcept {
+     if(kClass == nullptr)
+       LOG(FATAL) << "Int class not initialized";
+     auto address = zone->TryAllocate(kClass->GetAllocationSize());
+     if(address == UNALLOCATED)
+       LOG(FATAL) << "cannot allocate Int";
+     return ((Pointer*)address)->GetPointer();
+   }
+
    void* operator new(size_t) noexcept;
    void operator delete(void*) noexcept;
 
@@ -63,6 +74,11 @@ namespace poseidon {
 
    static inline Int* New() {
      return New(0);
+   }
+
+   template<class Z>
+   static inline Int* TryAllocateIn(Z* zone, const RawInt value = 0) {
+     return new (zone)Int(value);
    }
  };
 }

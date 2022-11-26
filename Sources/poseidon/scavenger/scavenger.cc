@@ -77,7 +77,7 @@ namespace poseidon {
    PSDN_ASSERT(ptr->IsMarked());
    PSDN_ASSERT(!ptr->IsRemembered());
 
-   auto new_address = tospace().TryAllocate(ptr->GetPointerSize());
+   auto new_address = tospace().TryAllocateBytes(ptr->GetPointerSize());
    if(new_address == UNALLOCATED) {
      LOG(FATAL) << "new_address == UNALLOCATED";
      return UNALLOCATED;

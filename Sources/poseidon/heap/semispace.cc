@@ -1,4 +1,5 @@
 #include "poseidon/heap/heap.h"
+#include "poseidon/type/class.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
@@ -9,7 +10,7 @@ namespace poseidon{
    current_ = GetStartingAddress();
  }
 
- bool Semispace::VisitPointers(poseidon::RawObjectVisitor* vis){
+ bool Semispace::VisitPointers(RawObjectVisitor* vis){
    SemispaceIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
@@ -19,7 +20,17 @@ namespace poseidon{
    return true;
  }
 
- bool Semispace::VisitMarkedPointers(poseidon::RawObjectVisitor* vis){
+ bool Semispace::VisitPointers(std::function<bool(Pointer*)>& function){
+   SemispaceIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(!function(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool Semispace::VisitMarkedPointers(RawObjectVisitor* vis){
    SemispaceIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
@@ -29,16 +40,34 @@ namespace poseidon{
    return true;
  }
 
- uword Semispace::TryAllocate(int64_t size){
-   if(size <= 0 || size >= GetAllocatableSize())
-     return UNALLOCATED;
-
-   auto total_size = static_cast<int64_t>(sizeof(Pointer) + size);
-   if((GetCurrentAddress() + total_size) > GetEndingAddress()){
-     PSDN_CANT_ALLOCATE(ERROR, total_size, (*this));
+ bool Semispace::VisitMarkedPointers(std::function<bool(Pointer*)>& function){
+   SemispaceIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(next->IsMarked() && !function(next))
+       return false;
    }
-   auto ptr = new (GetCurrentAddressPointer())Pointer(PointerTag::New(size));
-   current_ += ptr->GetTotalSize();
-   return ptr->GetStartingAddress();
+   return true;
+ }
+
+ uword Semispace::TryAllocateBytes(ObjectSize size) {
+   if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) {
+     PSDN_CANT_ALLOCATE(ERROR, size, (*this));
+     return UNALLOCATED;
+   }
+
+   auto total_size = GetTotalSizeNeededFor(size);
+   if((GetCurrentAddress() + total_size) > GetEndingAddress()) {
+     PSDN_CANT_ALLOCATE(ERROR, total_size, (*this));
+     return UNALLOCATED;
+   }
+
+   auto new_ptr = new (GetCurrentAddressPointer())Pointer(PointerTag::New(size));
+   current_ += total_size;
+   return new_ptr->GetStartingAddress();
+ }
+
+ uword Semispace::TryAllocateClassBytes(Class* cls) {
+   return TryAllocateBytes(cls->GetAllocationSize()); //TODO: refactor
  }
 }
