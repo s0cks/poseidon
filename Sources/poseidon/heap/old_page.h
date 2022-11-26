@@ -5,7 +5,7 @@
 #include "poseidon/utils.h"
 #include "poseidon/bitset.h"
 #include "poseidon/common.h"
-#include "poseidon/heap/page.h"
+#include "poseidon/heap/page/page.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{

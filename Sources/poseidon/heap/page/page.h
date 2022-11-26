@@ -4,8 +4,8 @@
 #include <ostream>
 
 #include "poseidon/heap/section.h"
-#include "poseidon/heap/page_tag.h"
 #include "poseidon/relaxed_atomic.h"
+#include "poseidon/heap/page/page_tag.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
@@ -87,16 +87,12 @@ namespace poseidon {
      return start_;
    }
 
-   int64_t GetSize() const override {
-     return PageTag::Size::Decode(raw_tag());
-   }
-
    PageIndex GetIndex() const {
      return PageTag::Index::Decode(raw_tag());
    }
 
-   virtual void Reset() { //TODO: refactor
-     memset(GetStartingAddressPointer(), 0, GetSize());
+   int64_t GetSize() const override {
+     return PageTag::Size::Decode(raw_tag());
    }
 
    Page& operator=(const Page& rhs) {

@@ -2,7 +2,7 @@
 #define POSEIDON_HEAP_ZONE_H
 
 #include "poseidon/bitset.h"
-#include "poseidon/heap/page.h"
+#include "poseidon/heap/page/page.h"
 #include "poseidon/pointer.h"
 #include "poseidon/platform/memory_region.h"
 

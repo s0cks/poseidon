@@ -2,7 +2,7 @@
 #define POSEIDON_NEW_PAGE_H
 
 #include "poseidon/flags.h"
-#include "poseidon/heap/page.h"
+#include "poseidon/heap/page/page.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {

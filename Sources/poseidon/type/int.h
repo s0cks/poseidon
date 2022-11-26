@@ -49,10 +49,10 @@ namespace poseidon {
    void* operator new(size_t, Z* zone) noexcept {
      if(kClass == nullptr)
        LOG(FATAL) << "Int class not initialized";
-     auto address = zone->TryAllocate(kClass->GetAllocationSize());
+     auto address = zone->TryAllocateBytes(kClass->GetAllocationSize());
      if(address == UNALLOCATED)
        LOG(FATAL) << "cannot allocate Int";
-     return ((Pointer*)address)->GetPointer();
+     return (void*)address;
    }
 
    void* operator new(size_t) noexcept;

@@ -21,9 +21,10 @@ namespace poseidon{
    return new NewZone(region.GetStartingAddress(), total_size, semi_size);
  }
 
- uword NewZone::TryAllocate(int64_t size){
+ uword NewZone::TryAllocateBytes(const int64_t size) {
    if(size <= 0 || size >= GetNewPageSize()) //TODO: cleanup
      return UNALLOCATED;
+
    uword ptr_address = UNALLOCATED;
    if((ptr_address = fromspace_.TryAllocateBytes(size)) == UNALLOCATED) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));

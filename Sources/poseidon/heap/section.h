@@ -16,12 +16,16 @@ namespace poseidon{
    virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
    virtual bool VisitMarkedPointers(RawObjectVisitor* vis) = 0;
 
-   inline void SetReadOnly() {
+   inline void SetReadOnly() { //TODO: visible for testing
      return Protect(MemoryRegion::kReadOnly);
    }
 
-   inline void SetWritable() {
+   inline void SetWritable() { //TODO: visible for testing
      return Protect(MemoryRegion::kReadWrite);
+   }
+
+   virtual void Clear() {
+     memset(GetStartingAddressPointer(), 0, GetSize());
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const Section& rhs) {
@@ -38,7 +42,6 @@ namespace poseidon{
    AllocationSection() = default;
 
    virtual uword TryAllocate(ObjectSize size) = 0;
-   virtual void Clear() = 0;
   public:
    ~AllocationSection() override = default;
 

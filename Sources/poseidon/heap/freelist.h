@@ -107,10 +107,9 @@ namespace poseidon{ //TODO: atomic support?
      num_nodes_(0),
      start_(start),
      total_size_(size) {
-       for(auto idx = 0; idx < GetNumberOfFreeListBuckets(); idx++)
-         buckets_[idx] = nullptr;
-       LOG_IF(FATAL, !Insert(start, size)) << "cannot insert initial freelist node for " << MemoryRegion(start, size);
-     }
+     for(auto idx = 0; idx < GetNumberOfFreeListBuckets(); idx++)
+       buckets_[idx] = nullptr;
+   }
    explicit FreeList(const MemoryRegion& region):
     FreeList(region.GetStartingAddress(), region.GetSize()) {
    }

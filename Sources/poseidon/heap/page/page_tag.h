@@ -67,7 +67,7 @@ namespace poseidon {
      return set_raw(Size::Update(value, raw()));
    }
   public:
-   constexpr PageTag(const RawPageTag& raw = kInvalidPageTag):
+   explicit constexpr PageTag(const RawPageTag raw = kInvalidPageTag):
     raw_(raw) {
    }
    PageTag(const PageTag& rhs) = default;

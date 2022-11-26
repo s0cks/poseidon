@@ -8,8 +8,6 @@
 #include "mock_raw_object_visitor.h"
 
 namespace poseidon{
-#define UNALLOCATED 0 //TODO: cleanup
-
  using namespace ::testing;
 
  class IsNewPageMatcher {
@@ -114,6 +112,7 @@ namespace poseidon{
    MemoryRegion region(GetNewZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = NewZone::New(region);
+   ASSERT_NO_FATAL_FAILURE(zone->SetWritable());
 
    Semispace fromspace = zone->fromspace();
    ASSERT_EQ(fromspace, zone->fromspace());

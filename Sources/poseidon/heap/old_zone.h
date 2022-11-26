@@ -25,10 +25,11 @@ namespace poseidon{
      ~OldZoneIterator() override = default;
 
      bool HasNext() const override {
-       return current_address() > 0 &&
+       return current_address() >= zone()->GetStartingAddress() &&
               current_address() < zone()->GetEndingAddress() &&
               current_ptr()->IsOld() &&
-              current_ptr()->GetSize() > 0;
+              current_ptr()->GetSize() > 0 &&
+              !current_ptr()->IsFree();
      }
    };
 
@@ -45,18 +46,30 @@ namespace poseidon{
    OldZone(const uword start_address, const int64_t size):
     Zone<OldPage>(start_address, size, GetOldPageSize()),
     free_list_(start_address, size) {
+     SetWritable();
+     free_list_.Insert(start_address, size);
    }
 
    virtual bool MarkAllIntersectedBy(const Region& region);
   public:
    OldZone() = delete;
+   explicit OldZone(const MemoryRegion& region):
+    OldZone(region.GetStartingAddress(), region.GetSize()) {
+   }
+   explicit OldZone(const int64_t size):
+     OldZone(MemoryRegion(size)) {
+   }
    ~OldZone() override = default;
 
    inline FreeList& free_list() { //TODO: visible for testing
      return free_list_;
    }
 
-   uword TryAllocate(const ObjectSize& size);
+   uword TryAllocateBytes(ObjectSize size);
+
+   inline uword TryAllocate(const ObjectSize size) {
+     return TryAllocateBytes(size); //TODO: remove
+   }
 
    virtual bool VisitPages(OldPageVisitor* vis) {
      OldZonePageIterator iter(this);
@@ -78,13 +91,10 @@ namespace poseidon{
      return true;
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override {
-     return IteratePointers<OldZone, OldZoneIterator, RawObjectVisitor>(this, vis);
-   }
-
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
-     return IterateMarkedPointers<OldZone, OldZoneIterator, RawObjectVisitor>(this, vis);
-   }
+   bool VisitPointers(RawObjectVisitor* vis) override;
+   bool VisitPointers(std::function<bool(Pointer*)>& function);
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   bool VisitMarkedPointers(std::function<bool(Pointer*)>& function);
 
    friend std::ostream& operator<<(std::ostream& stream, const OldZone& val){
      stream << "OldZone(";
@@ -96,6 +106,16 @@ namespace poseidon{
    }
 
    static OldZone* From(const MemoryRegion& region);
+
+   static constexpr ObjectSize
+   GetMinimumObjectSize() {
+     return kWordSize;
+   }
+
+   static ObjectSize
+   GetMaximumObjectSize() {
+     return GetLargeObjectSize();
+   }
  };
 }
 

@@ -76,7 +76,11 @@ namespace poseidon{
      return semisize_;
    }
 
-   virtual uword TryAllocate(ObjectSize size);
+   virtual uword TryAllocateBytes(ObjectSize size);
+
+   virtual uword TryAllocate(const ObjectSize size) {
+     return TryAllocateBytes(size); //TODO: remove
+   }
 
    bool VisitPages(NewPageVisitor* vis) {
      NewZonePageIterator iter(this);

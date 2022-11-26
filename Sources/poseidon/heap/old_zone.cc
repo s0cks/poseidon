@@ -13,8 +13,48 @@ namespace poseidon{
    return new OldZone(region.GetStartingAddress(), region.GetSize());
  }
 
- uword OldZone::TryAllocate(const ObjectSize& size) { //TODO: cleanup
-   if(size <= 0 || size >= GetSize()) {
+ bool OldZone::VisitPointers(RawObjectVisitor* vis) {
+   OldZoneIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(!vis->Visit(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool OldZone::VisitPointers(std::function<bool(Pointer*)>& function) {
+   OldZoneIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(!function(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool OldZone::VisitMarkedPointers(RawObjectVisitor* vis) {
+   OldZoneIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(next->IsMarked() && !vis->Visit(next))
+       return false;
+   }
+   return true;
+ }
+
+ bool OldZone::VisitMarkedPointers(std::function<bool(Pointer*)>& function) {
+   OldZoneIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(next->IsMarked() && !function(next))
+       return false;
+   }
+   return true;
+ }
+
+ uword OldZone::TryAllocateBytes(const ObjectSize size) { //TODO: cleanup
+   if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) {
      LOG(WARNING) << "cannot allocate " << Bytes(size) << " in " << (*this);
      return UNALLOCATED;
    }
@@ -34,6 +74,7 @@ namespace poseidon{
      //TODO: deallocate
      return UNALLOCATED;
    }
-   return val->GetStartingAddress();
+   memset((void*) val->GetObjectPointerAddress(), 0, val->GetSize());
+   return val->GetObjectPointerAddress();
  }
 }

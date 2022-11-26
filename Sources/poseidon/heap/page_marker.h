@@ -1,7 +1,7 @@
 #ifndef POSEIDON_PAGE_MARKER_H
 #define POSEIDON_PAGE_MARKER_H
 
-#include "poseidon/heap/page.h"
+#include "poseidon/heap/page/page.h"
 #include "poseidon/heap/new_page.h"
 #include "poseidon/heap/old_page.h"
 

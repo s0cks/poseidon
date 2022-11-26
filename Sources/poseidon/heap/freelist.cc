@@ -36,10 +36,7 @@ namespace poseidon{
        return UNALLOCATED; //TODO: add ptr back to freelist
      }
    }
-
-   auto ptr = new (free_ptr->GetStartingAddressPointer())Pointer(PointerTag::Old(size));
-   //TODO: mark all pages in old zone
-   return ptr->GetStartingAddress();
+   return free_ptr->GetStartingAddress();
  }
 
  FreeObject* FreeList::FindFirstFit(ObjectSize size) {
