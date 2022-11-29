@@ -103,17 +103,31 @@ namespace poseidon{
      stream << ")";
      return stream;
    }
+
+   Section& operator=(const Section& rhs) {
+     if(&rhs == this)
+       return *this;
+     start_ = rhs.start_;
+     size_ = rhs.size_;
+     return *this;
+   }
  };
 
  class AllocationSection : public Section {
   protected:
-   AllocationSection() = default;
+   uword current_;
 
-   virtual uword TryAllocate(ObjectSize size) = 0;
+   AllocationSection() = default;
+   AllocationSection(const uword start, const word size):
+    Section(start, size),
+    current_(start) {
+   }
   public:
    ~AllocationSection() override = default;
 
-   virtual uword GetCurrentAddress() const = 0;
+   virtual uword GetCurrentAddress() const {
+     return current_;
+   }
 
    virtual void* GetCurrentAddressPointer() const {
      return (void*) GetCurrentAddress();
@@ -145,6 +159,14 @@ namespace poseidon{
 
    virtual double GetPercentageBytesRemaining() const {
      return GetPercentageOf(GetNumberOfBytesRemaining(), GetSize());
+   }
+
+   AllocationSection& operator=(const AllocationSection& rhs) {
+     if(&rhs == this)
+       return *this;
+     Section::operator=(rhs);
+     current_ = rhs.current_;
+     return *this;
    }
  };
 }

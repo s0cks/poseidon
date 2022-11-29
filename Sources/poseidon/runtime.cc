@@ -8,7 +8,7 @@ namespace poseidon{
 
  void Runtime::Initialize(){
    GCLOG(3) << "initializing Runtime....";
-   task_pool = new TaskPool(GetNumberOfWorkers());
+   task_pool = new TaskPool(flags::FLAGS_num_workers);
    task_pool->StartAll();
  }
 

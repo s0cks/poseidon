@@ -24,7 +24,7 @@ namespace poseidon{
 
    auto new_ptr = new (GetCurrentAddressPointer())Pointer(PointerTag::New(size));
    current_ += total_size;
-   return new_ptr->GetStartingAddress();
+   return new_ptr->GetObjectPointerAddress();
  }
 
  uword Semispace::TryAllocateClassBytes(Class* cls) {

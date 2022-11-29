@@ -97,7 +97,7 @@ namespace poseidon{
 
    static ObjectSize
    GetMaximumObjectSize() {
-     return GetLargeObjectSize();
+     return flags::GetLargeObjectSize();
    }
  };
 }

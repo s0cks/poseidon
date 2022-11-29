@@ -40,10 +40,10 @@ namespace poseidon {
    ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(new LocalPage(page_region)));
 
-   NewZone new_zone(GetNewZoneSize(), GetNewZoneSemispaceSize());
+   NewZone new_zone(flags::GetNewZoneSize(), flags::GetNewZoneSemispaceSize());
    ASSERT_NO_FATAL_FAILURE(new_zone.SetWritable());
 
-   OldZone old_zone(GetOldZoneSize());
+   OldZone old_zone(flags::GetOldZoneSize());
    ASSERT_NO_FATAL_FAILURE(old_zone.SetWritable());
 
    MockMarker marker;

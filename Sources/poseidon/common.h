@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <iostream>
 
+#include "poseidon/utils/size.h"
+
 
 //TODO: cleanup
 
@@ -31,12 +33,6 @@ namespace poseidon{
   DVLOG(Level)
 
 #endif//PSDN_GCLOGS
-
- static constexpr const int64_t kB = 1;
- static constexpr const int64_t kKB = kB * 1024;
- static constexpr const int64_t kMB = kKB * 1024;
- static constexpr const int64_t kGB = kMB * 1024;
- static constexpr const int64_t kTB = kGB * 1024;
 
 #define TIMED_SECTION(Name, Section) \
   do {                               \

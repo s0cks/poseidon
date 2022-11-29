@@ -67,10 +67,10 @@ finish_allocation:
  }
 
  uword Heap::TryAllocateBytes(const ObjectSize size){
-   if(size < kWordSize || size > GetOldPageSize())
+   if(size < kWordSize || size > flags::GetOldPageSize())
      return UNALLOCATED;
 
-   if(size < GetNewPageSize()) {
+   if(size < flags::GetNewPageSize()) {
      uword address = UNALLOCATED;
      if((address = new_zone()->TryAllocateBytes(size)) != UNALLOCATED)
        return address;
@@ -78,7 +78,7 @@ finish_allocation:
      return UNALLOCATED;
    }
 
-   if(size >= GetNewPageSize()) {
+   if(size >= flags::GetNewPageSize()) {
      uword address = UNALLOCATED;
      if((address = old_zone()->TryAllocateBytes(size)) != UNALLOCATED)
        return address;

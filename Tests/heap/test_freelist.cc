@@ -90,7 +90,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestConstructor) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    //TODO: ??
@@ -99,7 +99,7 @@ namespace poseidon {
  //TODO: add Equals & NotEquals tests
 
  TEST_F(FreeListTest, TestTryAllocate_WillFail_SizeLessThanZero) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = TryAllocateBytes(free_list, -1);
@@ -107,7 +107,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestTryAllocate_WillFail_SizeEqualsZero) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = TryAllocateBytes(free_list, 0);
@@ -115,57 +115,57 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestTryAllocate_WillFail_SizeGreaterThanAvailable) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
-   auto ptr = TryAllocateBytes(free_list, GetOldZoneSize() + 1);
+   auto ptr = TryAllocateBytes(free_list, flags::GetOldZoneSize() + 1);
    ASSERT_EQ(ptr, UNALLOCATED);
  }
 
  TEST_F(FreeListTest, TestInsert_WillFail_StartingAddressIsNotContained) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_FALSE(free_list.Insert(region.GetStartingAddress() -1, region.GetSize()));
  }
 
  TEST_F(FreeListTest, TestInsert_WillFail_SizeLessThanZero) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_FALSE(free_list.Insert(region.GetStartingAddress(), -1));
  }
 
  TEST_F(FreeListTest, TestInsert_WillFail_SizeEqualsZero) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_FALSE(free_list.Insert(region.GetStartingAddress(), 0));
  }
 
  TEST_F(FreeListTest, TestInsert_WillFail_SizeGreaterThanMax) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_FALSE(free_list.Insert(region.GetStartingAddress(), region.GetSize() + 1));
  }
 
  TEST_F(FreeListTest, TestInsert_WillFail_SizeLessThanWordSize) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_FALSE(free_list.Insert(region.GetStartingAddress(), kWordSize - 1));
  }
 
  TEST_F(FreeListTest, TestInsert_WillFail_DuplicateStartingAddress) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_FALSE(free_list.Insert(region.GetStartingAddress(), region.GetSize()));
  }
 
  TEST_F(FreeListTest, TestInsert_WillPass_SizeEqualToWordSize) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_TRUE(free_list.Remove(region.GetStartingAddress(), region.GetSize()));
@@ -174,7 +174,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestInsert_WillPass_WillMergeOnInsert) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_TRUE(free_list.Remove(region.GetStartingAddress(), region.GetSize()));
@@ -190,21 +190,21 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestRemove_WillPass) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_TRUE(free_list.Remove(region.GetStartingAddress(), region.GetSize()));
  }
 
  TEST_F(FreeListTest, TestRemove_WillFail_NoMatchingSize) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_FALSE(free_list.Remove(region.GetStartingAddress(), region.GetSize() - kWordSize));
  }
 
  TEST_F(FreeListTest, TestFind_WillFail_SizeLessThanZero) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = free_list.FindFirstFit(-1);
@@ -212,7 +212,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestFind_WillFail_SizeEqualsZero) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = free_list.FindFirstFit(0);
@@ -220,17 +220,17 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestFind_WillPass_SizeExact) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
-   auto ptr = free_list.FindFirstFit(GetOldZoneSize());
+   auto ptr = free_list.FindFirstFit(flags::GetOldZoneSize());
    ASSERT_NE(ptr, nullptr);
    ASSERT_EQ(ptr->GetStartingAddress(), region.GetStartingAddress());
    ASSERT_EQ(ptr->GetSize(), region.GetSize());
  }
 
  TEST_F(FreeListTest, TestFind_WillPass_SizeLessThanExact) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    auto ptr = free_list.FindFirstFit(kWordSize);
@@ -240,7 +240,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestTryAllocate_OneObject) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
 
@@ -261,7 +261,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestVisit_WillPass) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
 
@@ -273,7 +273,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeListTest, TestVisit_WillPass_MultipleNoncontiguousFree) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
    ASSERT_TRUE(free_list.Remove(region.GetStartingAddress(), region.GetSize()));

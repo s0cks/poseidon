@@ -2,98 +2,95 @@
 #define POSEIDON_FLAGS_H
 
 #include <gflags/gflags.h>
+
 #include "poseidon/common.h"
+#include "poseidon/utils/size.h"
+#include "poseidon/platform/platform.h"
 
-namespace poseidon{
- static constexpr const int64_t kDefaultNewZoneSize = 16 * kMB;
- DECLARE_int64(new_zone_size);
- static constexpr const int64_t kDefaultNewPageSize = 2 * kMB;
- DECLARE_int64(new_page_size);
+namespace poseidon::flags{
+#if defined(ARCHITECTURE_IS_ARM64) || defined(ARCHITECTURE_IS_X64)
+#define DECLARE_word(Name) DECLARE_int64(Name)
+#elif defined(ARCHITECTURE_IS_X32)
+#define DECLARE_word(Name) DECLARE_int32(Name)
+#else
+#error "unsupported architecture"
+#endif // DECLARE_word
 
- static constexpr const int64_t kDefaultOldZoneSize = 256 * kMB;
- DECLARE_int64(old_zone_size);
- static constexpr const int64_t kDefaultOldPageSize = 32 * kMB;
- DECLARE_int64(old_page_size);
- static constexpr const int32_t kDefaultNumberOfFreeListBuckets = 16;
- DECLARE_int32(free_list_buckets);
+#define DECLARE_size(Name, Flag, Default) \
+  static constexpr const char* kDefault##Name##Size = (Default); \
+  DECLARE_string(Flag);                        \
+  word Get##Name##Size();
 
- static constexpr const int64_t kDefaultLargeObjectSize = 1 * kMB;
- DECLARE_int64(large_object_size);
+ DECLARE_size(NewZone, new_zone, "16mb");
+ DECLARE_size(NewPage, new_page, "2mb");
 
- static constexpr const int64_t kDefaultNumberOfWorkers = 2;
- DECLARE_int64(num_workers);
- static constexpr const char* kDefaultReportDirectory = "";
- DECLARE_string(report_directory);
-
- static inline std::string
- GetReportDirectory(){
-   return FLAGS_report_directory;
- }
-
- static inline bool
- HasReportDirectory(){
-   return !GetReportDirectory().empty();
- }
-
- static inline int64_t
- GetNewZoneSize(){
-   return FLAGS_new_zone_size;
- }
-
- static inline int64_t
+ static inline word
  GetNewZoneSemispaceSize() {
    return GetNewZoneSize() / 2;
  }
 
- static inline int64_t
- GetNewPageSize() {
-   return FLAGS_new_page_size;
+ DECLARE_size(OldZone, old_zone, "256mb");
+ DECLARE_size(OldPage, old_page, "32mb");
+
+ static constexpr const word kDefaultNumberOfFreeListBuckets = 16;
+ DECLARE_word(free_list_buckets);
+
+ static inline word
+ GetNumberOfFreeListBuckets() {
+   return FLAGS_free_list_buckets;
  }
 
- static inline int64_t
+ DECLARE_size(LargeObject, large_object, "16mb");
+
+ static constexpr const int64_t kDefaultNumberOfWorkers = 2;
+ DECLARE_int64(num_workers);
+
+ static constexpr const char* kDefaultReportDirectory = "";
+ DECLARE_string(report_directory);
+
+ static inline word
+ GetTotalInitialHeapSize() {
+   return GetNewZoneSize() + GetOldZoneSize();
+ }
+
+ static inline word
  GetNumberOfNewPages() {
    return GetNewZoneSize() / GetNewPageSize();
  }
 
- static inline int64_t
- GetOldZoneSize(){
-   return FLAGS_old_zone_size;
- }
-
- static inline int64_t
- GetOldPageSize(){
-   return FLAGS_old_page_size;
- }
-
- static inline int64_t
- GetNumberOfOldPages() {
-   return GetOldZoneSize() / GetOldPageSize();
- }
-
- static inline int64_t
- GetLargeObjectSize(){
-   return FLAGS_large_object_size;
- }
-
- static inline int64_t
- GetNumberOfWorkers(){
+ static inline word
+ GetNumberOfWorkers() {
    return FLAGS_num_workers;
  }
 
- static inline bool
- HasWorkers(){
-   return GetNumberOfWorkers() > 0;
+ static inline std::string
+ GetReportDirectory() {
+   return FLAGS_report_directory;
  }
 
- static inline int64_t
- GetTotalInitialHeapSize(){
-   return GetNewZoneSize() + GetOldZoneSize();
- }
+ class FlagsPrinter {
+  private:
+   const google::LogSeverity severity_;
 
- static inline int64_t
- GetNumberOfFreeListBuckets() {
-   return FLAGS_free_list_buckets;
- }
+   explicit FlagsPrinter(const google::LogSeverity severity):
+    severity_(severity) {
+   }
+  public:
+   ~FlagsPrinter() = default;
+
+   inline google::LogSeverity
+   GetSeverity() const {
+     return severity_;
+   }
+
+   void Print() const;
+  public:
+   template<const google::LogSeverity Severity = google::INFO>
+   static inline void PrintFlags() {
+     FlagsPrinter printer(Severity);
+     return printer.Print();
+   }
+ };
 }
 
 #endif //POSEIDON_FLAGS_H

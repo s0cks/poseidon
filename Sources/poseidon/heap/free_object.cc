@@ -15,7 +15,7 @@ namespace poseidon {
  }
 
  FreeObject* FreeObject::From(const Region& region){
-   if(region.GetStartingAddress() == 0 || region.GetSize() == 0 || region.GetSize() > GetOldZoneSize())
+   if(region.GetStartingAddress() == 0 || region.GetSize() == 0 || region.GetSize() > flags::GetOldZoneSize())
      return nullptr;
    return new (region.GetStartingAddressPointer())FreeObject(PointerTag::OldFree(region.GetSize()));
  }

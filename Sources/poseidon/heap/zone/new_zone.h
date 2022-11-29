@@ -44,10 +44,10 @@ namespace poseidon{
    }
   public:
    NewZone() = delete;
-   explicit NewZone(const MemoryRegion& region, const int64_t semi_size = GetNewZoneSemispaceSize()):
+   explicit NewZone(const MemoryRegion& region, const int64_t semi_size = flags::GetNewZoneSemispaceSize()):
     NewZone(region.GetStartingAddress(), region.GetSize(), semi_size) {
    }
-   explicit NewZone(const int64_t size, const int64_t semi_size = GetNewZoneSemispaceSize()):
+   explicit NewZone(const int64_t size, const int64_t semi_size = flags::GetNewZoneSemispaceSize()):
     NewZone(MemoryRegion(size), semi_size) {
    }
    NewZone(const NewZone& rhs) = delete;

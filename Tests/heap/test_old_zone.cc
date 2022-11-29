@@ -47,7 +47,7 @@ namespace poseidon {
  };
 
  TEST_F(OldZoneTest, TestConstructor) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    OldZone zone(region);
    ASSERT_EQ(zone.GetStartingAddress(), region.GetStartingAddress());
@@ -57,31 +57,31 @@ namespace poseidon {
  }
 
 #define DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(OldZoneTest, TestName, OldZone, GetOldZoneSize(), NumberOfBytes)
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(OldZoneTest, TestName, OldZone, flags::GetOldZoneSize(), NumberOfBytes)
 
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeLessThanZero, -1);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeEqualsZero, 0);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeLessThanMin, OldZone::GetMinimumObjectSize() - 1);
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeEqualsZoneSize, GetOldZoneSize());
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeGreaterThanZoneSize, GetOldZoneSize() + 1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeEqualsZoneSize, flags::GetOldZoneSize());
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeGreaterThanZoneSize, flags::GetOldZoneSize() + 1);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeGreaterThanMax, OldZone::GetMaximumObjectSize() + 1);
 
  TEST_F(OldZoneTest, TestTryAllocateBytes_WillPass_SizeEqualsWordSize) {
-   OldZone zone(GetOldZoneSize());
+   OldZone zone(flags::GetOldZoneSize());
    auto address = zone.TryAllocateBytes(kWordSize);
    ASSERT_NE(address, UNALLOCATED);
    ASSERT_EQ(*((word*) address), 0);
  }
 
  TEST_F(OldZoneTest, TestTryAllocateBytes_WillPass_SizeEqualsMin) {
-   OldZone zone(GetOldZoneSize());
+   OldZone zone(flags::GetOldZoneSize());
    auto address = zone.TryAllocateBytes(OldZone::GetMinimumObjectSize());
    ASSERT_NE(address, UNALLOCATED);
    ASSERT_EQ(*((word*) address), 0);
  }
 
  TEST_F(OldZoneTest, TestTryAllocateBytes_WillPass_SizeEqualsMax) {
-   OldZone zone(GetOldZoneSize());
+   OldZone zone(flags::GetOldZoneSize());
    auto address = zone.TryAllocateBytes(OldZone::GetMaximumObjectSize());
    ASSERT_NE(address, UNALLOCATED);
    ASSERT_EQ(*((word*) address), 0);
@@ -89,7 +89,7 @@ namespace poseidon {
 
 #define DEFINE_TRY_ALLOCATE_TYPE_PASSES_OLD_ZONE_TEST(Type, Value) \
  TEST_F(OldZoneTest, TestTryAllocate_##Type##_WillPass) {                    \
-   OldZone zone(GetOldZoneSize());                                           \
+   OldZone zone(flags::GetOldZoneSize());                                           \
    auto new_ptr = Type::TryAllocateIn<>(&zone, Value);                       \
    ASSERT_NE(new_ptr, nullptr);                                              \
    ASSERT_TRUE(IsInt(new_ptr->raw_ptr()));                                   \
@@ -99,7 +99,7 @@ namespace poseidon {
  DEFINE_TRY_ALLOCATE_TYPE_PASSES_OLD_ZONE_TEST(Int, 42);
 
  TEST_F(OldZoneTest, TestVisitPointers_WillPass) {
-   OldZone zone(GetOldZoneSize());
+   OldZone zone(flags::GetOldZoneSize());
 
    MockRawObjectVisitor visitor;
    static const constexpr int64_t kNumberOfPointers = 3;
@@ -118,7 +118,7 @@ namespace poseidon {
  }
 
  TEST_F(OldZoneTest, TestVisitMarkedPointers_WillPass) {
-   OldZone zone(GetOldZoneSize());
+   OldZone zone(flags::GetOldZoneSize());
 
    MockRawObjectVisitor visitor;
    static const constexpr int64_t kNumberOfPointers = 3;

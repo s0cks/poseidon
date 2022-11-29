@@ -63,7 +63,7 @@ namespace poseidon{ //TODO: atomic support?
    int64_t num_nodes_;
 
    static inline int GetBucketIndexFor(const ObjectSize& size){
-     return static_cast<int>(size % GetNumberOfFreeListBuckets());
+     return static_cast<int>(size % flags::GetNumberOfFreeListBuckets());
    }
 
    static inline bool
@@ -103,11 +103,11 @@ namespace poseidon{ //TODO: atomic support?
   public:
    FreeList() = default;
    FreeList(const uword start, const ObjectSize size):
-     buckets_(new FreeObject*[GetNumberOfFreeListBuckets()]),
+     buckets_(new FreeObject*[flags::GetNumberOfFreeListBuckets()]),
      num_nodes_(0),
      start_(start),
      total_size_(size) {
-     for(auto idx = 0; idx < GetNumberOfFreeListBuckets(); idx++)
+     for(auto idx = 0; idx < flags::GetNumberOfFreeListBuckets(); idx++)
        buckets_[idx] = nullptr;
    }
    explicit FreeList(const MemoryRegion& region):

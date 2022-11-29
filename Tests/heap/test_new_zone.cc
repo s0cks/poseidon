@@ -79,11 +79,11 @@ namespace poseidon{
  };
 
  TEST_F(NewZoneTest, TestConstructor) {
-   static const int64_t kSemispaceSize = GetNewZoneSize() / 2;
+   static const int64_t kSemispaceSize = flags::GetNewZoneSize() / 2;
    static const int64_t kFromspaceOffset = 0;
    static const int64_t kTospaceOffset = kSemispaceSize;
 
-   MemoryRegion region(GetNewZoneSize());
+   MemoryRegion region(flags::GetNewZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = NewZone::New(region);
    ASSERT_EQ(zone->GetStartingAddress(), region.GetStartingAddress());
@@ -100,7 +100,7 @@ namespace poseidon{
    ASSERT_EQ(tospace.GetSize(), kSemispaceSize);
    ASSERT_TRUE(tospace.IsEmpty());
 
-   for(auto idx = 0; idx < GetNumberOfNewPages(); idx++) {
+   for(auto idx = 0; idx < flags::GetNumberOfNewPages(); idx++) {
 //TODO:
 //     ASSERT_FALSE(zone->IsMarked(idx));
 //     auto page = zone->pages(idx);
@@ -113,7 +113,7 @@ namespace poseidon{
  //TODO: add equals & not equals tests?
 
  TEST_F(NewZoneTest, TestSwapSpaces_WillPass) {
-   MemoryRegion region(GetNewZoneSize());
+   MemoryRegion region(flags::GetNewZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto zone = NewZone::New(region);
    ASSERT_NO_FATAL_FAILURE(zone->SetWritable());
@@ -130,24 +130,24 @@ namespace poseidon{
  }
 
 #define DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(NewZoneTest, TestName, NewZone, GetNewZoneSize(), NumberOfBytes)
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(NewZoneTest, TestName, NewZone, flags::GetNewZoneSize(), NumberOfBytes)
 
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeLessThanZero, -1);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZero, 0);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeLessThanMin, NewZone::GetMinimumObjectSize() - 1);
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZoneSize, GetNewZoneSize());
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanZoneSize, GetNewZoneSize() + 1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZoneSize, flags::GetNewZoneSize());
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanZoneSize, flags::GetNewZoneSize() + 1);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanMax, NewZone::GetMaximumObjectSize() + 1);
 
 #define DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_PASS_TEST(NewZoneTest, TestName, NewZone, GetNewZoneSize(), NumberOfBytes)
+ DEFINE_TRY_ALLOCATE_BYTES_PASS_TEST(NewZoneTest, TestName, NewZone, flags::GetNewZoneSize(), NumberOfBytes)
 
  DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMin, NewZone::GetMinimumObjectSize());
  DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMax, NewZone::GetMaximumObjectSize());
  DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsWordSize, kWordSize);
 
  TEST_F(NewZoneTest, TestTryAllocateBytes_WillPass){
-   NewZone zone(GetNewZoneSize());
+   NewZone zone(flags::GetNewZoneSize());
    ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
 
    Semispace& fromspace = zone.fromspace();
@@ -169,7 +169,7 @@ namespace poseidon{
  }
 
  TEST_F(NewZoneTest, TestVisitPointers_WillPass_ContiguousUnmarked) {
-   NewZone zone(GetNewZoneSize());
+   NewZone zone(flags::GetNewZoneSize());
    ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
 
    MockRawObjectVisitor visitor;
@@ -182,7 +182,7 @@ namespace poseidon{
  }
 
  TEST_F(NewZoneTest, TestVisitPointers_WillPass_ContiguousMarkedAndUnmarked) {
-   NewZone zone(GetNewZoneSize());
+   NewZone zone(flags::GetNewZoneSize());
    ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
 
    MockRawObjectVisitor visitor;
@@ -197,7 +197,7 @@ namespace poseidon{
  }
 
  TEST_F(NewZoneTest, TestVisitMarkedPointers) {
-   NewZone zone(GetNewZoneSize());
+   NewZone zone(flags::GetNewZoneSize());
    ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
 
    MockRawObjectVisitor visitor;

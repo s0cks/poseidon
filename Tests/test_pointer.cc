@@ -16,7 +16,7 @@ namespace poseidon{
 
    PointerTest():
     Test(),
-    region_(GetNewZoneSize()),
+    region_(flags::GetNewZoneSize()),
     zone_(NewZone::New(region_)) {
    }
 

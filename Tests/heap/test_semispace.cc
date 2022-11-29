@@ -24,7 +24,7 @@ namespace poseidon{
  };
 
  TEST_F(SemispaceTest, TestConstructor_WillPass){
-   MemoryRegion region(GetNewZoneSemispaceSize());
+   MemoryRegion region(flags::GetNewZoneSemispaceSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    Semispace semispace(region);
    ASSERT_EQ(semispace.GetStartingAddress(), region.GetStartingAddress());
@@ -35,7 +35,7 @@ namespace poseidon{
 
  TEST_F(SemispaceTest, TestSwap_WillPass){
    // a == r1
-   MemoryRegion r1(GetNewZoneSemispaceSize());
+   MemoryRegion r1(flags::GetNewZoneSemispaceSize());
    ASSERT_TRUE(r1.Protect(MemoryRegion::kReadWrite));
    Semispace a(r1);
    ASSERT_EQ(a.GetStartingAddress(), r1.GetStartingAddress());
@@ -50,7 +50,7 @@ namespace poseidon{
    ASSERT_TRUE(a.Intersects(*ptr->raw_ptr()));
 
    // b == r2
-   MemoryRegion r2(GetNewZoneSemispaceSize());
+   MemoryRegion r2(flags::GetNewZoneSemispaceSize());
    ASSERT_TRUE(r2.Protect(MemoryRegion::kReadWrite));
    Semispace b(r2);
    ASSERT_EQ(b.GetStartingAddress(), r2.GetStartingAddress());
@@ -77,17 +77,17 @@ namespace poseidon{
  }
 
 #define DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(TestName, NumberOfBytes) \
-  DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(SemispaceTest, TestName, Semispace, GetNewZoneSemispaceSize(), NumberOfBytes)
+  DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(SemispaceTest, TestName, Semispace, flags::GetNewZoneSemispaceSize(), NumberOfBytes)
 
  DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeLessThanZero, -1);
  DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeEqualsZero, 0);
  DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeLessThanMin, Semispace::GetMinimumObjectSize() - 1);
  DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeGreaterThanMax, Semispace::GetMaximumObjectSize() + 1);
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeEqualToSemispaceSize, GetNewZoneSemispaceSize());
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeGreaterThanSemispaceSize, GetNewZoneSemispaceSize() + 1);
+ DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeEqualToSemispaceSize, flags::GetNewZoneSemispaceSize());
+ DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeGreaterThanSemispaceSize, flags::GetNewZoneSemispaceSize() + 1);
 
  TEST_F(SemispaceTest, TestTryAllocateBytes_WillFail_NotEnoughSpace){
-   auto semispace = Semispace(GetNewZoneSemispaceSize());
+   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
    ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
    SetCurrentAddress(semispace, semispace.GetEndingAddress());
    auto new_ptr = semispace.TryAllocateBytes(kWordSize);
@@ -95,7 +95,7 @@ namespace poseidon{
  }
 
  TEST_F(SemispaceTest, TestTryAllocate){
-   auto semispace = Semispace(GetNewZoneSemispaceSize());
+   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
    ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
 
    static const constexpr RawInt kDefaultValue = 42;
@@ -114,7 +114,7 @@ namespace poseidon{
  }
 
  TEST_F(SemispaceTest, TestVisitPointers){
-   auto semispace = Semispace(GetNewZoneSemispaceSize());
+   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
    ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
 
    static const constexpr int64_t kNumberOfPointers = 3;
@@ -140,7 +140,7 @@ namespace poseidon{
  }
 
  TEST_F(SemispaceTest, TestVisitMarkedPointers){
-   auto semispace = Semispace(GetNewZoneSemispaceSize());
+   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
    ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
 
    static const constexpr int64_t kNumberOfUnmarkedPointers = 1;

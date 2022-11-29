@@ -15,7 +15,7 @@ namespace poseidon{
  }
 
  uword FreeList::TryAllocate(const ObjectSize& size) {
-   if(size <= 0 || size > GetOldZoneSize())
+   if(size <= 0 || size > flags::GetOldZoneSize())
      return UNALLOCATED;
 
    auto total_size = size + static_cast<ObjectSize>(sizeof(Pointer));
@@ -40,7 +40,7 @@ namespace poseidon{
  }
 
  FreeObject* FreeList::FindFirstFit(ObjectSize size) {
-   if(size <= 0 || size > GetOldZoneSize())
+   if(size <= 0 || size > flags::GetOldZoneSize())
      return UNALLOCATED;
    const auto bucket = GetBucketIndexFor(size);
    auto entry = buckets_[bucket];
@@ -51,7 +51,7 @@ namespace poseidon{
    }
 
    PSDN_ASSERT(entry == nullptr);
-   for(auto idx = 0; idx < GetNumberOfFreeListBuckets(); idx++) {
+   for(auto idx = 0; idx < flags::GetNumberOfFreeListBuckets(); idx++) {
      entry = buckets_[idx];
      if(entry != nullptr) {
        if(entry->GetSize() >= size)

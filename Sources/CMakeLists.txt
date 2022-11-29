@@ -19,7 +19,7 @@ SET(PSDN_HEAP_ZONE_SOURCES
     poseidon/heap/zone/new_zone.h
     poseidon/heap/zone/new_zone.cc
     poseidon/heap/zone/old_zone.h
-    poseidon/heap/zone/old_zone.cc)
+    poseidon/heap/zone/old_zone.cc poseidon/flags.cc poseidon/utils/size.h)
 
 ADD_LIBRARY(poseidon
             ${PROJECT_BINARY_DIR}/poseidon/poseidon.h poseidon/poseidon.cc
@@ -56,8 +56,6 @@ ADD_LIBRARY(poseidon
             poseidon/task_pool.h poseidon/task_pool.cc
             poseidon/utils.h poseidon/utils.cc
             poseidon/wsq.h poseidon/heap/section.cc
-            poseidon/reference.h
-            poseidon/reference.cc
             poseidon/region.h
             poseidon/heap/free_object.h
             poseidon/sweeper/sweeper_stats.h

@@ -170,7 +170,7 @@ namespace poseidon{
    }
 
    SetCompacting();
-   if(HasWorkers()){
+   if(flags::FLAGS_num_workers > 0){
      ParallelCompact();
    } else{
      SerialCompact();

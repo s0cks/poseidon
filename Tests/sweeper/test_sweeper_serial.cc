@@ -28,7 +28,7 @@ namespace poseidon {
  TEST_F(SerialSweeperTest, TestSweep_WillPass_SweepsNothing) {
 
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->old_zone();
@@ -49,7 +49,7 @@ namespace poseidon {
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsOneObject) {
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->old_zone();
@@ -77,7 +77,7 @@ namespace poseidon {
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleContiguousObjects) {
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->old_zone();
@@ -133,7 +133,7 @@ namespace poseidon {
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleNoncontiguousObjects) {
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->old_zone();

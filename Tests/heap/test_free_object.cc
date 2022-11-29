@@ -29,7 +29,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeObjectTest, TestFrom_WillFail_SizeGreaterThanOldZoneSize) {
-   MemoryRegion region(GetOldZoneSize() + 1);
+   MemoryRegion region(flags::GetOldZoneSize() + 1);
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto ptr = FreeObject::From(region);
    ASSERT_EQ(ptr, nullptr);
@@ -48,7 +48,7 @@ namespace poseidon {
  }
 
  TEST_F(FreeObjectTest, TestFrom_WillPass_EqualToOldZoneSize) {
-   MemoryRegion region(GetOldZoneSize());
+   MemoryRegion region(flags::GetOldZoneSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto ptr = FreeObject::From(region);
    ASSERT_EQ(ptr->GetStartingAddress(), region.GetStartingAddress());

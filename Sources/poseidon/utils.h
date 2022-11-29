@@ -9,6 +9,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "poseidon/utils/size.h"
 #include "poseidon/platform/platform.h"
 #include "poseidon/relaxed_atomic.h"
 
@@ -302,7 +303,7 @@ namespace poseidon{
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const AtomicPointerCounter& val){
-     return stream << val.count << " (" << Bytes(val.bytes) << ")";
+     return stream << val.count << " (" << Bytes((word) (int64_t) val.bytes) << ")";
    }
  };
 }

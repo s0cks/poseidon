@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <glog/logging.h>
 
+#include "poseidon/flags.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
 #include "poseidon/type/class.h"
@@ -16,6 +17,8 @@ int main(int argc, char** argv){
   ::testing::InitGoogleTest(&argc, argv);
   ::google::ParseCommandLineFlags(&argc, &argv, false);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
+
+  flags::FlagsPrinter::PrintFlags();
 
   Heap::Initialize();
   Class::Initialize();

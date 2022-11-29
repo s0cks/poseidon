@@ -41,7 +41,7 @@ ADD_EXECUTABLE(poseidon-tests
                assertions/assertions.h
                assertions/pointers_eq.h
                assertions/type_assertions.h
-               mock_raw_object_visitor.h heap/page/test_page_tag.cc helpers/type_alloc_helpers.h)
+               mock_raw_object_visitor.h heap/page/test_page_tag.cc helpers/type_alloc_helpers.h utils/test_size.cc)
 TARGET_LINK_LIBRARIES(poseidon-tests
                       poseidon
                       ${CMAKE_THREAD_LIBS_INIT}

@@ -45,7 +45,7 @@ namespace poseidon {
    }
 
    Sweeper sweeper(zone);
-   return HasWorkers() ?
+   return flags::FLAGS_num_workers > 0 ?
           ParallelSweep(&sweeper) :
           SerialSweep(&sweeper);
  }

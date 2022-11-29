@@ -62,7 +62,7 @@ namespace poseidon {
      }
    };
   public: //TODO: reduce access
-   explicit NewPage(const PageIndex index = 0, const uword start_address = 0, const PageSize size = GetNewPageSize()):
+   explicit NewPage(const PageIndex index = 0, const uword start_address = 0, const PageSize size = flags::GetNewPageSize()):
      Page(PageTag::New(index, size), start_address) {
    }
   public:
@@ -73,7 +73,7 @@ namespace poseidon {
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
    word GetSize() const override {
-     return GetNewPageSize();
+     return flags::GetNewPageSize();
    }
 
    NewPage& operator=(const NewPage& rhs) = default;

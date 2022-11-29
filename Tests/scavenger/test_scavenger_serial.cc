@@ -36,7 +36,7 @@ namespace poseidon {
    LocalPage page(page_region);
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->new_zone();
@@ -70,7 +70,7 @@ namespace poseidon {
    LocalPage page(page_region);
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->new_zone();
@@ -100,7 +100,7 @@ namespace poseidon {
    LocalPage page(page_region);
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->new_zone();
@@ -173,7 +173,7 @@ namespace poseidon {
    LocalPage page(page_region);
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto new_zone = heap->new_zone();
@@ -220,7 +220,7 @@ namespace poseidon {
    LocalPage page(page_region);
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto new_zone = heap->new_zone();
@@ -293,7 +293,7 @@ namespace poseidon {
    LocalPage page(page_region);
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto new_zone = heap->new_zone();
@@ -351,7 +351,7 @@ namespace poseidon {
    LocalPage page(page_region);
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
 
-   MemoryRegion region(GetTotalInitialHeapSize());
+   MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto new_zone = heap->new_zone();

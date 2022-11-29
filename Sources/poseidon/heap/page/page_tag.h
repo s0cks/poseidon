@@ -131,12 +131,12 @@ namespace poseidon {
    }
 
    static inline constexpr RawPageTag
-   New(const PageIndex& index, const PageSize& size = GetNewPageSize()) {
+   New(const PageIndex& index, const PageSize& size = flags::GetNewPageSize()) {
      return Empty() | NewBit::Encode(true) | Index::Encode(index) | Size::Encode(size);
    }
 
    static inline constexpr RawPageTag
-   Old(const PageIndex& index, const PageSize& size = GetOldPageSize()) {
+   Old(const PageIndex& index, const PageSize& size = flags::GetOldPageSize()) {
      return Empty() | OldBit::Encode(true) | Index::Encode(index) | Size::Encode(size);
    }
  };

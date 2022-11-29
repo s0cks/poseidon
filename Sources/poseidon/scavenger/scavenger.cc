@@ -41,7 +41,7 @@ namespace poseidon {
      ALREADY_SCAVENGING;
 
    Scavenger scavenger(heap);
-   return HasWorkers() ?
+   return flags::FLAGS_num_workers > 0 ?
           SerialScavenge(&scavenger) :
           ParallelScavenge(&scavenger);
  }

@@ -51,10 +51,6 @@ namespace poseidon{
      }
    };
   protected:
-   uword start_;
-   int64_t size_;
-   RelaxedAtomic<uword> current_;
-
    void Clear() override;
 
    static inline constexpr ObjectSize
@@ -62,17 +58,9 @@ namespace poseidon{
      return size + static_cast<ObjectSize>(sizeof(Pointer));
    }
   public:
-   Semispace():
-    AllocationSection(),
-    start_(0),
-    current_(0),
-    size_(0) {
-   }
+   Semispace() = default;
    explicit Semispace(const uword start, const int64_t size):
-    AllocationSection(),
-    start_(start),
-    current_(start),
-    size_(size) {
+    AllocationSection(start, size) {
    }
    explicit Semispace(const MemoryRegion& region):
     Semispace(region.GetStartingAddress(), region.GetSize()) {
@@ -83,24 +71,8 @@ namespace poseidon{
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
 
-   uword GetStartingAddress() const override {
-     return start_;
-   }
-
-   uword GetCurrentAddress() const override {
-     return (uword)current_;
-   }
-
-   word GetSize() const override {
-     return size_;
-   }
-
    uword TryAllocateBytes(ObjectSize size);
    uword TryAllocateClassBytes(Class* cls);
-
-   uword TryAllocate(ObjectSize size) override {
-     return TryAllocateBytes(size); //TODO: remove
-   }
 
    bool VisitPointers(RawObjectVisitor* vis) override {
      return IteratePointers<Semispace, SemispaceIterator>(vis);
@@ -121,9 +93,7 @@ namespace poseidon{
    Semispace& operator=(const Semispace& rhs){
      if(this == &rhs)
        return *this;
-     start_ = rhs.GetStartingAddress();
-     current_ = rhs.GetCurrentAddress();
-     size_ = rhs.GetSize();
+     AllocationSection::operator=(rhs);
      return *this;
    }
 
