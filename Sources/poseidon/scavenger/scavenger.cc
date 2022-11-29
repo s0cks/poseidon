@@ -58,7 +58,7 @@ namespace poseidon {
    PSDN_ASSERT(ptr->IsRemembered());
    DLOG(INFO) << "promoting " << (*ptr);
 
-   auto new_address = old_zone()->TryAllocate(ptr->GetPointerSize());
+   auto new_address = old_zone()->TryAllocateBytes(ptr->GetPointerSize());
    if(new_address == UNALLOCATED) {
      LOG(FATAL) << "new_address == UNALLOCATED";
      return UNALLOCATED;

@@ -8,7 +8,7 @@
 #include "poseidon/heap/freelist.h"
 
 namespace poseidon{
- class OldZone : public Zone<OldPage> {
+ class OldZone : public Zone {
    friend class OldZoneTest;
    friend class SweeperTest;
    friend class Heap;
@@ -17,47 +17,37 @@ namespace poseidon{
    friend class SerialSweeper;
    friend class ParallelSweeper;
   public:
-   class OldZoneIterator : public ZoneIterator<OldZone> {
+   class OldZoneIterator : public ZonePointerIterator {
     public:
-     explicit OldZoneIterator(OldZone* zone):
-       ZoneIterator<OldZone>(zone) {
+     explicit OldZoneIterator(const OldZone* zone):
+       ZonePointerIterator(zone) {
      }
      ~OldZoneIterator() override = default;
 
      bool HasNext() const override {
        return current_address() >= zone()->GetStartingAddress() &&
-              current_address() < zone()->GetEndingAddress() &&
-              current_ptr()->IsOld() &&
-              current_ptr()->GetSize() > 0 &&
-              !current_ptr()->IsFree();
+           current_address() < zone()->GetEndingAddress() &&
+           current_ptr()->IsOld() &&
+           !current_ptr()->IsFree() &&
+           current_ptr()->GetSize() > 0;
      }
-   };
-
-   class OldZonePageIterator : public ZonePageIterator {
-    public:
-     explicit OldZonePageIterator(OldZone* zone):
-       ZonePageIterator(zone) {
-     }
-     ~OldZonePageIterator() override = default;
    };
   protected:
    FreeList free_list_;
 
    OldZone(const uword start_address, const int64_t size):
-    Zone<OldPage>(start_address, size, GetOldPageSize()),
+    Zone(start_address, size),
     free_list_(start_address, size) {
      SetWritable();
      free_list_.Insert(start_address, size);
    }
-
-   virtual bool MarkAllIntersectedBy(const Region& region);
   public:
    OldZone() = delete;
    explicit OldZone(const MemoryRegion& region):
     OldZone(region.GetStartingAddress(), region.GetSize()) {
    }
    explicit OldZone(const int64_t size):
-     OldZone(MemoryRegion(size)) {
+    OldZone(MemoryRegion(size)) {
    }
    OldZone(const OldZone& rhs) = delete;
    ~OldZone() override = default;
@@ -66,36 +56,28 @@ namespace poseidon{
      return free_list_;
    }
 
-   uword TryAllocateBytes(ObjectSize size);
+   uword TryAllocateBytes(word size) override;
 
-   inline uword TryAllocate(const ObjectSize size) {
-     return TryAllocateBytes(size); //TODO: remove
+   uword TryAllocateClassBytes(Class* cls) override {
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     return UNALLOCATED;
    }
 
-   virtual bool VisitPages(OldPageVisitor* vis) {
-     OldZonePageIterator iter(this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(!vis->Visit(next))
-         return false;
-     }
-     return true;
+   bool VisitPointers(RawObjectVisitor* vis) override {
+     return IteratePointers<OldZone, OldZoneIterator>(vis);
    }
 
-   virtual bool VisitMarkedPages(OldPageVisitor* vis) {
-     OldZonePageIterator iter(this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(IsMarked(next) && !vis->Visit(next))
-           return false;
-     }
-     return true;
+   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IteratePointers<OldZone, OldZoneIterator>(vis);
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitPointers(std::function<bool(Pointer*)>& function);
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(std::function<bool(Pointer*)>& function);
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+     return IterateMarkedPointers<OldZone, OldZoneIterator>(vis);
+   }
+
+   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IterateMarkedPointers<OldZone, OldZoneIterator>(vis);
+   }
 
    friend std::ostream& operator<<(std::ostream& stream, const OldZone& val){
      stream << "OldZone(";
@@ -106,8 +88,8 @@ namespace poseidon{
      return stream;
    }
 
-   static OldZone* From(const MemoryRegion& region);
-
+   OldZone& operator=(const OldZone& rhs) = delete;
+  public:
    static constexpr ObjectSize
    GetMinimumObjectSize() {
      return kWordSize;

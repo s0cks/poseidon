@@ -10,46 +10,6 @@ namespace poseidon{
    current_ = GetStartingAddress();
  }
 
- bool Semispace::VisitPointers(RawObjectVisitor* vis){
-   SemispaceIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(!vis->Visit(next))
-       return false;
-   }
-   return true;
- }
-
- bool Semispace::VisitPointers(std::function<bool(Pointer*)>& function){
-   SemispaceIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(!function(next))
-       return false;
-   }
-   return true;
- }
-
- bool Semispace::VisitMarkedPointers(RawObjectVisitor* vis){
-   SemispaceIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(next->IsMarked() && !vis->Visit(next))
-       return false;
-   }
-   return true;
- }
-
- bool Semispace::VisitMarkedPointers(std::function<bool(Pointer*)>& function){
-   SemispaceIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(next->IsMarked() && !function(next))
-       return false;
-   }
-   return true;
- }
-
  uword Semispace::TryAllocateBytes(ObjectSize size) {
    if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));

@@ -17,13 +17,13 @@ namespace poseidon{
 
  uword Heap::AllocateNewObject(int64_t size){
    Pointer* val = nullptr;
-   if((val = (Pointer*)new_zone()->TryAllocate(size)) != nullptr)
+   if((val = (Pointer*)new_zone()->TryAllocateBytes(size)) != nullptr)
      goto finish_allocation;
 
    DLOG(WARNING) << "couldn't allocate new object of " << Bytes(size) << ".";
    Collector::MinorCollection();
 
-   if((val = (Pointer*)new_zone()->TryAllocate(size)) != nullptr)
+   if((val = (Pointer*)new_zone()->TryAllocateBytes(size)) != nullptr)
      goto finish_allocation;
 
    LOG(FATAL) << "cannot allocate new object of " << Bytes(size) << "!";
@@ -38,14 +38,14 @@ finish_allocation:
    Pointer* val = nullptr;
 
    // 1. Try Allocation
-   if((val = (Pointer*)old_zone()->TryAllocate(size)) != nullptr)
+   if((val = (Pointer*)old_zone()->TryAllocateBytes(size)) != nullptr)
      goto finish_allocation;
 
    // 2. Try Major Collection
    Collector::MajorCollection();
 
    // 3. Try Allocation Again
-   if((val = (Pointer*)old_zone()->TryAllocate(size)) != nullptr)
+   if((val = (Pointer*)old_zone()->TryAllocateBytes(size)) != nullptr)
      goto finish_allocation;
 
    // 4. Try Pages w/ Grow
@@ -72,7 +72,7 @@ finish_allocation:
 
    if(size < GetNewPageSize()) {
      uword address = UNALLOCATED;
-     if((address = new_zone()->TryAllocate(size)) != UNALLOCATED)
+     if((address = new_zone()->TryAllocateBytes(size)) != UNALLOCATED)
        return address;
      PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      return UNALLOCATED;
@@ -80,7 +80,7 @@ finish_allocation:
 
    if(size >= GetNewPageSize()) {
      uword address = UNALLOCATED;
-     if((address = old_zone()->TryAllocate(size)) != UNALLOCATED)
+     if((address = old_zone()->TryAllocateBytes(size)) != UNALLOCATED)
        return address;
 
      PSDN_CANT_ALLOCATE(FATAL, size, (*this));

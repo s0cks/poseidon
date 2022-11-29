@@ -4,16 +4,10 @@
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{
-#define UNALLOCATED 0 //TODO: cleanup
-
  void NewZone::SwapSpaces() {
    DLOG(INFO) << "swapping spaces";
    std::swap(fromspace_, tospace_);
  }
-
-  bool NewZone::MarkAllIntersectedBy(const Region& region){
-    return PageMarker<NewZone>::MarkAllIntersectedBy(this, region);
-  }
 
  NewZone* NewZone::New(const poseidon::MemoryRegion& region){
    const auto total_size = region.GetSize();
@@ -21,7 +15,7 @@ namespace poseidon{
    return new NewZone(region.GetStartingAddress(), total_size, semi_size);
  }
 
- uword NewZone::TryAllocateBytes(const int64_t size) {
+ uword NewZone::TryAllocateBytes(const word size) {
    if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) //TODO: cleanup
      return UNALLOCATED;
 
@@ -34,8 +28,9 @@ namespace poseidon{
        PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      }
    }
+
+   //TODO: mark all pages intersected by
    auto ptr = (Pointer*)ptr_address;
-   MarkAllIntersectedBy(*ptr);
    memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
    return ptr->GetObjectPointerAddress();
  }

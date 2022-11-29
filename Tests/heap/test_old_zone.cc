@@ -19,7 +19,7 @@ namespace poseidon {
 
    static inline uword
    TryAllocateBytes(OldZone* zone, const ObjectSize size) {
-     return zone->TryAllocate(size);
+     return zone->TryAllocateBytes(size);
    }
 
    static inline Pointer*
@@ -97,22 +97,6 @@ namespace poseidon {
  }
 
  DEFINE_TRY_ALLOCATE_TYPE_PASSES_OLD_ZONE_TEST(Int, 42);
-
- TEST_F(OldZoneTest, TestVisitMarkedPages) {
-   MemoryRegion region(GetOldZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = OldZone::From(region);
-
-   static const constexpr int kNumberOfMarkedPages = 3;
-   ASSERT_NO_FATAL_FAILURE(zone->Mark((const int64_t) 0));
-   ASSERT_NO_FATAL_FAILURE(zone->Mark(1));
-   ASSERT_NO_FATAL_FAILURE(zone->Mark(2));
-
-   MockOldPageVisitor visitor;
-   EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfMarkedPages);
-   ASSERT_NO_FATAL_FAILURE(zone->VisitMarkedPages(&visitor));
- }
 
  TEST_F(OldZoneTest, TestVisitPointers_WillPass) {
    OldZone zone(GetOldZoneSize());

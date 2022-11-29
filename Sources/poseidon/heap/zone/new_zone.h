@@ -8,38 +8,28 @@
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
- class NewZone : public Zone<NewPage> { //TODO: make resizable
+ class NewZone : public Zone { //TODO: make resizable
    template<bool Parallel>
    friend class ScavengerVisitorBase;//TODO: remove
 
-   template<class P>
    friend class Zone;
 
    friend class Heap;
    friend class NewZoneTest;
   public:
-   class NewZoneIterator : public ZoneIterator<NewZone> {
+   class NewZoneIterator : public ZonePointerIterator {
     public:
-     explicit NewZoneIterator(NewZone* zone):
-       ZoneIterator<NewZone>(zone) {
+     explicit NewZoneIterator(const NewZone* zone):
+       ZonePointerIterator(zone) {
      }
      ~NewZoneIterator() override = default;
 
      bool HasNext() const override {
-       return current_address() > 0 &&
-              current_address() >= zone()->GetStartingAddress() &&
-              current_address() < zone()->GetEndingAddress() &&
+       return zone()->Contains(current_address()) &&
               current_ptr()->IsNew() &&
-              !current_ptr()->IsFree();
+              !current_ptr()->IsFree() &&
+              current_ptr()->GetSize() > 0;
      }
-   };
-
-   class NewZonePageIterator : public ZonePageIterator{
-    public:
-     explicit NewZonePageIterator(Zone<NewPage>* zone):
-       ZonePageIterator(zone) {
-     }
-     ~NewZonePageIterator() override = default;
    };
   protected:
    int64_t semisize_; //TODO: remove
@@ -47,7 +37,7 @@ namespace poseidon{
    Semispace tospace_;
 
    NewZone(const uword start_address, const int64_t size, const int64_t semi_size):
-    Zone<NewPage>(start_address, size, GetNewPageSize()),
+    Zone(start_address, size),
     fromspace_(GetStartingAddress(), semi_size),
     tospace_(GetStartingAddress() + semi_size, semi_size),
     semisize_(semi_size) {
@@ -83,42 +73,29 @@ namespace poseidon{
      return semisize_;
    }
 
-   virtual uword TryAllocateBytes(ObjectSize size);
+   virtual void SwapSpaces();
+   uword TryAllocateBytes(word size) override;
 
-   virtual uword TryAllocate(const ObjectSize size) {
-     return TryAllocateBytes(size); //TODO: remove
-   }
-
-   bool VisitPages(NewPageVisitor* vis) {
-     NewZonePageIterator iter(this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(!vis->Visit(next))
-         return false;
-     }
-     return true;
-   }
-
-   bool VisitMarkedPages(NewPageVisitor* vis) {
-     NewZonePageIterator iter(this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(IsMarked(next) && !vis->Visit(next))
-         return false;
-     }
-     return true;
+   uword TryAllocateClassBytes(Class* cls) override {
+     NOT_IMPLEMENTED(FATAL); //TODO: implement
+     return UNALLOCATED;
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override {
-     return IteratePointers<NewZone, NewZoneIterator, RawObjectVisitor>(this, vis);
+     return IteratePointers<NewZone, NewZoneIterator>(vis);
+   }
+
+   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IteratePointers<NewZone, NewZoneIterator>(vis);
    }
 
    bool VisitMarkedPointers(RawObjectVisitor* vis) override {
-     return IterateMarkedPointers<NewZone, NewZoneIterator, RawObjectVisitor>(this, vis);
+     return IterateMarkedPointers<NewZone, NewZoneIterator>(vis);
    }
 
-   virtual void SwapSpaces();
-   virtual bool MarkAllIntersectedBy(const Region& region);
+   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IterateMarkedPointers<NewZone, NewZoneIterator>(vis);
+   }
 
    friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){
      stream << "NewZone(";

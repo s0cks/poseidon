@@ -17,7 +17,6 @@ namespace poseidon {
 
  class NewZone;
  class NewPage : public Page {
-   template<class P>
    friend class Zone;
 
    friend class NewZone;

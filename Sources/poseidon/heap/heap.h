@@ -41,7 +41,7 @@ namespace poseidon{
     start_(region.GetStartingAddress()),
     size_(region.GetSize()),
     new_zone_(NewZone::New(MemoryRegion::Subregion(region, 0, GetNewZoneSize()))),
-    old_zone_(OldZone::From(MemoryRegion::Subregion(region, GetNewZoneSize(), GetOldZoneSize()))) {
+    old_zone_(new OldZone(MemoryRegion::Subregion(region, GetNewZoneSize(), GetOldZoneSize()))) {
    }
    Heap(const Heap& rhs) = default;
    ~Heap() override = default;

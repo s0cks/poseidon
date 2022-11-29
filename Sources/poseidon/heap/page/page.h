@@ -95,6 +95,14 @@ namespace poseidon {
      return PageTag::Size::Decode(raw_tag());
    }
 
+   virtual bool IsNew() const {
+     return false;
+   }
+
+   virtual bool IsOld() const {
+     return false;
+   }
+
    Page& operator=(const Page& rhs) {
      if(&rhs == this)
        return *this;

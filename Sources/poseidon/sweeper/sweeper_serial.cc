@@ -12,7 +12,7 @@ namespace poseidon {
    TIMED_SECTION("SweepPage", {
      if(!page->VisitPointers(this))
        return false;
-     zone()->Unmark(page->GetIndex());
+     //TODO: zone()->Unmark(page->GetIndex());
    });
    return true;
  }

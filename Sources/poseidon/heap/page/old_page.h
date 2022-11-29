@@ -19,7 +19,6 @@ namespace poseidon{
 
  class OldZone;
  class OldPage : public Page{
-   template<class P>
    friend class Zone;
 
    friend class OldZone;

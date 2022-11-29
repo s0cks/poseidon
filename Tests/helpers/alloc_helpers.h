@@ -11,7 +11,7 @@ namespace poseidon {
  template<class Z>
  static inline uword
  TryAllocateBytes(Z* zone, const ObjectSize size) {
-   return zone->TryAllocate(size);
+   return zone->TryAllocateBytes(size);
  }
 
  template<class Z>

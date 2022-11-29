@@ -44,8 +44,8 @@ namespace poseidon {
    EXPECT_CALL(sweeper, Sweep)
     .Times(0);
 
-   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
-     ASSERT_FALSE(zone->IsMarked(it));
+//   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+//     ASSERT_FALSE(zone->IsMarked(it));
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsOneObject) {
@@ -72,8 +72,8 @@ namespace poseidon {
 
    ASSERT_TRUE(IsFree(a));
 
-   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
-     ASSERT_FALSE(zone->IsMarked(it));
+//   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+//     ASSERT_FALSE(zone->IsMarked(it));
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleContiguousObjects) {
@@ -128,8 +128,8 @@ namespace poseidon {
    ASSERT_TRUE(IsFree(b));
    ASSERT_TRUE(IsFree(c));
 
-   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
-     ASSERT_FALSE(zone->IsMarked(it));
+//   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+//     ASSERT_FALSE(zone->IsMarked(it));
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleNoncontiguousObjects) {
@@ -182,7 +182,7 @@ namespace poseidon {
 
    ASSERT_TRUE(IsFree(c));
 
-   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
-     ASSERT_FALSE(zone->IsMarked(it));
+//   for(auto it = zone->pages_begin(); it != zone->pages_end(); it++)
+//     ASSERT_FALSE(zone->IsMarked(it));
  }
 }

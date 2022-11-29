@@ -102,10 +102,21 @@ namespace poseidon{
      return TryAllocateBytes(size); //TODO: remove
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitPointers(std::function<bool(Pointer*)>& function);
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(std::function<bool(Pointer*)>& function);
+   bool VisitPointers(RawObjectVisitor* vis) override {
+     return IteratePointers<Semispace, SemispaceIterator>(vis);
+   }
+
+   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IteratePointers<Semispace, SemispaceIterator>(vis);
+   }
+
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+     return IterateMarkedPointers<Semispace, SemispaceIterator>(vis);
+   }
+
+   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IterateMarkedPointers<Semispace, SemispaceIterator>(vis);
+   }
 
    Semispace& operator=(const Semispace& rhs){
      if(this == &rhs)

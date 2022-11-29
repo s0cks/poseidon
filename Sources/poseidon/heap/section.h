@@ -21,6 +21,52 @@ namespace poseidon{
    }
 
    void Protect(MemoryRegion::ProtectionMode mode);
+
+   template<class Z, class Iterator>
+   inline bool
+   IteratePointers(RawObjectVisitor* vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(!vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator>
+   inline bool IteratePointers(const std::function<bool(Pointer*)>& vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(!vis(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator>
+   inline bool
+   IterateMarkedPointers(RawObjectVisitor* vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(next->IsMarked() && !vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator>
+   inline bool IterateMarkedPointers(const std::function<bool(Pointer*)>& vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(next->IsMarked() && !vis(next))
+         return false;
+     }
+     return true;
+   }
   public:
    ~Section() override = default;
 
@@ -33,7 +79,10 @@ namespace poseidon{
    }
 
    virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
+   virtual bool VisitPointers(const std::function<bool(Pointer*)>& vis) = 0;
+
    virtual bool VisitMarkedPointers(RawObjectVisitor* vis) = 0;
+   virtual bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) = 0;
 
    inline void SetReadOnly() { //TODO: visible for testing
      return Protect(MemoryRegion::kReadOnly);

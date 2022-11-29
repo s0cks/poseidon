@@ -35,8 +35,9 @@ namespace poseidon {
 
    virtual bool Sweep() {
      TIMED_SECTION("SweepOldZone", {
-       if(!zone()->VisitMarkedPages(this))
-         return false;
+//TODO:
+//       if(!zone()->VisitMarkedPages(this))
+//         return false;
      });
      return true;
    }
