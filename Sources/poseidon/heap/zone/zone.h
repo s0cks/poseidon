@@ -2,8 +2,9 @@
 #define POSEIDON_HEAP_ZONE_H
 
 #include "poseidon/bitset.h"
-#include "poseidon/heap/page/page.h"
 #include "poseidon/pointer.h"
+#include "poseidon/heap/page/page.h"
+#include "poseidon/heap/page/page_table.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
@@ -48,14 +49,22 @@ namespace poseidon{
      }
    };
   protected:
+   PageTable table_;
+
    Zone() = default;
-   Zone(const uword start, const word size):
-    Section(start, size) {
+   Zone(const uword start, const word size, const word page_size):
+    Section(start, size),
+    table_(start, size, page_size) {
    }
   public:
    ~Zone() override = default;
+
    virtual uword TryAllocateBytes(word size) = 0;
    virtual uword TryAllocateClassBytes(Class* cls) = 0;
+
+   operator PageTable() const {
+     return table_;
+   }
  };
 }
 

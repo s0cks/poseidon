@@ -3,10 +3,11 @@
 
 #include "poseidon/bitset.h"
 #include "poseidon/pointer.h"
+#include "poseidon/heap/section.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
- class LocalPage : public Region {
+ class LocalPage : public Section {
    friend class SerialScavenger;
   public:
    class LocalPageIterator {
@@ -48,31 +49,30 @@ namespace poseidon {
      }
    };
   protected:
-   uword start_;
    uword current_;
-   int64_t size_;
    BitSet slots_;
 
-   uword GetLocalAddressAt(const int64_t index) const {
+   uword GetLocalAddressAt(const word index) const {
      if(index < 0 || index > GetNumberOfLocals())
        return UNALLOCATED;
      return GetStartingAddress() + (index * kWordSize);
    }
 
-   Pointer** GetLocalAt(const int64_t index) const {
+   Pointer** GetLocalAt(const word index) const {
      return (Pointer**) GetLocalAddressAt(index);
    }
   public:
    LocalPage() = default;
-   LocalPage(const uword start, const int64_t size):
-     Region(),
-     start_(start),
-     current_(start),
-     size_(size) {
+   LocalPage(const uword start, const word size):
+     Section(start, size),
+     current_(start) {
      Clear();
    }
    explicit LocalPage(const MemoryRegion& region):
-     LocalPage(region.GetStartingAddress(), region.GetSize()) {
+    LocalPage(region.GetStartingAddress(), region.GetSize()) {
+   }
+   explicit LocalPage(const word size):
+    LocalPage(MemoryRegion(size)) {
    }
    LocalPage(const LocalPage& rhs) = default;
    ~LocalPage() override = default;
@@ -106,13 +106,24 @@ namespace poseidon {
    }
 
    uword TryAllocate();
-   bool VisitPointers(RawObjectVisitor* vis);
+
+   bool VisitPointers(RawObjectVisitor* vis) override {
+     return IteratePointers<LocalPage, LocalPageIterator>(vis);
+   }
+
+   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IteratePointers<LocalPage, LocalPageIterator>(vis);
+   }
+
    bool VisitNewPointers(RawObjectVisitor* vis);
    bool VisitOldPointers(RawObjectVisitor* vis);
-   bool VisitMarkedPointers(RawObjectVisitor* vis);
 
-   void Clear() {
-     memset(GetStartingAddressPointer(), 0, GetSize());
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+     return IteratePointers<LocalPage, LocalPageIterator>(vis);
+   }
+
+   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IteratePointers<LocalPage, LocalPageIterator>(vis);
    }
 
    LocalPage& operator=(const LocalPage& rhs) = default;

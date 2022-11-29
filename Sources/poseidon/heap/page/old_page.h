@@ -25,31 +25,12 @@ namespace poseidon{
    friend class OldPageTest;
    friend class SerialSweeperTest;
   public:
-   class OldPageIterator : public PageIterator<OldPage> {
-    public:
-     explicit OldPageIterator(OldPage* page):
-       PageIterator<OldPage>(page) {
-     }
-     ~OldPageIterator() override = default;
-
-     bool HasNext() const override {
-       return current_address() > 0 &&
-              current_address() < page()->GetEndingAddress() &&
-              current_ptr()->IsOld() &&
-              current_ptr()->GetSize() > 0;
-     }
-   };
-  public:
    OldPage() = default;
    explicit OldPage(const PageIndex index, const uword start, const ObjectSize size):
-     Page(PageTag::Old(index, size), start) {
+     Page(index, start, size) {
    }
    OldPage(const OldPage& rhs) = default;
    ~OldPage() override = default;
-
-   PageTag tag() const {
-     return (PageTag)raw_tag();
-   }
 
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
@@ -60,7 +41,6 @@ namespace poseidon{
      stream << "OldPage(";
      stream << "start=" << value.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(value.GetSize()) << ", ";
-     stream << "tag=" << value.tag();
      stream << ")";
      return stream;
    }

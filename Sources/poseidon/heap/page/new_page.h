@@ -63,7 +63,7 @@ namespace poseidon {
    };
   public: //TODO: reduce access
    explicit NewPage(const PageIndex index = 0, const uword start_address = 0, const PageSize size = flags::GetNewPageSize()):
-     Page(PageTag::New(index, size), start_address) {
+     Page(index, start_address, size) {
    }
   public:
    NewPage(const NewPage& rhs) = default;

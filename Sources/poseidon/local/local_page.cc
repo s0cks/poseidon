@@ -3,16 +3,6 @@
 #include "poseidon/platform/os_thread.h"
 
 namespace poseidon {
- bool LocalPage::VisitPointers(RawObjectVisitor* vis){
-   LocalPageIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(!vis->Visit(next))
-       return false;
-   }
-   return true;
- }
-
  bool LocalPage::VisitNewPointers(RawObjectVisitor* vis){
    LocalPageIterator iter(this);
    while(iter.HasNext()) {
@@ -28,16 +18,6 @@ namespace poseidon {
    while(iter.HasNext()) {
      auto next = iter.Next();
      if(next->IsOld() && !vis->Visit(next))
-       return false;
-   }
-   return true;
- }
-
- bool LocalPage::VisitMarkedPointers(RawObjectVisitor* vis){
-   LocalPageIterator iter(this);
-   while(iter.HasNext()) {
-     auto next = iter.Next();
-     if(next->IsMarked() && !vis->Visit(next))
        return false;
    }
    return true;

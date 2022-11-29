@@ -21,65 +21,55 @@ namespace poseidon {
  class Page : public Section {
    friend class NewZone;
    friend class OldZone;
-
-   friend class Pointer;//TODO: remove
-   friend class NewPageTest; //TODO: remove
-   friend class OldPageTest; //TODO: remove
   protected:
-   template<class T>
+   word index_;
+
    class PageIterator : public RawObjectPointerIterator {
     protected:
-     T* page_;
-     uword current_address_;
+     const Page* page_;
+     uword current_;
 
-     inline T* page() const {
+     inline const Page*
+     page() const {
        return page_;
      }
 
-     inline uword current_address() const {
-       return current_address_;
+     inline uword
+     current_address() const {
+       return current_;
      }
 
-     inline Pointer* current_ptr() const {
+     inline Pointer*
+     current_ptr() const {
        return (Pointer*)current_address();
      }
     public:
-     explicit PageIterator(T* page):
-       page_(page),
-       current_address_(page->GetStartingAddress()) {
+     explicit PageIterator(const Page* page):
+      RawObjectPointerIterator(),
+      page_(page),
+      current_(page->GetStartingAddress()) {
      }
      ~PageIterator() override = default;
 
+     bool HasNext() const override {
+       return current_address() >= page()->GetStartingAddress() &&
+              current_address() <= page()->GetEndingAddress() &&
+              !current_ptr()->IsFree() &&
+              current_ptr()->GetSize() > 0;
+     }
+
      Pointer* Next() override {
        auto next = current_ptr();
-       current_address_ += next->GetTotalSize();
+       current_ += next->GetTotalSize();
        return next;
      }
    };
-  protected:
-   RelaxedAtomic<RawPageTag> tag_;
-   uword start_;
-
-   Page():
-    Section(),
-    tag_(0),
-    start_(0) {
-   }
-
-   Page(const RawPageTag tag, const uword start):
-    Section(),
-    tag_(tag),
-    start_(start) {
-   }
-
-   inline RawPageTag raw_tag() const {
-     return (RawPageTag)tag_;
-   }
-
-   inline void set_raw_tag(const RawPageTag& value) {
-     tag_ = value;
-   }
   public:
+   Page() = default;
+   Page(const word index, const uword start, const word size):
+    Section(start, size),
+    index_(index) {
+   }
    Page(const Page& rhs) = default;
    ~Page() override = default;
 
@@ -88,28 +78,44 @@ namespace poseidon {
    }
 
    PageIndex GetIndex() const {
-     return PageTag::Index::Decode(raw_tag());
+     return index_;
    }
 
    word GetSize() const override {
-     return PageTag::Size::Decode(raw_tag());
+     return size_;
    }
 
-   virtual bool IsNew() const {
-     return false;
+   bool VisitPointers(RawObjectVisitor* vis) override {
+     return IteratePointers<Page, PageIterator>(vis);
    }
 
-   virtual bool IsOld() const {
-     return false;
+   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IteratePointers<Page, PageIterator>(vis);
+   }
+
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+     return IterateMarkedPointers<Page, PageIterator>(vis);
+   }
+
+   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
+     return IterateMarkedPointers<Page, PageIterator>(vis);
    }
 
    Page& operator=(const Page& rhs) {
      if(&rhs == this)
        return *this;
      Section::operator=(rhs);
-     tag_ = rhs.raw_tag();
-     start_ = rhs.GetStartingAddress();
+     index_ = rhs.index_;
      return *this;
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const Page& value) {
+     stream << "Page(";
+     stream << "index=" << value.GetIndex() << ", ";
+     stream << "start=" << value.GetStartingAddressPointer() << ", ";
+     stream << "size=" << value.GetSize();
+     stream << ")";
+     return stream;
    }
  };
 }

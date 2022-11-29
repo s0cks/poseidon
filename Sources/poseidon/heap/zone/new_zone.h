@@ -37,7 +37,7 @@ namespace poseidon{
    Semispace tospace_;
 
    NewZone(const uword start_address, const int64_t size, const int64_t semi_size):
-    Zone(start_address, size),
+    Zone(start_address, size, flags::GetNewPageSize()),
     fromspace_(GetStartingAddress(), semi_size),
     tospace_(GetStartingAddress() + semi_size, semi_size),
     semisize_(semi_size) {

@@ -11,13 +11,10 @@ namespace poseidon{
    uword start_;
    word size_;
 
-   explicit Section(uword start, word size):
+   explicit Section(const uword start = 0, const word size = 0):
     Region(),
     start_(start),
     size_(size) {
-   }
-   Section():
-    Section(0, 0) {
    }
 
    void Protect(MemoryRegion::ProtectionMode mode);

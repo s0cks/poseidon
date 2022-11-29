@@ -36,7 +36,7 @@ namespace poseidon{
    FreeList free_list_;
 
    OldZone(const uword start_address, const int64_t size):
-    Zone(start_address, size),
+    Zone(start_address, size, flags::GetOldPageSize()),
     free_list_(start_address, size) {
      SetWritable();
      free_list_.Insert(start_address, size);
