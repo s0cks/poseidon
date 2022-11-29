@@ -71,7 +71,7 @@ namespace poseidon{
       return (uword)this;
     }
 
-    int64_t GetSize() const override {
+    word GetSize() const override {
       return tag().GetSize();
     }
 

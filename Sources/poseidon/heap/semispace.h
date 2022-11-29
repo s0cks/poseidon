@@ -91,7 +91,7 @@ namespace poseidon{
      return (uword)current_;
    }
 
-   int64_t GetSize() const override {
+   word GetSize() const override {
      return size_;
    }
 

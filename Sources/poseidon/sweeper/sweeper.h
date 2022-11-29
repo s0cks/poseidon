@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SWEEPER_H
 #define POSEIDON_SWEEPER_H
 
-#include "poseidon/heap/old_zone.h"
+#include "poseidon/heap/zone/old_zone.h"
 
 namespace poseidon {
  class Sweeper {

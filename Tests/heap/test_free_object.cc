@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "poseidon/heap/old_zone.h"
+#include "poseidon/heap/zone/old_zone.h"
 #include "poseidon/heap/free_object.h"
 
 namespace poseidon {

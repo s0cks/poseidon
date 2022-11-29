@@ -7,11 +7,24 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
 
 SET(PSDN_HEAP_PAGE_SOURCES
     poseidon/heap/page/page_tag.h
-    poseidon/heap/page/page.h poseidon/heap/page/page_table.h poseidon/type/all.h)
+    poseidon/heap/page/page.h
+    poseidon/heap/page/page_table.h
+    poseidon/heap/page/page_table.cc
+    poseidon/heap/page/new_page.h
+    poseidon/heap/page/new_page.cc
+    poseidon/heap/page/old_page.h
+    poseidon/heap/page/old_page.cc)
+SET(PSDN_HEAP_ZONE_SOURCES
+    poseidon/heap/zone/zone.h
+    poseidon/heap/zone/new_zone.h
+    poseidon/heap/zone/new_zone.cc
+    poseidon/heap/zone/old_zone.h
+    poseidon/heap/zone/old_zone.cc)
 
 ADD_LIBRARY(poseidon
             ${PROJECT_BINARY_DIR}/poseidon/poseidon.h poseidon/poseidon.cc
             ${PSDN_HEAP_PAGE_SOURCES}
+            ${PSDN_HEAP_ZONE_SOURCES}
             # allocator
             poseidon/allocator/allocator.h poseidon/allocator/allocator.cc
             # collector
@@ -22,11 +35,7 @@ ADD_LIBRARY(poseidon
             # heap
             poseidon/heap/heap.h poseidon/heap/heap.cc
             poseidon/heap/section.h
-            poseidon/heap/old_page.h
             poseidon/heap/semispace.h poseidon/heap/semispace.cc
-            poseidon/heap/zone.h
-            poseidon/heap/new_zone.h poseidon/heap/new_zone.cc
-            poseidon/heap/old_zone.h poseidon/heap/old_zone.cc
             # platform
             poseidon/platform/memory_region.h poseidon/platform/memory_region.cc
             poseidon/platform/memory_region_linux.cc
@@ -49,10 +58,7 @@ ADD_LIBRARY(poseidon
             poseidon/wsq.h poseidon/heap/section.cc
             poseidon/reference.h
             poseidon/reference.cc
-            poseidon/heap/new_page.h
-            poseidon/heap/new_page.cc
             poseidon/region.h
-            poseidon/heap/old_page.cc
             poseidon/heap/free_object.h
             poseidon/sweeper/sweeper_stats.h
             poseidon/sweeper/sweeper_visitor.h

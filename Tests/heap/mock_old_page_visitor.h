@@ -2,7 +2,7 @@
 #define POSEIDON_MOCK_OLD_PAGE_VISITOR_H
 
 #include <gmock/gmock.h>
-#include "poseidon/heap/old_page.h"
+#include "poseidon/heap/page/old_page.h"
 
 namespace poseidon {
  class MockOldPageVisitor : public OldPageVisitor {

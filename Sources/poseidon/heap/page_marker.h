@@ -2,8 +2,8 @@
 #define POSEIDON_PAGE_MARKER_H
 
 #include "poseidon/heap/page/page.h"
-#include "poseidon/heap/new_page.h"
-#include "poseidon/heap/old_page.h"
+#include "poseidon/heap/page/old_page.h"
+#include "poseidon/heap/page/new_page.h"
 
 namespace poseidon {
  template<class Z>

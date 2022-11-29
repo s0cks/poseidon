@@ -37,7 +37,7 @@ namespace poseidon {
      return (void*)GetEndingAddress();
    }
 
-   virtual int64_t GetSize() const = 0;
+   virtual word GetSize() const = 0;
 
    virtual bool Contains(const uword address) const {
      return GetStartingAddress() <= address

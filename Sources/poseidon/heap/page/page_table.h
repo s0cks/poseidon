@@ -9,26 +9,41 @@ namespace poseidon {
   protected:
    BitSet marked_;
    uword start_;
-   int64_t size_;
-   int64_t page_size_;
+   word size_;
+   word page_size_;
   public:
-   PageTable() = default;
+   PageTable(uword start, word size, word page_size):
+    marked_(size / page_size),
+    start_(start),
+    size_(size),
+    page_size_(page_size) {
+   }
    ~PageTable() override = default;
 
    uword GetStartingAddress() const override {
      return start_;
    }
 
-   int64_t GetPageSize() const {
+   word GetPageSize() const {
      return page_size_;
    }
 
-   int64_t GetSize() const override {
+   word GetSize() const override {
      return size_;
+   }
+
+   word GetNumberOfPages() const {
+     return size_ / page_size_;
    }
 
    BitSet marked() const {
      return marked_;
+   }
+
+   void MarkAllIntersectedBy(Region* region);
+
+   friend std::ostream& operator<<(std::ostream& stream, const PageTable& table) {
+     return stream << table.marked();
    }
  };
 }

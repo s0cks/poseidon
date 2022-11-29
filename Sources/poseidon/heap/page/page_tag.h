@@ -8,7 +8,7 @@
 namespace poseidon {
  typedef uint64_t RawPageTag;
  typedef int64_t PageIndex;
- typedef ObjectSize PageSize;
+ typedef word PageSize;
 
  static constexpr const RawPageTag kInvalidPageTag = 0x0;
 

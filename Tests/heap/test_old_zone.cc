@@ -3,7 +3,7 @@
 
 #include "helpers.h"
 #include "mock_raw_object_visitor.h"
-#include "poseidon/heap/old_zone.h"
+#include "poseidon/heap/zone/old_zone.h"
 #include "heap/mock_old_page_visitor.h"
 
 #include "poseidon/type/int.h"

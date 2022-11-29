@@ -1,8 +1,8 @@
 #ifndef POSEIDON_MARKER_H
 #define POSEIDON_MARKER_H
 
-#include "poseidon/heap/new_zone.h"
-#include "poseidon/heap/old_zone.h"
+#include "poseidon/heap/zone/new_zone.h"
+#include "poseidon/heap/zone/old_zone.h"
 #include "poseidon/marker/marker_stats.h"
 
 namespace poseidon {

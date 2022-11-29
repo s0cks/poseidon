@@ -8,11 +8,30 @@
 namespace poseidon{
  class Section : public Region {
   protected:
-   Section() = default;
+   uword start_;
+   word size_;
+
+   explicit Section(uword start, word size):
+    Region(),
+    start_(start),
+    size_(size) {
+   }
+   Section():
+    Section(0, 0) {
+   }
 
    void Protect(MemoryRegion::ProtectionMode mode);
   public:
    ~Section() override = default;
+
+   uword GetStartingAddress() const override {
+     return start_;
+   }
+
+   word GetSize() const override {
+     return size_;
+   }
+
    virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
    virtual bool VisitMarkedPointers(RawObjectVisitor* vis) = 0;
 
@@ -59,11 +78,11 @@ namespace poseidon{
      return GetCurrentAddress() == GetEndingAddress();
    }
 
-   virtual int64_t GetAllocatableSize() const {
+   virtual word GetAllocatableSize() const {
      return GetSize();
    }
 
-   virtual int64_t GetNumberOfBytesAllocated() const{
+   virtual word GetNumberOfBytesAllocated() const{
      return static_cast<int64_t>(GetCurrentAddress() - GetStartingAddress());
    }
 
@@ -71,7 +90,7 @@ namespace poseidon{
      return GetPercentageOf(GetNumberOfBytesAllocated(), GetSize());
    }
 
-   virtual int64_t GetNumberOfBytesRemaining() const{
+   virtual word GetNumberOfBytesRemaining() const{
      return GetSize() - GetNumberOfBytesAllocated();
    }
 

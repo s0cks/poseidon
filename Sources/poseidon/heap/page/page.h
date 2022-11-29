@@ -91,7 +91,7 @@ namespace poseidon {
      return PageTag::Index::Decode(raw_tag());
    }
 
-   int64_t GetSize() const override {
+   word GetSize() const override {
      return PageTag::Size::Decode(raw_tag());
    }
 

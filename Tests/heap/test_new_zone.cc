@@ -2,7 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "helpers.h"
-#include "poseidon/heap/new_zone.h"
+#include "poseidon/heap/zone/new_zone.h"
 #include "heap/mock_new_page_visitor.h"
 #include "assertions/type_assertions.h"
 #include "mock_raw_object_visitor.h"

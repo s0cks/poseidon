@@ -2,7 +2,7 @@
 #define POSEIDON_MOCK_NEW_PAGE_VISITOR_H
 
 #include <gmock/gmock.h>
-#include "poseidon/heap/new_page.h"
+#include "poseidon/heap/page/new_page.h"
 
 namespace poseidon {
  class MockNewPageVisitor : public NewPageVisitor {

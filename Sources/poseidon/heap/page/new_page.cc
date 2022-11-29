@@ -1,4 +1,4 @@
-#include "poseidon/heap/new_page.h"
+#include "poseidon/heap/page/new_page.h"
 
 namespace poseidon {
  bool NewPage::VisitPointers(poseidon::RawObjectVisitor* vis){

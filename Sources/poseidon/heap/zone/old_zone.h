@@ -3,8 +3,8 @@
 
 #include "poseidon/flags.h"
 #include "poseidon/bitset.h"
-#include "poseidon/heap/zone.h"
-#include "poseidon/heap/old_page.h"
+#include "poseidon/heap/zone/zone.h"
+#include "poseidon/heap/page/old_page.h"
 #include "poseidon/heap/freelist.h"
 
 namespace poseidon{

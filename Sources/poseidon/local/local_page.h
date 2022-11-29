@@ -89,7 +89,7 @@ namespace poseidon {
      return (void*)GetCurrentAddress();
    }
 
-   int64_t GetSize() const override {
+   word GetSize() const override {
      return size_;
    }
 

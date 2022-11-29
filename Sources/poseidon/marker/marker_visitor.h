@@ -1,7 +1,7 @@
 #ifndef POSEIDON_MARKER_VISITOR_H
 #define POSEIDON_MARKER_VISITOR_H
 
-#include "poseidon/heap/zone.h"
+#include "poseidon/heap/zone/zone.h"
 #include "poseidon/heap/page/page.h"
 #include "poseidon/marker/marker.h"
 

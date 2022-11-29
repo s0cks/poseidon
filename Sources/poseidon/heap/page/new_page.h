@@ -24,10 +24,27 @@ namespace poseidon {
    friend class NewPageTest;
    friend class SerialMarkerTest;
   public:
-   class NewPageIterator : public PageIterator<NewPage> {
+   class NewPageIterator : public RawObjectPointerIterator {
+    private:
+     const NewPage* page_;
+     uword current_;
+
+     inline const NewPage* page() const {
+       return page_;
+     }
+
+     inline uword current_address() const {
+       return current_;
+     }
+
+     inline Pointer* current_ptr() const {
+       return (Pointer*) current_address();
+     }
     public:
-     explicit NewPageIterator(NewPage* page):
-       PageIterator<NewPage>(page) {
+     explicit NewPageIterator(const NewPage* page):
+       RawObjectPointerIterator(),
+       page_(page),
+       current_(page->GetStartingAddress()) {
      }
      ~NewPageIterator() override = default;
 
@@ -35,7 +52,14 @@ namespace poseidon {
        return current_address() > 0 &&
               current_address() < page()->GetEndingAddress() &&
               current_ptr()->IsNew() &&
+              !current_ptr()->IsFree() &&
               current_ptr()->GetSize() > 0;
+     }
+
+     Pointer* Next() override {
+       auto next = current_ptr();
+       current_ += next->GetTotalSize();
+       return next;
      }
    };
   public: //TODO: reduce access
@@ -49,7 +73,7 @@ namespace poseidon {
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
-   int64_t GetSize() const override {
+   word GetSize() const override {
      return GetNewPageSize();
    }
 

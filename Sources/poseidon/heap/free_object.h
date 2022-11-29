@@ -95,7 +95,7 @@ namespace poseidon {
      return GetStartingAddress();
    }
 
-   ObjectSize GetSize() const override {
+   word GetSize() const override {
      return PointerTag::SizeTag::Decode(raw_tag());
    }
 

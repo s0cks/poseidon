@@ -6,7 +6,7 @@
 #include "marker/mock_marker.h"
 #include "helpers/alloc_helpers.h"
 #include "poseidon/local/local.h"
-#include "poseidon/heap/new_page.h"
+#include "poseidon/heap/page/new_page.h"
 #include "poseidon/marker/marker_serial.h"
 
 #include "matchers/is_pointer_to.h"
