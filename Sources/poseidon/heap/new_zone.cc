@@ -22,7 +22,7 @@ namespace poseidon{
  }
 
  uword NewZone::TryAllocateBytes(const int64_t size) {
-   if(size <= 0 || size >= GetNewPageSize()) //TODO: cleanup
+   if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) //TODO: cleanup
      return UNALLOCATED;
 
    uword ptr_address = UNALLOCATED;
@@ -34,8 +34,9 @@ namespace poseidon{
        PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      }
    }
-   auto ptr = new ((void*) ptr_address)Pointer(PointerTag::New(size));
+   auto ptr = (Pointer*)ptr_address;
    MarkAllIntersectedBy(*ptr);
-   return ptr->GetStartingAddress();
+   memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
+   return ptr->GetObjectPointerAddress();
  }
 }

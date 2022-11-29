@@ -8,7 +8,7 @@
 
 #include "poseidon/type/int.h"
 #include "matchers/is_pointer_to.h"
-#include "assertions/int_assertions.h"
+#include "assertions/type_assertions.h"
 
 namespace poseidon {
  using namespace ::testing;

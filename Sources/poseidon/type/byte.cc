@@ -6,40 +6,10 @@ namespace poseidon {
  Class* Byte::kClass = nullptr;
  Field* Byte::kValueField = nullptr;
 
-#ifndef UNALLOCATED
-#define UNALLOCATED 0 //TODO: cleanup
-#endif // UNALLOCATED
-
- void* Byte::operator new(const size_t) noexcept {
-   if(kClass == nullptr)
-     LOG(FATAL) << "Byte class not initialized";
-   auto heap = Heap::GetCurrentThreadHeap();
-   auto address = heap->TryAllocate(kClass->GetAllocationSize());
-   if(address == UNALLOCATED)
-     LOG(FATAL) << "cannot allocate Byte";
-   return ((Pointer*)address)->GetPointer();
- }
-
- void Byte::operator delete(void* ptr) noexcept {
-   // do nothing
- }
-
  Class* Byte::CreateClass() {
-   auto cls = kClass = new Class("Byte", kTypeId, Class::kNumberClass);
+   LOG_IF(FATAL, kClass != nullptr) << kClassName << " class is already initialized";
+   auto cls = kClass = new Class(kClassName, kTypeId, Class::kNumberClass);
    kValueField = cls->CreateField("value", cls);
    return cls;
- }
-
- Byte::Byte(const RawByte value):
-  Instance(kClass, kTypeId) {
-   Set(value);
- }
-
- RawByte Byte::Get() const {
-   return *((RawByte*) FieldAddrAtOffset(kValueField->GetOffset()));
- }
-
- void Byte::Set(const RawByte value) {
-   *((RawByte*) FieldAddrAtOffset(kValueField->GetOffset())) = value;
  }
 }

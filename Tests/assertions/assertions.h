@@ -8,6 +8,6 @@ namespace poseidon {
 }
 
 #include "assertions/pointers_eq.h"
-#include "assertions/int_assertions.h"
+#include "assertions/type_assertions.h"
 
 #endif // POSEIDON_ASSERTIONS_H

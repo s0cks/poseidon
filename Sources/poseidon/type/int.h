@@ -13,12 +13,22 @@ namespace poseidon {
   protected:
    static Field* kValueField;
 
-   explicit Int(RawInt value);
-   void Set(RawInt value);
+   explicit Int(RawInt value):
+    Instance(kClass, kTypeId) {
+     Set(value);
+   }
   public:
    ~Int() override = default;
 
-   RawInt Get() const;
+   void Set(const RawInt value) {
+     CHECK_CLASS_IS_INITIALIZED(FATAL);
+     *((RawInt*) FieldAddrAtOffset(kValueField->GetOffset())) = value;
+   }
+
+   RawInt Get() const {
+     CHECK_CLASS_IS_INITIALIZED(FATAL);
+     return *((RawInt*) FieldAddrAtOffset(kValueField->GetOffset()));
+   }
 
    friend std::ostream& operator<<(std::ostream& stream, const Int& value) {
      stream << "Int(";
@@ -45,18 +55,24 @@ namespace poseidon {
 
    DEFINE_OBJECT(Int);
   public:
-   template<class Z>
-   void* operator new(size_t, Z* zone) noexcept {
-     if(kClass == nullptr)
-       LOG(FATAL) << "Int class not initialized";
-     auto address = zone->TryAllocateBytes(kClass->GetAllocationSize());
-     if(address == UNALLOCATED)
-       LOG(FATAL) << "cannot allocate Int";
+   void* operator new(size_t) noexcept {
+     CHECK_CLASS_IS_INITIALIZED(FATAL);
+     LOG_IF(FATAL, Heap::CurrentThreadHasHeap()) << "current thread `" << GetCurrentThreadName() << "` does not have a heap";
+     auto heap = Heap::GetCurrentThreadHeap();
+     auto address = heap->TryAllocateBytes(kClass->GetAllocationSize());
+     LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate new " << kClassName;
      return (void*)address;
    }
 
-   void* operator new(size_t) noexcept;
-   void operator delete(void*) noexcept;
+   template<class Z>
+   void* operator new(size_t, Z* zone) noexcept {
+     CHECK_CLASS_IS_INITIALIZED(FATAL);
+     auto address = zone->TryAllocateBytes(kClass->GetAllocationSize());
+     LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate new " << kClassName;
+     return (void*)address;
+   }
+
+   void operator delete(void*) noexcept { /* do nothing */ }
 
    static inline int
    Compare(const Int& lhs, const Int& rhs) {
@@ -68,17 +84,13 @@ namespace poseidon {
      return 0;
    }
 
-   static inline Int* New(const RawInt value) {
-     return new Int(value);
-   }
-
-   static inline Int* New() {
-     return New(0);
-   }
-
    template<class Z>
    static inline Int* TryAllocateIn(Z* zone, const RawInt value = 0) {
      return new (zone)Int(value);
+   }
+
+   static inline Int* New(const RawInt value = 0) {
+     return new Int(value);
    }
  };
 }

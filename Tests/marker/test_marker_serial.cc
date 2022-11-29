@@ -10,6 +10,7 @@
 #include "poseidon/marker/marker_serial.h"
 
 #include "matchers/is_pointer_to.h"
+#include "assertions/type_assertions.h"
 
 namespace poseidon {
  using namespace ::testing;
@@ -27,60 +28,60 @@ namespace poseidon {
    ~SerialMarkerTest() override = default;
  };
 
+ static inline bool
+ MarkPointer(Pointer* raw_ptr) {
+   DLOG(INFO) << "marking " << (*raw_ptr) << "....";
+   raw_ptr->SetMarkedBit();
+   return raw_ptr->IsMarked();
+ }
+
  TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass) {
    MemoryRegion page_region(LocalPage::CalculateLocalPageSize(64));
    ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(new LocalPage(page_region)));
 
-   static const int64_t kNewZoneTotalSize = GetNewZoneSize();
-   MemoryRegion new_zone_region(kNewZoneTotalSize);
-   ASSERT_TRUE(new_zone_region.Protect(MemoryRegion::kReadWrite));
-   const auto new_zone = NewZone::New(new_zone_region);
+   NewZone new_zone(GetNewZoneSize(), GetNewZoneSemispaceSize());
+   ASSERT_NO_FATAL_FAILURE(new_zone.SetWritable());
 
-   static const int64_t kOldZoneTotalSize = GetOldZoneSize();
-   MemoryRegion old_zone_region(kOldZoneTotalSize);
-   ASSERT_TRUE(old_zone_region.Protect(MemoryRegion::kReadWrite));
-   const auto old_zone = OldZone::From(old_zone_region);
-
-   static constexpr const word kAValue = 1394;
-   Local<Long> a(Long::New(kAValue)->raw_ptr());
-   ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsNewLong(a, kAValue));
-   ASSERT_FALSE(IsMarked(a));
-
-   static constexpr const word kBValue = 595;
-   Local<word> b(TryAllocateWord(old_zone, kBValue));
-   ASSERT_TRUE(IsAllocated(b));
-   ASSERT_TRUE(IsOldWord(b, kBValue));
-   ASSERT_FALSE(IsMarked(b));
-
-   static constexpr const word kCValue = 3848;
-   Local<word> c(TryAllocateWord(new_zone, kCValue));
-   ASSERT_TRUE(IsAllocated(c));
-   ASSERT_TRUE(IsNewWord(c, kCValue));
-   ASSERT_FALSE(IsMarked(c));
+   OldZone old_zone(GetOldZoneSize());
+   ASSERT_NO_FATAL_FAILURE(old_zone.SetWritable());
 
    MockMarker marker;
-   EXPECT_CALL(marker, Mark(IsPointerTo(a.raw_ptr())))
-    .WillOnce([](Pointer* ptr) {
-      DLOG(INFO) << "marking " << (*ptr);
-      ptr->SetMarkedBit();
-      return ptr->IsMarked();
-    });
-   EXPECT_CALL(marker, Mark(IsPointerTo(b.raw_ptr())))
-    .Times(1)
-    .WillOnce([](Pointer* ptr) {
-      DLOG(INFO) << "marking " << (*ptr);
-      ptr->SetMarkedBit();
-      return ptr->IsMarked();
-    });
-   EXPECT_CALL(marker, Mark(IsPointerTo(c.raw_ptr())))
-    .Times(1)
-    .WillOnce([](Pointer* ptr) {
-      DLOG(INFO) << "marking " << (*ptr);
-      ptr->SetMarkedBit();
-      return ptr->IsMarked();
-    });
+
+   static constexpr const RawLong kAValue = 1394;
+   auto raw_a = Long::TryAllocateIn(&new_zone, kAValue);
+   ASSERT_NE(raw_a, nullptr);
+   ASSERT_TRUE(IsLong(raw_a->raw_ptr()));
+   ASSERT_TRUE(LongEq(kAValue, raw_a));
+   Local<Long> a(raw_a->raw_ptr());
+   ASSERT_FALSE(IsMarked(a));
+   ON_CALL(marker, Mark(IsPointerTo(raw_a->raw_ptr())))
+    .WillByDefault(MarkPointer);
+   EXPECT_CALL(marker, Mark(IsPointerTo(raw_a->raw_ptr())))
+    .WillOnce(Return(true));
+
+   static constexpr const RawLong kBValue = 595;
+   auto raw_b = Long::TryAllocateIn(&old_zone, kBValue);
+   ASSERT_NE(raw_b, nullptr);
+   ASSERT_TRUE(IsLong(raw_b->raw_ptr()));
+   ASSERT_TRUE(LongEq(kBValue, raw_b));
+   Local<Long> b(raw_b->raw_ptr());
+   ASSERT_FALSE(IsMarked(b));
+   ON_CALL(marker, Mark(IsPointerTo(raw_b->raw_ptr())))
+    .WillByDefault(MarkPointer);
+   EXPECT_CALL(marker, Mark(IsPointerTo(raw_b->raw_ptr())))
+    .WillOnce(Return(true));
+
+   static constexpr const RawLong kCValue = 3848;
+   auto raw_c = Long::TryAllocateIn(&old_zone, kCValue);
+   ASSERT_NE(raw_c, nullptr);
+   ASSERT_TRUE(IsLong(raw_c->raw_ptr()));
+   ASSERT_TRUE(LongEq(kCValue, raw_c));
+   Local<Long> c(raw_c->raw_ptr());
+   ON_CALL(marker, Mark(IsPointerTo(raw_c->raw_ptr())))
+    .WillByDefault(MarkPointer);
+   EXPECT_CALL(marker, Mark(IsPointerTo(raw_c->raw_ptr())))
+    .WillOnce(Return(true));
 
    ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
 

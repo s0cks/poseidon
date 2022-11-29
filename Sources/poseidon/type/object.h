@@ -23,12 +23,16 @@ namespace poseidon {
 
 #define DEFINE_OBJECT(Name) \
  public:                    \
+  static constexpr const char* kClassName = #Name; \
   static const constexpr TypeId kTypeId = TypeId::k##Name##TypeId; \
   TypeId GetTypeId() const override { return kTypeId; }            \
   static Class* GetClass() { return kClass; }                      \
  private:                   \
   static Class* kClass;     \
   static Class* CreateClass();
+
+#define CHECK_CLASS_IS_INITIALIZED(Severity) \
+  LOG_IF(FATAL, kClass == nullptr) << "Class " << kClassName << " is not initialized";
 }
 
 #endif // POSEIDON_OBJECT_H

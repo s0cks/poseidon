@@ -59,6 +59,7 @@ namespace poseidon{
    explicit OldZone(const int64_t size):
      OldZone(MemoryRegion(size)) {
    }
+   OldZone(const OldZone& rhs) = delete;
    ~OldZone() override = default;
 
    inline FreeList& free_list() { //TODO: visible for testing

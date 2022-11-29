@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
 
 SET(PSDN_HEAP_PAGE_SOURCES
     poseidon/heap/page/page_tag.h
-    poseidon/heap/page/page.h poseidon/heap/page/page_table.h)
+    poseidon/heap/page/page.h poseidon/heap/page/page_table.h poseidon/type/all.h)
 
 ADD_LIBRARY(poseidon
             ${PROJECT_BINARY_DIR}/poseidon/poseidon.h poseidon/poseidon.cc

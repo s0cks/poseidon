@@ -4,8 +4,11 @@
 #include "helpers.h"
 #include "poseidon/heap/new_zone.h"
 #include "heap/mock_new_page_visitor.h"
-
+#include "assertions/type_assertions.h"
 #include "mock_raw_object_visitor.h"
+
+#include "matchers/is_pointer_to.h"
+#include "helpers/type_alloc_helpers.h"
 
 namespace poseidon{
  using namespace ::testing;
@@ -125,69 +128,42 @@ namespace poseidon{
    ASSERT_EQ(tospace, zone->fromspace());
  }
 
- TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeLessThanZero) {
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-   auto ptr = TryAllocateBytes(zone, -1);
-   ASSERT_EQ(ptr, UNALLOCATED);
- }
+#define DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(NewZoneTest, TestName, NewZone, GetNewZoneSize(), NumberOfBytes)
 
- TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeEqualToZero) {
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-   auto ptr = TryAllocateBytes(zone, 0);
-   ASSERT_EQ(ptr, UNALLOCATED);
- }
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeLessThanZero, -1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZero, 0);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeLessThanMin, NewZone::GetMinimumObjectSize() - 1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZoneSize, GetNewZoneSize());
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanZoneSize, GetNewZoneSize() + 1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanMax, NewZone::GetMaximumObjectSize() + 1);
 
- TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeEqualToPageSize) {
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-   auto ptr = TryAllocateBytes(zone, GetNewPageSize());
-   ASSERT_EQ(ptr, UNALLOCATED);
- }
+#define DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
+ DEFINE_TRY_ALLOCATE_BYTES_PASS_TEST(NewZoneTest, TestName, NewZone, GetNewZoneSize(), NumberOfBytes)
 
- TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeEqualToZoneSize) {
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-   auto ptr = TryAllocateBytes(zone, GetNewZoneSize());
-   ASSERT_EQ(ptr, UNALLOCATED);
- }
+ DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMin, NewZone::GetMinimumObjectSize());
+ DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMax, NewZone::GetMaximumObjectSize());
+ DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsWordSize, kWordSize);
 
- TEST_F(NewZoneTest, TestTryAllocate_WillFail_SizeGreaterThanZoneSize) {
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-   auto ptr = TryAllocateBytes(zone, GetNewZoneSize() + 1);
-   ASSERT_EQ(ptr, UNALLOCATED);
- }
+ TEST_F(NewZoneTest, TestTryAllocateBytes_WillPass){
+   NewZone zone(GetNewZoneSize());
+   ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
 
- TEST_F(NewZoneTest, TestTryAllocate_WillPass){
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-   Semispace& fromspace = zone->fromspace();
+   Semispace& fromspace = zone.fromspace();
 
-   static const constexpr word kDefaultWordValue = 42;
-   auto ptr = TryAllocateWord(zone, kDefaultWordValue);
-   ASSERT_TRUE(IsAllocated(ptr));
-   ASSERT_TRUE(IsNew(ptr));
-   ASSERT_FALSE(IsOld(ptr));
-   ASSERT_FALSE(IsMarked(ptr));
-   ASSERT_FALSE(IsRemembered(ptr));
-   ASSERT_FALSE(IsForwarding(ptr));
-   ASSERT_TRUE(IsWord(ptr, kDefaultWordValue));
+   static const constexpr RawLong kDefaultWordValue = 42;
+   auto ptr = Long::TryAllocateIn(&zone, kDefaultWordValue);
+   ASSERT_NE(ptr, nullptr);
+   ASSERT_TRUE(IsLong(ptr->raw_ptr()));
+   ASSERT_TRUE(LongEq(kDefaultWordValue, ptr));
 
    // the object should be inside the fromspace
-   ASSERT_TRUE(fromspace.Intersects(*ptr));
+   ASSERT_TRUE(fromspace.Intersects(*ptr->raw_ptr()));
 
    // the object should be in the first page, and the page should be marked
    static const int64_t kFirstPageIndex = 0;
-   ASSERT_TRUE(zone->IsMarked(kFirstPageIndex));
-   ASSERT_TRUE(zone->pages(kFirstPageIndex)->Intersects(*ptr));
+   ASSERT_TRUE(zone.IsMarked(kFirstPageIndex));
+   ASSERT_TRUE(zone.pages(kFirstPageIndex)->Intersects(*ptr->raw_ptr()));
  }
 
  TEST_F(NewZoneTest, TestVisitPages) {
@@ -227,56 +203,46 @@ namespace poseidon{
    ASSERT_NO_FATAL_FAILURE(zone->VisitMarkedPages(&visitor));
  }
 
- TEST_F(NewZoneTest, TestVisitPointers) {
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-
-   static const constexpr word kAValue = 124;
-   auto a = TryAllocateWord(zone, kAValue);
-   ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsNewWord(a, kAValue));
-
-   static const constexpr word kBValue = 512;
-   auto b = TryAllocateWord(zone, kBValue);
-   ASSERT_TRUE(IsAllocated(b));
-   ASSERT_TRUE(IsNewWord(b, kBValue));
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_ContiguousUnmarked) {
+   NewZone zone(GetNewZoneSize());
+   ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
 
    MockRawObjectVisitor visitor;
-   EXPECT_CALL(visitor, Visit(a))
-    .Times(1)
-    .WillOnce(Return(true));
-   EXPECT_CALL(visitor, Visit(b))
-    .Times(1)
-    .WillOnce(Return(true));
-   ASSERT_NO_FATAL_FAILURE(zone->VisitPointers(&visitor));
+   static constexpr const int64_t kNumberOfPointers = 4;
+   GenerateUnmarkedLongsInZone(&zone, kNumberOfPointers);
+   EXPECT_CALL(visitor, Visit(_))
+    .Times(kNumberOfPointers);
+   ASSERT_TRUE(zone.VisitPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_ContiguousMarkedAndUnmarked) {
+   NewZone zone(GetNewZoneSize());
+   ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
+
+   MockRawObjectVisitor visitor;
+   static constexpr const int64_t kNumberOfUnmarkedPointers = 4;
+   GenerateUnmarkedLongsInZone(&zone, kNumberOfUnmarkedPointers);
+   static constexpr const int64_t kNumberOfMarkedPointers = 3;
+   GenerateMarkedLongsInZone(&zone, kNumberOfMarkedPointers);
+
+   EXPECT_CALL(visitor, Visit(_))
+     .Times(kNumberOfUnmarkedPointers + kNumberOfMarkedPointers);
+   ASSERT_TRUE(zone.VisitPointers(&visitor));
  }
 
  TEST_F(NewZoneTest, TestVisitMarkedPointers) {
-   MemoryRegion region(GetNewZoneSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto zone = NewZone::New(region);
-   static const constexpr int64_t kNumberOfPointers = 3;
-   static const constexpr int64_t kNumberOfMarkedPointers = 3;
-
-   for(auto idx = 0; idx < kNumberOfPointers; idx++){
-     auto ptr = TryAllocateWord(zone, idx);
-     ASSERT_TRUE(IsAllocated(ptr));
-     ASSERT_TRUE(IsNew(ptr));
-     ASSERT_TRUE(IsWord(ptr, idx));
-   }
-
-   for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto ptr = TryAllocateMarkedWord(zone, idx);
-     ASSERT_TRUE(IsAllocated(ptr));
-     ASSERT_TRUE(IsNew(ptr));
-     ASSERT_TRUE(IsMarked(ptr));
-     ASSERT_TRUE(IsWord(ptr, idx));
-   }
+   NewZone zone(GetNewZoneSize());
+   ASSERT_NO_FATAL_FAILURE(zone.SetWritable());
 
    MockRawObjectVisitor visitor;
-   EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfMarkedPointers);
-   ASSERT_NO_FATAL_FAILURE(zone->VisitMarkedPointers(&visitor));
+   static const constexpr int64_t kNumberOfPointers = 4;
+   GenerateUnmarkedLongsInZone(&zone, kNumberOfPointers);
+
+   static constexpr const int64_t kNumberOfMarkedPointers = 3;
+   GenerateMarkedLongsInZone(&zone, kNumberOfMarkedPointers);
+
+   EXPECT_CALL(visitor, Visit(_))
+    .Times(kNumberOfMarkedPointers);
+   ASSERT_NO_FATAL_FAILURE(zone.VisitMarkedPointers(&visitor));
  }
 }

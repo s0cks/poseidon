@@ -26,6 +26,8 @@ namespace poseidon {
  };
 
  TEST_F(SerialSweeperTest, TestSweep_WillPass_SweepsNothing) {
+
+
    MemoryRegion region(GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);

@@ -66,7 +66,7 @@ finish_allocation:
    return AllocateOldObject(size);//TODO: refactor
  }
 
- uword Heap::TryAllocate(int64_t size){
+ uword Heap::TryAllocateBytes(const ObjectSize size){
    if(size < kWordSize || size > GetOldPageSize())
      return UNALLOCATED;
 

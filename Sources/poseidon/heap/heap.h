@@ -66,7 +66,11 @@ namespace poseidon{
      return old_zone_;
    }
 
-   uword TryAllocate(int64_t size);
+   uword TryAllocateBytes(ObjectSize size);
+
+   uword TryAllocate(const ObjectSize size) {
+     return TryAllocateBytes(size); //TODO: remove
+   }
 
    Heap& operator=(const Heap& rhs) = delete;
 

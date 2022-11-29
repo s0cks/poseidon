@@ -8,11 +8,17 @@
 
 namespace poseidon {
  class MockRawObjectVisitor : public RawObjectVisitor{
+  private:
+   static inline bool
+   VisitPointer(Pointer* raw_ptr) {
+     DLOG(INFO) << "visiting " << (*raw_ptr);
+     return true;
+   }
   public:
    MockRawObjectVisitor():
      RawObjectVisitor() {
-     ON_CALL(*this, Visit)
-       .WillByDefault(::testing::Return(true));
+     ON_CALL(*this, Visit(::testing::_))
+       .WillByDefault(VisitPointer);
    }
    ~MockRawObjectVisitor() override = default;
 

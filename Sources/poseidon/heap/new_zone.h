@@ -27,9 +27,10 @@ namespace poseidon{
 
      bool HasNext() const override {
        return current_address() > 0 &&
+              current_address() >= zone()->GetStartingAddress() &&
               current_address() < zone()->GetEndingAddress() &&
               current_ptr()->IsNew() &&
-              current_ptr()->GetSize() > 0;
+              !current_ptr()->IsFree();
      }
    };
 
@@ -53,6 +54,12 @@ namespace poseidon{
    }
   public:
    NewZone() = delete;
+   explicit NewZone(const MemoryRegion& region, const int64_t semi_size = GetNewZoneSemispaceSize()):
+    NewZone(region.GetStartingAddress(), region.GetSize(), semi_size) {
+   }
+   explicit NewZone(const int64_t size, const int64_t semi_size = GetNewZoneSemispaceSize()):
+    NewZone(MemoryRegion(size), semi_size) {
+   }
    NewZone(const NewZone& rhs) = delete;
    ~NewZone() override = default;
 
@@ -126,6 +133,16 @@ namespace poseidon{
    }
   public:
    static NewZone* New(const MemoryRegion& region);
+
+   static constexpr ObjectSize
+   GetMinimumObjectSize() {
+     return kWordSize;
+   }
+
+   static constexpr ObjectSize
+   GetMaximumObjectSize() {
+     return Semispace::GetMaximumObjectSize();
+   }
  };
 }
 
