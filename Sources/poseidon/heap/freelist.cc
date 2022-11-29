@@ -1,8 +1,7 @@
+#include "poseidon/type/class.h"
 #include "poseidon/heap/freelist.h"
 
 namespace poseidon{
-#define UNALLOCATED 0 //TODO: cleanup
-
  bool FreeList::VisitFreePointers(FreeObjectVisitor* vis){
    FreeListIterator iterator(this);
    while(iterator.HasNext()) {
@@ -14,7 +13,7 @@ namespace poseidon{
    return true;
  }
 
- uword FreeList::TryAllocate(const ObjectSize& size) {
+ Pointer* FreeList::TryAllocatePointer(const word size) {
    if(size <= 0 || size > flags::GetOldZoneSize())
      return UNALLOCATED;
 
@@ -36,7 +35,18 @@ namespace poseidon{
        return UNALLOCATED; //TODO: add ptr back to freelist
      }
    }
-   return free_ptr->GetStartingAddress();
+   return new (free_ptr->GetStartingAddressPointer()) Pointer(PointerTag::Old(size));
+ }
+
+ uword FreeList::TryAllocateBytes(const word size) {
+   auto new_ptr = TryAllocatePointer(size);
+   if(new_ptr == UNALLOCATED)
+     return UNALLOCATED;
+   return new_ptr->GetObjectPointerAddress();
+ }
+
+ uword FreeList::TryAllocateClassBytes(Class* cls) {
+   return TryAllocateBytes(cls->GetAllocationSize());
  }
 
  FreeObject* FreeList::FindFirstFit(ObjectSize size) {

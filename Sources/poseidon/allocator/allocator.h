@@ -19,7 +19,7 @@ namespace poseidon{
    Allocate(int64_t size){
      auto heap = Heap::GetCurrentThreadHeap();
      PSDN_ASSERT(heap != nullptr);
-     return heap->TryAllocate(size);
+     return heap->TryAllocateBytes(size);
    }
 
    static inline void*

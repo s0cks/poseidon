@@ -43,7 +43,7 @@ namespace poseidon {
      CHECK_CLASS_IS_INITIALIZED(FATAL);
      LOG_IF(FATAL, !Heap::CurrentThreadHasHeap()) << "current thread `" << GetCurrentThreadName() << "` does not have a heap";
      auto heap = Heap::GetCurrentThreadHeap();
-     auto address = heap->TryAllocateBytes(kClass->GetAllocationSize());
+     auto address = heap->TryAllocateClassBytes(kClass);
      LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate new " << kClassName;
      return (void*) address;
    }
@@ -51,7 +51,7 @@ namespace poseidon {
    template<class Z>
    void* operator new(size_t, Z* zone) noexcept {
      CHECK_CLASS_IS_INITIALIZED(FATAL);
-     auto address = zone->TryAllocateBytes(kClass->GetAllocationSize());
+     auto address = zone->TryAllocateClassBytes(kClass);
      LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate new " << kClassName;
      return (void*) address;
    }

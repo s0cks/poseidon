@@ -71,8 +71,19 @@ namespace poseidon{
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
 
-   uword TryAllocateBytes(ObjectSize size);
+   Pointer* TryAllocatePointer(word size);
+   uword TryAllocateBytes(word size);
    uword TryAllocateClassBytes(Class* cls);
+
+   template<typename T>
+   T* TryAllocate() {
+     return (T*) TryAllocateBytes(sizeof(T));
+   }
+
+   template<class T>
+   T* TryAllocateClassBytes() {
+     return TryAllocateClassBytes(T::GetClass());
+   }
 
    bool VisitPointers(RawObjectVisitor* vis) override {
      return IteratePointers<Semispace, SemispaceIterator>(vis);

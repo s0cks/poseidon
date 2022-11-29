@@ -14,6 +14,7 @@
 #include "poseidon/heap/free_object.h"
 
 namespace poseidon{ //TODO: atomic support?
+ class Class;
  class FreeList {
    friend class Sweeper;
    friend class OldZone;
@@ -189,7 +190,19 @@ namespace poseidon{ //TODO: atomic support?
      return Remove(free_ptr->GetStartingAddress(), free_ptr->GetSize());
    }
 
-   virtual uword TryAllocate(const ObjectSize& size);
+   virtual Pointer* TryAllocatePointer(word size);
+   virtual uword TryAllocateBytes(word size);
+   virtual uword TryAllocateClassBytes(Class* cls);
+
+   template<typename T>
+   T* TryAllocate() {
+     return TryAllocateBytes(sizeof(T));
+   }
+
+   template<class T>
+   T* TryAllocateClass() {
+     return TryAllocateClassBytes(T::GetClass());
+   }
 
    virtual bool VisitFreePointers(FreeObjectVisitor* vis);
 

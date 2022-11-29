@@ -1,12 +1,10 @@
 #include <glog/logging.h>
+
 #include "poseidon/heap/heap.h"
+#include "poseidon/type/class.h"
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{
-#ifndef UNALLOCATED
-#define UNALLOCATED 0 //TODO: cleanup
-#endif // UNALLOCATED
-
  Heap* Heap::From(const MemoryRegion& region){
    if(region.GetStartingAddress() <= 0 || region.GetSize() <= 0)
      return nullptr;
@@ -66,22 +64,22 @@ finish_allocation:
    return AllocateOldObject(size);//TODO: refactor
  }
 
- uword Heap::TryAllocateBytes(const ObjectSize size){
+ Pointer* Heap::TryAllocatePointer(const word size) {
    if(size < kWordSize || size > flags::GetOldPageSize())
      return UNALLOCATED;
 
    if(size < flags::GetNewPageSize()) {
-     uword address = UNALLOCATED;
-     if((address = new_zone()->TryAllocateBytes(size)) != UNALLOCATED)
-       return address;
+     Pointer* new_ptr = nullptr;
+     if((new_ptr = new_zone()->TryAllocatePointer(size)) != UNALLOCATED)
+       return new_ptr;
      PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      return UNALLOCATED;
    }
 
    if(size >= flags::GetNewPageSize()) {
-     uword address = UNALLOCATED;
-     if((address = old_zone()->TryAllocateBytes(size)) != UNALLOCATED)
-       return address;
+     Pointer* new_ptr = nullptr;
+     if((new_ptr = old_zone()->TryAllocatePointer(size)) != UNALLOCATED)
+       return new_ptr;
 
      PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      return UNALLOCATED;
@@ -89,5 +87,16 @@ finish_allocation:
 
    PSDN_CANT_ALLOCATE(FATAL, size, (*this));
    return UNALLOCATED;
+ }
+
+ uword Heap::TryAllocateBytes(word size) {
+   auto new_ptr = TryAllocatePointer(size);
+   if(new_ptr == UNALLOCATED)
+     return UNALLOCATED;
+   return new_ptr->GetObjectPointerAddress();
+ }
+
+ uword Heap::TryAllocateClassBytes(Class* cls) {
+   return TryAllocateBytes(cls->GetAllocationSize());
  }
 }

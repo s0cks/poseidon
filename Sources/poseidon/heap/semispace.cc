@@ -3,14 +3,12 @@
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
-#define UNALLOCATED 0 //TODO: cleanup
-
  void Semispace::Clear() {
    memset(GetStartingAddressPointer(), 0, GetSize());
    current_ = GetStartingAddress();
  }
 
- uword Semispace::TryAllocateBytes(ObjectSize size) {
+ Pointer* Semispace::TryAllocatePointer(const word size) {
    if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
      return UNALLOCATED;
@@ -23,7 +21,15 @@ namespace poseidon{
    }
 
    auto new_ptr = new (GetCurrentAddressPointer())Pointer(PointerTag::New(size));
+   memset((void*) new_ptr->GetObjectPointerAddress(), 0, new_ptr->GetSize());
    current_ += total_size;
+   return new_ptr;
+ }
+
+ uword Semispace::TryAllocateBytes(const word size) {
+   auto new_ptr = TryAllocatePointer(size);
+   if(new_ptr == UNALLOCATED)
+     return UNALLOCATED;
    return new_ptr->GetObjectPointerAddress();
  }
 

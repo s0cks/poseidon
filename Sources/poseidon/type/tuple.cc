@@ -9,7 +9,7 @@ namespace poseidon {
  void* Tuple::operator new(const size_t) noexcept {
   LOG_IF(FATAL, kClass == nullptr) << "Tuple class not initialized";
   auto heap = Heap::GetCurrentThreadHeap();
-  auto address = heap->TryAllocate(kClass->GetAllocationSize());
+  auto address = heap->TryAllocateClassBytes(kClass);
   LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate Tuple";
   return ((Pointer*)address)->GetPointer();
  }

@@ -74,11 +74,19 @@ namespace poseidon{
    }
 
    virtual void SwapSpaces();
-   uword TryAllocateBytes(word size) override;
 
-   uword TryAllocateClassBytes(Class* cls) override {
-     NOT_IMPLEMENTED(FATAL); //TODO: implement
-     return UNALLOCATED;
+   virtual Pointer* TryAllocatePointer(word size);
+   uword TryAllocateBytes(word size) override;
+   uword TryAllocateClassBytes(Class* cls) override;
+
+   template<typename T>
+   T* TryAllocate() {
+     return (T*) TryAllocateBytes(sizeof(T));
+   }
+
+   template<class T>
+   T* TryAllocateClass() {
+     return (T*) TryAllocateClassBytes(T::GetClass());
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override {

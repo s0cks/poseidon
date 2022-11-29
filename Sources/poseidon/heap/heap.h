@@ -66,10 +66,18 @@ namespace poseidon{
      return old_zone_;
    }
 
-   uword TryAllocateBytes(ObjectSize size);
+   Pointer* TryAllocatePointer(word size);
+   uword TryAllocateBytes(word size);
+   uword TryAllocateClassBytes(Class* cls);
 
-   uword TryAllocate(const ObjectSize size) {
-     return TryAllocateBytes(size); //TODO: remove
+   template<typename T>
+   T* TryAllocate() {
+     return TryAllocateBytes(sizeof(T));
+   }
+
+   template<class T>
+   T* TryAllocateClass() {
+     return TryAllocateClassBytes(T::GetClass());
    }
 
    Heap& operator=(const Heap& rhs) = delete;

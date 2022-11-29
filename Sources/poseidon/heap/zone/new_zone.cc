@@ -1,6 +1,7 @@
+#include "poseidon/type/class.h"
+#include "poseidon/heap/page_marker.h"
 #include "poseidon/heap/zone/new_zone.h"
 #include "poseidon/heap/page/new_page.h"
-#include "poseidon/heap/page_marker.h"
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{
@@ -15,23 +16,31 @@ namespace poseidon{
    return new NewZone(region.GetStartingAddress(), total_size, semi_size);
  }
 
- uword NewZone::TryAllocateBytes(const word size) {
+ Pointer* NewZone::TryAllocatePointer(const word size) {
    if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) //TODO: cleanup
      return UNALLOCATED;
 
-   uword ptr_address = UNALLOCATED;
-   if((ptr_address = fromspace_.TryAllocateBytes(size)) == UNALLOCATED) {
+   Pointer* new_ptr = nullptr;
+   if((new_ptr = fromspace_.TryAllocatePointer(size)) == UNALLOCATED) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
      Collector::MinorCollection();
 
-     if((ptr_address = fromspace_.TryAllocateBytes(size)) == UNALLOCATED) {
+     if((new_ptr = fromspace_.TryAllocatePointer(size)) == UNALLOCATED) {
        PSDN_CANT_ALLOCATE(FATAL, size, (*this));
      }
    }
-
    //TODO: mark all pages intersected by
-   auto ptr = (Pointer*)ptr_address;
-   memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
-   return ptr->GetObjectPointerAddress();
+   return new_ptr;
+ }
+
+ uword NewZone::TryAllocateBytes(const word size) {
+   auto new_ptr = TryAllocatePointer(size);
+   if(new_ptr == UNALLOCATED)
+     return UNALLOCATED;
+   return new_ptr->GetObjectPointerAddress();
+ }
+
+ uword NewZone::TryAllocateClassBytes(Class* cls) {
+   return TryAllocateBytes(cls->GetAllocationSize());
  }
 }

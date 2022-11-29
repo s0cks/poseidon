@@ -45,7 +45,7 @@ namespace poseidon {
 
    static inline uword
    TryAllocateBytes(FreeList& free_list, const ObjectSize size) {
-     return free_list.TryAllocate(size);
+     return free_list.TryAllocateBytes(size);
    }
 
    static inline Pointer*

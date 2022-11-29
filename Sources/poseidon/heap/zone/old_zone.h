@@ -56,12 +56,9 @@ namespace poseidon{
      return free_list_;
    }
 
+   Pointer* TryAllocatePointer(word size);
    uword TryAllocateBytes(word size) override;
-
-   uword TryAllocateClassBytes(Class* cls) override {
-     NOT_IMPLEMENTED(ERROR); //TODO: implement
-     return UNALLOCATED;
-   }
+   uword TryAllocateClassBytes(Class* cls) override;
 
    bool VisitPointers(RawObjectVisitor* vis) override {
      return IteratePointers<OldZone, OldZoneIterator>(vis);
