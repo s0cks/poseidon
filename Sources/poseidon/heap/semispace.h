@@ -61,6 +61,7 @@ namespace poseidon{
    Semispace() = default;
    explicit Semispace(const uword start, const int64_t size):
     AllocationSection(start, size) {
+     SetWritable();
    }
    explicit Semispace(const MemoryRegion& region):
     Semispace(region.GetStartingAddress(), region.GetSize()) {
@@ -135,6 +136,44 @@ namespace poseidon{
    static inline constexpr ObjectSize
    GetMaximumObjectSize() { //TODO: refactor
      return 1 * kMB;
+   }
+ };
+
+ class SemispacePrinter : public RawObjectVisitor {
+  protected:
+   std::string name_;
+   const google::LogSeverity severity_;
+  public:
+   explicit SemispacePrinter(std::string name, const google::LogSeverity severity):
+    RawObjectVisitor(),
+    name_(std::move(name)),
+    severity_(severity) {
+   }
+   ~SemispacePrinter() override = default;
+
+   std::string name() const {
+     return name_;
+   }
+
+   google::LogSeverity GetSeverity() const {
+     return severity_;
+   }
+
+   bool Visit(Pointer* raw_ptr) override {
+     LOG_AT_LEVEL(GetSeverity()) << " - " << (*raw_ptr);
+     return true;
+   }
+
+   bool PrintSemispace(Semispace* semispace) {
+     LOG_AT_LEVEL(GetSeverity()) << name() << ":";
+     return semispace->VisitPointers(this);
+   }
+  public:
+   template<const google::LogSeverity Severity = google::INFO>
+   static inline bool
+   Print(const std::string& name, Semispace* semispace) {
+     SemispacePrinter printer(name, Severity);
+     return printer.PrintSemispace(semispace);
    }
  };
 }

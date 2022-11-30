@@ -64,7 +64,7 @@ namespace poseidon {
    T* Get() const {
      if(IsEmpty())
        return nullptr;
-     return raw_ptr()->GetPointer();
+     return (T*) raw_ptr()->GetPointer();
    }
 
    Local& operator=(Pointer* ptr) {

@@ -7,45 +7,42 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
- class LocalPage : public Section {
+ class LocalPage : public Section { //TODO: make linked list
    friend class SerialScavenger;
   public:
-   class LocalPageIterator {
-    private:
+   class LocalPageIterator : public RawObjectPointerIterator {
+    protected:
      const LocalPage* page_;
-     int64_t current_;
+     uword current_;
 
      inline const LocalPage* page() const {
        return page_;
      }
 
-     inline int64_t current() const {
+     inline uword current_address() const {
        return current_;
      }
 
-     inline Pointer* current_ptr() const {
-       return page()->GetLocal(current());
-     }
-
-     inline int64_t total() const {
-       return page()->GetNumberOfLocals();
+     inline Pointer** current_ptr() const {
+       return (Pointer**)current_address();
      }
     public:
      explicit LocalPageIterator(const LocalPage* page):
+      RawObjectPointerIterator(),
       page_(page),
-      current_(0) {
+      current_(page->GetStartingAddress()) {
      }
-     ~LocalPageIterator() = default;
+     ~LocalPageIterator() override = default;
 
-     bool HasNext() const {
-       return current() < total() &&
-              current_ptr() != nullptr; //TODO: need to handle gaps in local page slots
+     bool HasNext() const override {
+       return current_address() >= page()->GetStartingAddress() &&
+              current_address() < page()->GetEndingAddress();
      }
 
-     Pointer* Next() {
+     Pointer* Next() override {
        auto next = current_ptr();
-       current_ += 1;
-       return next;
+       current_ += kWordSize;
+       return (*next);
      }
    };
   protected:
@@ -66,20 +63,18 @@ namespace poseidon {
    LocalPage(const uword start, const word size):
      Section(start, size),
      current_(start) {
+
+     SetWritable();
      Clear();
    }
    explicit LocalPage(const MemoryRegion& region):
     LocalPage(region.GetStartingAddress(), region.GetSize()) {
    }
    explicit LocalPage(const word size):
-    LocalPage(MemoryRegion(size)) {
+    LocalPage(MemoryRegion(CalculateLocalPageSize(size))) {
    }
    LocalPage(const LocalPage& rhs) = default;
    ~LocalPage() override = default;
-
-   uword GetStartingAddress() const override {
-     return start_;
-   }
 
    uword GetCurrentAddress() const {
      return current_;
@@ -89,42 +84,32 @@ namespace poseidon {
      return (void*)GetCurrentAddress();
    }
 
-   word GetSize() const override {
-     return size_;
-   }
-
-   int64_t GetNumberOfLocals() const {
+   word GetNumberOfLocals() const {
      return GetSize() / kWordSize;
    }
 
-   Pointer* GetLocal(const int64_t index) const {
+   Pointer* GetLocal(const word index) const {
+     if(index < 0 || index > GetNumberOfLocals())
+       return UNALLOCATED;
      return *GetLocalAt(index);
    }
 
-   void SetLocal(const int64_t index, Pointer* ptr) {
+   void SetLocal(const word index, Pointer* ptr) {
+     if(index < 0 || index > GetNumberOfLocals())
+       return;
      *GetLocalAt(index) = ptr;
    }
 
    uword TryAllocate();
 
-   bool VisitPointers(RawObjectVisitor* vis) override {
-     return IteratePointers<LocalPage, LocalPageIterator>(vis);
-   }
-
-   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IteratePointers<LocalPage, LocalPageIterator>(vis);
-   }
-
+   bool VisitPointers(RawObjectVisitor* vis) override;
+   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override;
    bool VisitNewPointers(RawObjectVisitor* vis);
+   bool VisitNewPointers(const std::function<bool(Pointer*)>& vis);
    bool VisitOldPointers(RawObjectVisitor* vis);
-
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
-     return IteratePointers<LocalPage, LocalPageIterator>(vis);
-   }
-
-   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IteratePointers<LocalPage, LocalPageIterator>(vis);
-   }
+   bool VisitOldPointers(const std::function<bool(Pointer*)>& vis);
+   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override;
 
    LocalPage& operator=(const LocalPage& rhs) = default;
 
@@ -136,14 +121,39 @@ namespace poseidon {
      return stream;
    }
   public:
-   static inline constexpr int64_t
-   CalculateLocalPageSize(const int64_t num_locals) {
+   static inline constexpr word
+   CalculateLocalPageSize(const word num_locals) {
      return num_locals * kWordSize;
    }
 
-   static void Initialize();
-   static LocalPage* GetForCurrentThread();
    static void SetForCurrentThread(LocalPage* page);
+   static LocalPage* GetForCurrentThread();
+
+   static inline bool
+   ExistsInCurrentThread() {
+     return GetForCurrentThread() != nullptr;
+   }
+
+   static inline void
+   RemoveFromCurrentThread() {
+     LOG(ERROR) << "cannot remove existing LocalPage so just overwriting it";
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     SetForCurrentThread(nullptr);
+   }
+
+   static inline void
+   InitializeForCurrentThread(const MemoryRegion& region) {
+     if(ExistsInCurrentThread())
+       RemoveFromCurrentThread();
+     return SetForCurrentThread(new LocalPage(region));
+   }
+
+   static inline void
+   InitializeForCurrentThread(const word size) {
+     if(ExistsInCurrentThread())
+       RemoveFromCurrentThread();
+     return SetForCurrentThread(new LocalPage(size));
+   }
  };
 }
 

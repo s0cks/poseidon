@@ -1,6 +1,7 @@
 #ifndef POSEIDON_OS_THREAD_H
 #define POSEIDON_OS_THREAD_H
 
+#include <glog/logging.h>
 #include "poseidon/platform/platform.h"
 
 #ifdef OS_IS_LINUX
@@ -34,6 +35,52 @@ namespace poseidon{
  SetCurrentThreadName(const std::string& name){
    return SetThreadName(GetCurrentThreadId(), name);
  }
+
+ template<typename T>
+ class ThreadLocal {
+  protected:
+   std::string name_;
+   ThreadLocalKey key_;
+  public:
+   explicit ThreadLocal(std::string name):
+    name_(std::move(name)),
+    key_() {
+     LOG_IF(FATAL, !InitializeThreadLocal(key_)) << "cannot initialize ThreadLocal `" << name_ << "` in thread: " << GetCurrentThreadName();
+   }
+   ThreadLocal(ThreadLocal<T>& rhs) = default;
+   ~ThreadLocal() = default;
+
+   std::string name() const {
+     return name_;
+   }
+
+   ThreadLocalKey& key() {
+     return key_;
+   }
+
+   ThreadLocalKey key() const {
+     return key_;
+   }
+
+   T* Get() const {
+     return (T*) GetCurrentThreadLocal(key());
+   }
+
+   void Set(T* value) {
+     SetCurrentThreadLocal(key(), value);
+   }
+
+   T* operator->() {
+     return GetCurrentThreadLocal(key());
+   }
+
+   ThreadLocal& operator=(const ThreadLocal<T>& rhs) = default;
+
+   ThreadLocal& operator=(T* rhs) {
+     Set(rhs);
+     return *this;
+   }
+ };
 }
 
 #endif //POSEIDON_OS_THREAD_H

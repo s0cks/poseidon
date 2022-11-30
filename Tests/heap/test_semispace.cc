@@ -1,9 +1,8 @@
 #include "helpers.h"
 #include "helpers/assertions.h"
 #include "helpers/alloc_helpers.h"
-#include "heap/semispace_printer.h"
 #include "mock_raw_object_visitor.h"
-
+#include "poseidon/heap/semispace.h"
 #include "poseidon/type/int.h"
 #include "assertions/type_assertions.h"
 
@@ -110,7 +109,7 @@ namespace poseidon{
    ASSERT_TRUE(IsInt(ptr->raw_ptr()));
    ASSERT_TRUE(IntEq(kDefaultValue, ptr));
 
-   ASSERT_TRUE(SemispacePrinter<>::PrintSemispace(semispace));
+   ASSERT_TRUE(SemispacePrinter::Print("Semispace", &semispace));
  }
 
  TEST_F(SemispaceTest, TestVisitPointers){
@@ -136,7 +135,7 @@ namespace poseidon{
      .Times(kNumberOfPointers);
    ASSERT_NO_FATAL_FAILURE(semispace.VisitPointers(&visitor));
 
-   ASSERT_NO_FATAL_FAILURE(SemispacePrinter<>::PrintSemispace(semispace));
+   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print("Semispace", &semispace));
  }
 
  TEST_F(SemispaceTest, TestVisitMarkedPointers){
@@ -179,6 +178,6 @@ namespace poseidon{
        .Times(kNumberOfMarkedPointers);
    ASSERT_NO_FATAL_FAILURE(semispace.VisitMarkedPointers(&visitor));
 
-   ASSERT_NO_FATAL_FAILURE(SemispacePrinter<>::PrintSemispace(semispace));
+   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print("Semispace", &semispace));
  }
 }

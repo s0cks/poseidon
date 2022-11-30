@@ -23,6 +23,6 @@ int main(int argc, char** argv){
   Heap::Initialize();
   Class::Initialize();
   Runtime::Initialize();
-  LocalPage::Initialize();
+  LocalPage::InitializeForCurrentThread(1024); //TODO: fix
   return RUN_ALL_TESTS();
 }

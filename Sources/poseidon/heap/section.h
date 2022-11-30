@@ -43,6 +43,50 @@ namespace poseidon{
    }
 
    template<class Z, class Iterator>
+   inline bool IterateNewPointers(RawObjectVisitor* vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(next->IsNew() && !vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator>
+   inline bool IterateNewPointers(const std::function<bool(Pointer*)>& vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(next->IsNew() && !vis(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator>
+   inline bool IterateOldPointers(RawObjectVisitor* vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(next->IsOld() && !vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator>
+   inline bool IterateOldPointers(const std::function<bool(Pointer*)>& vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       if(next->IsOld() && !vis(next))
+         return false;
+     }
+     return true;
+   }
+
+   template<class Z, class Iterator>
    inline bool
    IterateMarkedPointers(RawObjectVisitor* vis) {
      Iterator iter((Z*) this);
@@ -114,12 +158,13 @@ namespace poseidon{
   protected:
    uword current_;
 
-   AllocationSection() = default;
    AllocationSection(const uword start, const word size):
     Section(start, size),
     current_(start) {
    }
   public:
+   AllocationSection() = default;
+   AllocationSection(const AllocationSection& rhs) = default;
    ~AllocationSection() override = default;
 
    virtual uword GetCurrentAddress() const {

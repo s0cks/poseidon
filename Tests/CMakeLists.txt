@@ -34,7 +34,6 @@ ADD_EXECUTABLE(poseidon-tests
                type/test_int.cc
                type/test_long.cc
                local/test_local_page.cc
-               heap/semispace_printer.h
                matchers/is_pointer_to.h
                matchers/object_tag_matcher.h
                type/test_tuple.cc

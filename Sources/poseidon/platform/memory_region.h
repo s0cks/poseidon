@@ -134,7 +134,7 @@ namespace poseidon{
       auto ending_address = starting_address + size;
       if(!region.Contains(starting_address) || !region.Contains(ending_address))
         return {};
-      return MemoryRegion(starting_address, size);
+      return {starting_address, size};
     }
   };
 }

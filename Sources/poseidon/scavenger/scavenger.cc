@@ -48,52 +48,12 @@ namespace poseidon {
 
  static inline void
  CopyObject(Pointer* src, Pointer* dst) {
-   VLOG_IF(10, PSDN_DEBUG) << "copying " << (*src) << " to " << (*dst);
-   memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
- }
-
- uword Scavenger::Promote(Pointer* ptr) {
-   PSDN_ASSERT(ptr->IsNew());
-   PSDN_ASSERT(ptr->IsMarked());
-   PSDN_ASSERT(ptr->IsRemembered());
-   DLOG(INFO) << "promoting " << (*ptr);
-
-   auto new_address = old_zone()->TryAllocateBytes(ptr->GetPointerSize());
-   if(new_address == UNALLOCATED) {
-     LOG(FATAL) << "new_address == UNALLOCATED";
-     return UNALLOCATED;
-   }
-
-   auto new_ptr = (Pointer*)new_address;
-   CopyObject(ptr, new_ptr);
-   VLOG_IF(10, google::DEBUG_MODE) << "promoted " << (*ptr) << " to " << (*new_ptr);
-   //TODO: set new tag
-   return new_ptr->GetStartingAddress();
- }
-
- uword Scavenger::Scavenge(Pointer* ptr) {
-   DLOG(INFO) << "scavenging " << (*ptr);
-   PSDN_ASSERT(ptr->IsNew());
-   PSDN_ASSERT(ptr->IsMarked());
-   PSDN_ASSERT(!ptr->IsRemembered());
-
-   auto new_address = tospace().TryAllocateBytes(ptr->GetPointerSize());
-   if(new_address == UNALLOCATED) {
-     LOG(FATAL) << "new_address == UNALLOCATED";
-     return UNALLOCATED;
-   }
-
-   auto new_ptr = (Pointer*)new_address;
-   CopyObject(ptr, new_ptr);
-   VLOG_IF(10, google::DEBUG_MODE) << "scavenged " << (*ptr) << " to " << (*new_ptr);
-   //TODO: set new tag
-   return new_address;
+   DLOG(INFO) << "copying " << (*src) << " to " << (*dst);
+   memcpy(dst->GetPointer(), src->GetPointer(), src->GetSize());
  }
 
  static inline uword
  Forward(Pointer* src, Pointer* dst) {
-   if(dst == UNALLOCATED)
-     return src->GetStartingAddress();
    PSDN_ASSERT(!src->IsForwarding());
    DLOG(INFO) << "forwarding " << (*src) << " to " << (*dst);
    src->SetForwardingAddress(dst->GetStartingAddress());
@@ -101,23 +61,58 @@ namespace poseidon {
    return src->GetForwardingAddress();
  }
 
+ uword Scavenger::Promote(Pointer* ptr) {
+   LOG(INFO) << "promoting " << (*ptr);
+   PSDN_ASSERT(ptr->IsNew());
+   PSDN_ASSERT(ptr->IsMarked());
+   PSDN_ASSERT(ptr->IsRemembered());
+
+   auto new_address = old_zone()->TryAllocatePointer(ptr->GetPointerSize());
+   if(new_address == UNALLOCATED) {
+     LOG(FATAL) << "new_address == UNALLOCATED";
+     return UNALLOCATED;
+   }
+
+   auto new_ptr = (Pointer*)new_address;
+   DLOG(INFO) << "new-ptr: " << new_ptr;
+   CopyObject(ptr, new_ptr);
+   VLOG_IF(10, google::DEBUG_MODE) << "promoted " << (*ptr) << " to " << (*new_ptr);
+   new_ptr->SetRememberedBit();
+   return Forward(ptr, new_ptr);
+ }
+
+ uword Scavenger::Scavenge(Pointer* ptr) {
+   LOG(INFO) << "scavenging " << (*ptr);
+   PSDN_ASSERT(ptr->IsNew());
+   PSDN_ASSERT(ptr->IsMarked());
+   PSDN_ASSERT(!ptr->IsRemembered());
+
+   auto new_ptr = tospace_.TryAllocatePointer(ptr->GetSize());
+   if(new_ptr == UNALLOCATED) {
+     LOG(FATAL) << "new_address == UNALLOCATED";
+     return UNALLOCATED;
+   }
+
+   CopyObject(ptr, new_ptr);
+   VLOG_IF(10, google::DEBUG_MODE) << "scavenged " << (*ptr) << " to " << (*new_ptr);
+   new_ptr->SetRememberedBit();
+   return Forward(ptr, new_ptr);
+ }
+
  uword Scavenger::Process(Pointer* ptr) {
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
-   DLOG(INFO) << "processing " << (*ptr);
 
-   if(ptr->IsForwarding())
+   if(ptr->IsForwarding()){
      return ptr->GetForwardingAddress();
+   }
 
+   DLOG(INFO) << "processing " << (*ptr);
    if(ptr->IsRemembered()) {
-     auto new_ptr = (Pointer*) Promote(ptr);
-     new_ptr->SetRememberedBit();
-     return Forward(ptr, new_ptr);
-   } else {
-     DLOG(INFO) << "scavenging " << (*ptr);
-     auto new_ptr = (Pointer*) Scavenge(ptr);
-     new_ptr->SetRememberedBit();
-     return Forward(ptr, new_ptr);
+     return Promote(ptr);
+   } else{
+     DLOG(INFO) << "scavenging: " << (*ptr);
+     return Scavenge(ptr);
    }
  }
 }
