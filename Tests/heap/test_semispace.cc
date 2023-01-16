@@ -25,7 +25,7 @@ namespace poseidon{
  TEST_F(SemispaceTest, TestConstructor_WillPass){
    MemoryRegion region(flags::GetNewZoneSemispaceSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   Semispace semispace(region);
+   Semispace semispace(Space::kUnknownSpace, region);
    ASSERT_EQ(semispace.GetStartingAddress(), region.GetStartingAddress());
    ASSERT_TRUE(semispace.IsEmpty());
    ASSERT_EQ(semispace.GetCurrentAddress(), semispace.GetCurrentAddress());
@@ -36,7 +36,7 @@ namespace poseidon{
    // a == r1
    MemoryRegion r1(flags::GetNewZoneSemispaceSize());
    ASSERT_TRUE(r1.Protect(MemoryRegion::kReadWrite));
-   Semispace a(r1);
+   Semispace a(Space::kUnknownSpace, r1);
    ASSERT_EQ(a.GetStartingAddress(), r1.GetStartingAddress());
    ASSERT_EQ(a.GetCurrentAddress(), r1.GetStartingAddress());
    ASSERT_EQ(a.GetSize(), r1.GetSize());
@@ -51,7 +51,7 @@ namespace poseidon{
    // b == r2
    MemoryRegion r2(flags::GetNewZoneSemispaceSize());
    ASSERT_TRUE(r2.Protect(MemoryRegion::kReadWrite));
-   Semispace b(r2);
+   Semispace b(Space::kUnknownSpace, r2);
    ASSERT_EQ(b.GetStartingAddress(), r2.GetStartingAddress());
    ASSERT_EQ(b.GetCurrentAddress(), r2.GetStartingAddress());
    ASSERT_EQ(b.GetSize(), r2.GetSize());
@@ -109,7 +109,7 @@ namespace poseidon{
    ASSERT_TRUE(IsInt(ptr->raw_ptr()));
    ASSERT_TRUE(IntEq(kDefaultValue, ptr));
 
-   ASSERT_TRUE(SemispacePrinter::Print("Semispace", &semispace));
+   ASSERT_TRUE(SemispacePrinter::Print(&semispace));
  }
 
  TEST_F(SemispaceTest, TestVisitPointers){
@@ -135,7 +135,7 @@ namespace poseidon{
      .Times(kNumberOfPointers);
    ASSERT_NO_FATAL_FAILURE(semispace.VisitPointers(&visitor));
 
-   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print("Semispace", &semispace));
+   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print(&semispace));
  }
 
  TEST_F(SemispaceTest, TestVisitMarkedPointers){
@@ -178,6 +178,6 @@ namespace poseidon{
        .Times(kNumberOfMarkedPointers);
    ASSERT_NO_FATAL_FAILURE(semispace.VisitMarkedPointers(&visitor));
 
-   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print("Semispace", &semispace));
+   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print(&semispace));
  }
 }

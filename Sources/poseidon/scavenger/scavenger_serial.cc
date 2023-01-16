@@ -16,7 +16,6 @@ namespace poseidon {
      for(auto idx = 0; idx < page->GetNumberOfLocals(); idx++) {
        auto ptr = page->GetLocalAt(idx);
        if((*ptr) != nullptr) {
-         DLOG(INFO) << "checking: " << (**ptr);
          if((*ptr)->IsNew() && (*ptr)->IsMarked() && !(*ptr)->IsForwarding()){
            (*ptr) = (Pointer*) scavenger()->Process((*ptr));
          }

@@ -5,7 +5,7 @@
 #include "poseidon/bitset.h"
 #include "poseidon/heap/zone/zone.h"
 #include "poseidon/heap/page/old_page.h"
-#include "poseidon/heap/freelist.h"
+#include "poseidon/heap/freelist/freelist.h"
 
 namespace poseidon{
  class OldZone : public Zone {
@@ -95,6 +95,27 @@ namespace poseidon{
    static ObjectSize
    GetMaximumObjectSize() {
      return flags::GetLargeObjectSize();
+   }
+ };
+
+ class OldZonePrinter : public SectionPrinter<OldZone> {
+  protected:
+   explicit OldZonePrinter(const google::LogSeverity severity):
+    SectionPrinter<OldZone>(severity) {
+   }
+
+   bool PrintSection(OldZone* zone) override {
+     LOG_AT_LEVEL(GetSeverity()) << "OldZone " << (*zone) << ":";
+     return SectionPrinter<OldZone>::PrintSection(zone);
+   }
+  public:
+   ~OldZonePrinter() override = default;
+  public:
+   template<const google::LogSeverity Severity = google::INFO>
+   static inline bool
+   Print(OldZone* semispace) {
+     OldZonePrinter printer(Severity);
+     return printer.PrintSection(semispace);
    }
  };
 }

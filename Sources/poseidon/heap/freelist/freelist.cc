@@ -1,5 +1,5 @@
 #include "poseidon/type/class.h"
-#include "poseidon/heap/freelist.h"
+#include "freelist.h"
 
 namespace poseidon{
  bool FreeList::VisitFreePointers(FreeObjectVisitor* vis){

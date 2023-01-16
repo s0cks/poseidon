@@ -113,8 +113,8 @@ namespace poseidon {
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->new_zone();
-   auto fromspace = zone->fromspace();
-   auto tospace = zone->tospace();
+   auto& fromspace = zone->fromspace();
+   auto& tospace = zone->tospace();
 
    static constexpr const RawInt kAValue = 33;
    auto raw_a = Int::TryAllocateIn(zone, kAValue);
@@ -126,7 +126,7 @@ namespace poseidon {
    ASSERT_TRUE(a.raw_ptr()->IsMarked());
    ASSERT_FALSE(a.raw_ptr()->IsRemembered());
    ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
-   DLOG(INFO) << "a: " << (*a.raw_ptr());
+   DLOG(INFO) << "a (before): " << (*a.raw_ptr());
 
    static constexpr const RawInt kBValue = 33;
    auto raw_b = Int::TryAllocateIn(zone, kBValue);
@@ -138,26 +138,37 @@ namespace poseidon {
    ASSERT_TRUE(b.raw_ptr()->IsMarked());
    ASSERT_FALSE(b.raw_ptr()->IsRemembered());
    ASSERT_FALSE(tospace.Intersects(*b.raw_ptr()));
-   DLOG(INFO) << "b: " << (*b.raw_ptr());
+   DLOG(INFO) << "b (before): " << (*b.raw_ptr());
    
    MockScavenger scavenger(heap);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
-    .WillOnce(Return(true));
+    .Times(1);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(b)))
-    .WillOnce(Return(true));
+    .Times(1);
+
+   DLOG(INFO) << "New Zone (before):";
+   SemispacePrinter::Print(&fromspace);
+   SemispacePrinter::Print(&tospace);
+
    ASSERT_TRUE(SerialScavenge(&scavenger));
    
    ASSERT_FALSE(a.raw_ptr()->IsMarked());
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsInt(a.raw_ptr()));
    ASSERT_TRUE(IntEq(kAValue, a.Get()));
-   ASSERT_TRUE(tospace.Intersects((*a.raw_ptr())));
+   ASSERT_TRUE(fromspace.Intersects((*a.raw_ptr())));
+   DLOG(INFO) << "a (after): " << (*a.raw_ptr());
 
    ASSERT_FALSE(b.raw_ptr()->IsMarked());
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsInt(b.raw_ptr()));
    ASSERT_TRUE(IntEq(kAValue, b.Get()));
-   ASSERT_TRUE(tospace.Intersects((*b.raw_ptr())));
+   ASSERT_TRUE(fromspace.Intersects((*b.raw_ptr())));
+   DLOG(INFO) << "b (after): " << (*b.raw_ptr());
+
+   DLOG(INFO) << "New Zone (after):";
+   SemispacePrinter::Print(&fromspace);
+   SemispacePrinter::Print(&tospace);
 
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
  }

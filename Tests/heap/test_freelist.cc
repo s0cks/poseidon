@@ -2,7 +2,7 @@
 
 #include "helpers.h"
 #include "poseidon/flags.h"
-#include "poseidon/heap/freelist.h"
+#include "poseidon/heap/freelist/freelist.h"
 
 namespace poseidon {
  using namespace ::testing;

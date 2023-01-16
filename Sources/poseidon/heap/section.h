@@ -154,6 +154,32 @@ namespace poseidon{
    }
  };
 
+ template<class S>
+ class SectionPrinter : public RawObjectVisitor {
+  protected:
+   const google::LogSeverity severity_;
+
+   explicit SectionPrinter(const google::LogSeverity severity):
+     RawObjectVisitor(),
+     severity_(severity) {
+   }
+
+   virtual bool PrintSection(S* section) {
+     return section->VisitPointers(this);
+   }
+  public:
+   ~SectionPrinter() override = default;
+
+   google::LogSeverity GetSeverity() const {
+     return severity_;
+   }
+
+   bool Visit(Pointer* raw_ptr) override {
+     LOG_AT_LEVEL(GetSeverity()) << " - " << (*raw_ptr);
+     return true;
+   }
+ };
+
  class AllocationSection : public Section {
   protected:
    uword current_;

@@ -9,6 +9,12 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
+ enum class Space : uint8_t {
+   kUnknownSpace = 0,
+   kFromSpace = 1,
+   kToSpace,
+ };
+
  class Class;
  class Semispace : public AllocationSection {
    friend class SemispaceTest;
@@ -41,7 +47,10 @@ namespace poseidon{
      ~SemispaceIterator() override = default;
 
      bool HasNext() const override {
-       return current_address() < semispace()->GetCurrentAddress();
+       return current_address() >= semispace()->GetStartingAddress() &&
+              current_address() < semispace()->GetCurrentAddress() &&
+              current_ptr()->IsNew() &&
+              current_ptr()->GetSize() > 0;
      }
 
      Pointer* Next() override {
@@ -51,26 +60,47 @@ namespace poseidon{
      }
    };
   protected:
+   Space space_;
+
    void Clear() override;
 
-   static inline constexpr ObjectSize
-   GetTotalSizeNeededFor(const ObjectSize size) {
-     return size + static_cast<ObjectSize>(sizeof(Pointer));
+   static inline constexpr word
+   GetTotalSizeNeededFor(const word size) {
+     return size + static_cast<word>(sizeof(Pointer));
    }
   public:
    Semispace() = default;
-   explicit Semispace(const uword start, const int64_t size):
-    AllocationSection(start, size) {
+   explicit Semispace(const Space space, const uword start, const word size):
+    AllocationSection(start, size),
+    space_(space) {
      SetWritable();
    }
-   explicit Semispace(const MemoryRegion& region):
-    Semispace(region.GetStartingAddress(), region.GetSize()) {
+   explicit Semispace(const Space space, const MemoryRegion& region):
+    Semispace(space, region.GetStartingAddress(), region.GetSize()) {
    }
-   explicit Semispace(const int64_t size):
-    Semispace(MemoryRegion(size)) {
+   explicit Semispace(const MemoryRegion& region):
+    Semispace(Space::kUnknownSpace, region) {
+   }
+   explicit Semispace(const Space space, const word size):
+    Semispace(space, MemoryRegion(size)) {
+   }
+   explicit Semispace(const word size):
+    Semispace(Space::kUnknownSpace, size) {
    }
    Semispace(const Semispace& rhs) = default;
    ~Semispace() override = default;
+
+   Space space() const {
+     return space_;
+   }
+
+   bool IsFromspace() const {
+     return space() == Space::kFromSpace;
+   }
+
+   bool IsTospace() const {
+     return space() == Space::kToSpace;
+   }
 
    Pointer* TryAllocatePointer(word size);
    uword TryAllocateBytes(word size);
@@ -128,52 +158,45 @@ namespace poseidon{
      return stream;
    }
   public:
-   static inline constexpr ObjectSize
+   static inline constexpr word
    GetMinimumObjectSize() { //TODO: refactor
      return kMinimumObjectSize;
    }
 
-   static inline constexpr ObjectSize
+   static inline constexpr word
    GetMaximumObjectSize() { //TODO: refactor
      return 1 * kMB;
    }
  };
 
- class SemispacePrinter : public RawObjectVisitor {
+ class SemispacePrinter : public SectionPrinter<Semispace> {
   protected:
-   std::string name_;
-   const google::LogSeverity severity_;
+   explicit SemispacePrinter(const google::LogSeverity severity):
+     SectionPrinter<Semispace>(severity) {
+   }
+
+   bool PrintSection(Semispace* semispace) override {
+     switch(semispace->space()) {
+       case Space::kFromSpace:
+         LOG_AT_LEVEL(GetSeverity()) << "Fromspace " << (*semispace) << ":";
+         break;
+       case Space::kToSpace:
+         LOG_AT_LEVEL(GetSeverity()) << "Tospace " << (*semispace) << ":";
+         break;
+       case Space::kUnknownSpace:
+       default:
+         LOG_AT_LEVEL(GetSeverity()) << "<unknown space: " << static_cast<word>(semispace->space()) << "> " << (*semispace) << ":";
+     }
+     return SectionPrinter<Semispace>::PrintSection(semispace);
+   }
   public:
-   explicit SemispacePrinter(std::string name, const google::LogSeverity severity):
-    RawObjectVisitor(),
-    name_(std::move(name)),
-    severity_(severity) {
-   }
    ~SemispacePrinter() override = default;
-
-   std::string name() const {
-     return name_;
-   }
-
-   google::LogSeverity GetSeverity() const {
-     return severity_;
-   }
-
-   bool Visit(Pointer* raw_ptr) override {
-     LOG_AT_LEVEL(GetSeverity()) << " - " << (*raw_ptr);
-     return true;
-   }
-
-   bool PrintSemispace(Semispace* semispace) {
-     LOG_AT_LEVEL(GetSeverity()) << name() << ":";
-     return semispace->VisitPointers(this);
-   }
   public:
    template<const google::LogSeverity Severity = google::INFO>
    static inline bool
-   Print(const std::string& name, Semispace* semispace) {
-     SemispacePrinter printer(name, Severity);
-     return printer.PrintSemispace(semispace);
+   Print(Semispace* semispace) {
+     SemispacePrinter printer(Severity);
+     return printer.PrintSection(semispace);
    }
  };
 }

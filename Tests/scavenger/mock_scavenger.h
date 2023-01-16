@@ -13,12 +13,12 @@ namespace poseidon {
    explicit MockScavenger(Heap* heap):
     Scavenger(heap) {
      ON_CALL(*this, Scavenge(_))
-      .WillByDefault([](Pointer* ptr) {
-        return UNALLOCATED;
+      .WillByDefault([this](Pointer* raw_ptr) {
+        return Scavenger::Scavenge(raw_ptr);
       });
      ON_CALL(*this, Promote(_))
-      .WillByDefault([](Pointer* ptr) {
-        return UNALLOCATED;
+      .WillByDefault([this](Pointer* raw_ptr) {
+        return Scavenger::Promote(raw_ptr);
       });
    }
    ~MockScavenger() override = default;

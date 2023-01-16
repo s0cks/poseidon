@@ -32,22 +32,22 @@ namespace poseidon{
      }
    };
   protected:
-   int64_t semisize_; //TODO: remove
+   word semisize_; //TODO: remove
    Semispace fromspace_;
    Semispace tospace_;
 
-   NewZone(const uword start_address, const int64_t size, const int64_t semi_size):
+   NewZone(const uword start_address, const word size, const word semi_size):
     Zone(start_address, size, flags::GetNewPageSize()),
-    fromspace_(GetStartingAddress(), semi_size),
-    tospace_(GetStartingAddress() + semi_size, semi_size),
+    fromspace_(Space::kFromSpace, GetStartingAddress(), semi_size),
+    tospace_(Space::kToSpace, GetStartingAddress() + semi_size, semi_size),
     semisize_(semi_size) {
    }
   public:
    NewZone() = delete;
-   explicit NewZone(const MemoryRegion& region, const int64_t semi_size = flags::GetNewZoneSemispaceSize()):
+   explicit NewZone(const MemoryRegion& region, const word semi_size = flags::GetNewZoneSemispaceSize()):
     NewZone(region.GetStartingAddress(), region.GetSize(), semi_size) {
    }
-   explicit NewZone(const int64_t size, const int64_t semi_size = flags::GetNewZoneSemispaceSize()):
+   explicit NewZone(const word size, const word semi_size = flags::GetNewZoneSemispaceSize()):
     NewZone(MemoryRegion(size), semi_size) {
    }
    NewZone(const NewZone& rhs) = delete;
@@ -69,7 +69,7 @@ namespace poseidon{
      return tospace_;
    }
 
-   int64_t semisize() const{
+   word semisize() const{
      return semisize_;
    }
 
@@ -119,14 +119,35 @@ namespace poseidon{
   public:
    static NewZone* New(const MemoryRegion& region);
 
-   static constexpr ObjectSize
+   static constexpr word
    GetMinimumObjectSize() {
      return kWordSize;
    }
 
-   static constexpr ObjectSize
+   static constexpr word
    GetMaximumObjectSize() {
      return Semispace::GetMaximumObjectSize();
+   }
+ };
+
+ class NewZonePrinter : public SectionPrinter<NewZone> {
+  protected:
+   explicit NewZonePrinter(const google::LogSeverity severity):
+     SectionPrinter<NewZone>(severity) {
+   }
+
+   bool PrintSection(NewZone* zone) override {
+     LOG_AT_LEVEL(GetSeverity()) << "New Zone " << (*zone) << ":";
+     return SectionPrinter<NewZone>::PrintSection(zone);
+   }
+  public:
+   ~NewZonePrinter() override = default;
+  public:
+   template<const google::LogSeverity Severity = google::INFO>
+   static inline bool
+   Print(NewZone* zone) {
+     NewZonePrinter printer(Severity);
+     return printer.PrintSection(zone);
    }
  };
 }

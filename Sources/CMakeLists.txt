@@ -49,7 +49,7 @@ ADD_LIBRARY(poseidon
             poseidon/bitset.h
             poseidon/common.h
             poseidon/flags.h
-            poseidon/heap/freelist.h poseidon/heap/freelist.cc
+            poseidon/heap/freelist/freelist.h poseidon/heap/freelist/freelist.cc
             poseidon/pointer.h poseidon/pointer.cc
             poseidon/relaxed_atomic.h
             poseidon/runtime.h poseidon/runtime.cc

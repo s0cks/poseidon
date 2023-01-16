@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SERIAL_SWEEPER_H
 #define POSEIDON_SERIAL_SWEEPER_H
 
-#include "poseidon/heap/freelist.h"
+#include "poseidon/heap/freelist/freelist.h"
 #include "poseidon/sweeper/sweeper.h"
 #include "poseidon/sweeper/sweeper_visitor.h"
 
