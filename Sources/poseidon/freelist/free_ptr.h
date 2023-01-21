@@ -137,7 +137,7 @@ namespace poseidon {
    FreePointer& operator=(const FreePointer& rhs) = default;
 
    explicit operator Region() const {
-     return Region(GetStartingAddress(), GetSize());
+     return { GetStartingAddress(), GetSize() };
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const FreePointer& val) {

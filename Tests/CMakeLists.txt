@@ -14,7 +14,6 @@ ADD_EXECUTABLE(poseidon-tests
                helpers/assertions.h
                heap/test_new_page.cc
                heap/test_old_zone.cc
-               freelist/test_freelist.cc
                heap/test_free_object.cc
                marker/test_marker_serial.cc
                sweeper/test_sweeper_serial.cc
@@ -45,6 +44,8 @@ ADD_EXECUTABLE(poseidon-tests
                helpers/type_alloc_helpers.h
                utils/test_size.cc
                heap/page/test_page_table.cc
+               freelist/test_freelist.h
+               freelist/test_freelist.cc
                freelist/mock_free_list.h
                freelist/mock_free_pointer.h
                freelist/is_free_ptr_to.h)
