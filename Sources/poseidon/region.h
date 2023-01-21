@@ -2,62 +2,114 @@
 #define POSEIDON_REGION_H
 
 #include "poseidon/platform/platform.h"
+#include "poseidon/common.h"
 
 namespace poseidon {
+ typedef word RegionSize;
+
  class Region {
-  public:
-   static inline int
-   Compare(const Region& lhs, const Region& rhs) {
-     if(lhs.GetStartingAddress() < rhs.GetStartingAddress())
-       return -1;
-     else if(lhs.GetStartingAddress() > rhs.GetStartingAddress())
-       return +1;
-
-     if(lhs.GetSize() < rhs.GetSize())
-       return -1;
-     else if(lhs.GetSize() > rhs.GetSize())
-       return +1;
-     return 0;
-   }
   protected:
-   Region() = default;
+   uword start_;
+   RegionSize size_;
   public:
+   Region() = default;
+   Region(const uword start, const RegionSize size):
+    start_(start),
+    size_(size) {
+   }
+   Region(const Region& rhs) = default;
    virtual ~Region() = default;
-   virtual uword GetStartingAddress() const = 0;
 
-   virtual void* GetStartingAddressPointer() const {
-     return (void*)GetStartingAddress();
+   virtual uword GetStartingAddress() const {
+     return start_;
    }
 
-   virtual uword GetEndingAddress() const {
+   void* GetStartingAddressPointer() const {
+     return (void*) GetStartingAddress();
+   }
+
+   uword GetEndingAddress() const {
      return GetStartingAddress() + GetSize();
    }
 
-   virtual void* GetEndingAddressPointer() const {
-     return (void*)GetEndingAddress();
+   void* GetEndingAddressPointer() const {
+     return (void*) GetEndingAddress();
    }
 
-   virtual word GetSize() const = 0;
+   virtual RegionSize GetSize() const {
+     return size_;
+   }
 
    virtual bool Contains(const uword address) const {
-     return GetStartingAddress() <= address
-         && GetEndingAddress() >= address;
+     return GetStartingAddress() <= address &&
+            GetEndingAddress() >= address;
    }
 
-   virtual bool Intersects(const Region& rhs) const {
-     return Contains(rhs.GetStartingAddress()) || Contains(rhs.GetEndingAddress());
+   virtual bool Contains(const uword start, const RegionSize size) const {
+     return Contains(start) && Contains(start + size);
+   }
+
+   virtual inline bool Contains(const Region* region) const {
+     return Contains(region->GetStartingAddress(), region->GetSize());
+   }
+
+   virtual inline bool Contains(const Region& region) const {
+     return Contains(&region);
+   }
+
+   virtual bool Intersects(const uword start, const RegionSize size) const {
+     return Contains(start) || Contains(start + size);
+   }
+
+   virtual inline bool Intersects(const Region* rhs) const {
+     return Intersects(rhs->GetStartingAddress(), rhs->GetSize());
+   }
+
+   virtual inline bool Intersects(const Region& rhs) const {
+     return Intersects(&rhs);
+   }
+
+   Region& operator=(const Region& rhs) {
+     if(*this == rhs)
+       return *this;
+     start_ = rhs.start_;
+     size_ = rhs.size_;
+     return *this;
+   }
+
+   friend Region operator+(const Region& lhs, const RegionSize& rhs) {
+     return { lhs.GetStartingAddress() + (lhs.GetSize() * rhs), lhs.GetSize() };
+   }
+
+   friend Region operator-(const Region& lhs, const RegionSize& rhs) {
+     return { lhs.GetStartingAddress() - (lhs.GetSize() * rhs), lhs.GetSize() };
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const Region& region) {
+     stream << "Region(";
+     stream << "start=" << region.GetStartingAddressPointer() << ", ";
+     stream << "size=" << Bytes(region.GetSize());
+     stream << ")";
+     return stream;
    }
 
    friend bool operator==(const Region& lhs, const Region& rhs) {
-     return Compare(lhs, rhs) == 0;
+     return lhs.GetStartingAddress() == rhs.GetStartingAddress() &&
+            lhs.GetSize() == rhs.GetSize();
    }
 
    friend bool operator!=(const Region& lhs, const Region& rhs) {
-     return Compare(lhs, rhs) != 0;
+     return !operator==(lhs, rhs);
+   }
+  public:
+   static inline Region
+   Subregion(const Region& parent, const RegionSize offset, const RegionSize size) {
+     return { parent.GetStartingAddress() + offset, size };
    }
 
-   friend bool operator<(const Region& lhs, const Region& rhs) {
-     return Compare(lhs, rhs) < 0;
+   static inline Region
+   Subregion(const Region& parent, const RegionSize size) {
+     return Subregion(parent, 0, size);
    }
  };
 }

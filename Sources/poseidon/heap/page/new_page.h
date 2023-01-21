@@ -72,10 +72,6 @@ namespace poseidon {
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
-   word GetSize() const override {
-     return flags::GetNewPageSize();
-   }
-
    NewPage& operator=(const NewPage& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const NewPage& value) {

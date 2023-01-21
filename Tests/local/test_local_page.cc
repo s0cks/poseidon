@@ -27,7 +27,7 @@ namespace poseidon {
    static constexpr const RawInt kAValue = 44;
    auto a = Int::New(kAValue);
    DLOG(INFO) << "a: " << (*a);
-   ASSERT_TRUE(new_zone->Intersects(*a->raw_ptr()));
+   ASSERT_TRUE(new_zone->Intersects((Region) *a->raw_ptr()));
    ASSERT_EQ(a->Get(), kAValue);
    ASSERT_NO_FATAL_FAILURE(page.SetLocal(kALocalIndex, a->raw_ptr()));
 
@@ -35,7 +35,7 @@ namespace poseidon {
    static constexpr const RawInt kBValue = 88;
    auto b = Int::New(kBValue);
    DLOG(INFO) << "b: " << (*b);
-   ASSERT_TRUE(new_zone->Intersects(*b->raw_ptr()));
+   ASSERT_TRUE(new_zone->Intersects((Region) *b->raw_ptr()));
    ASSERT_EQ(b->Get(), kBValue);
    ASSERT_NO_FATAL_FAILURE(page.SetLocal(kBLocalIndex, b->raw_ptr()));
 

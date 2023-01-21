@@ -48,7 +48,7 @@ namespace poseidon {
    ASSERT_TRUE(IsLong(p1->raw_ptr()));
    ASSERT_TRUE(LongEq(10, p1));
 
-   ASSERT_NO_FATAL_FAILURE(table.MarkAllIntersectedBy(p1->raw_ptr()));
+   ASSERT_NO_FATAL_FAILURE(table.MarkAllIntersectedBy((Region) *p1->raw_ptr()));
 
    ASSERT_TRUE(table.IsMarked(0));
    DLOG(INFO) << "table: " << table;

@@ -5,7 +5,7 @@
 #include "poseidon/bitset.h"
 #include "poseidon/heap/zone/zone.h"
 #include "poseidon/heap/page/old_page.h"
-#include "poseidon/heap/freelist/freelist.h"
+#include "poseidon/freelist/freelist.h"
 
 namespace poseidon{
  class OldZone : public Zone {
@@ -39,7 +39,6 @@ namespace poseidon{
     Zone(start_address, size, flags::GetOldPageSize()),
     free_list_(start_address, size) {
      SetWritable();
-     free_list_.Insert(start_address, size);
    }
   public:
    OldZone() = delete;

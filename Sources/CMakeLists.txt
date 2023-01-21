@@ -49,7 +49,7 @@ ADD_LIBRARY(poseidon
             poseidon/bitset.h
             poseidon/common.h
             poseidon/flags.h
-            poseidon/heap/freelist/freelist.h poseidon/heap/freelist/freelist.cc
+            poseidon/freelist/freelist.h poseidon/freelist/freelist.cc
             poseidon/pointer.h poseidon/pointer.cc
             poseidon/relaxed_atomic.h
             poseidon/runtime.h poseidon/runtime.cc
@@ -57,7 +57,7 @@ ADD_LIBRARY(poseidon
             poseidon/utils.h poseidon/utils.cc
             poseidon/wsq.h poseidon/heap/section.cc
             poseidon/region.h
-            poseidon/heap/free_object.h
+            poseidon/freelist/free_ptr.h
             poseidon/sweeper/sweeper_stats.h
             poseidon/sweeper/sweeper_visitor.h
             poseidon/sweeper/sweeper_serial.h
@@ -70,7 +70,7 @@ ADD_LIBRARY(poseidon
             poseidon/sweeper/sweeper.h
             poseidon/sweeper/sweeper_serial.cc
             poseidon/pointer_tag.h
-            poseidon/heap/free_object.cc
+            poseidon/freelist/free_ptr.cc
             poseidon/marker/marker_serial.cc
             poseidon/heap/page_marker.h
             poseidon/scavenger/scavenger.cc
@@ -107,7 +107,7 @@ ADD_LIBRARY(poseidon
             poseidon/type/tuple.cc
             poseidon/type/tuple.h
             poseidon/utils/region.cc
-            poseidon/utils/region.h)
+            poseidon/utils/region.h poseidon/freelist/freelist_printer.h)
 TARGET_LINK_LIBRARIES(poseidon
                       ${CMAKE_THREAD_LIBS_INIT}
                       glog::glog

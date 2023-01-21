@@ -12,20 +12,6 @@
 namespace poseidon{
  using namespace ::testing;
 
- class MockFreeListNodeVisitor : public FreeObjectVisitor {
-  public:
-   MockFreeListNodeVisitor():
-       FreeObjectVisitor() {
-     ON_CALL(*this, Visit)
-      .WillByDefault([](FreeObject* val) {
-        return true;
-      });
-   }
-   ~MockFreeListNodeVisitor() override = default;
-   MOCK_METHOD(bool, Visit, (FreeObject*), (override));
- };
-}
-
 #define DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(TestSuite, TestName, Zone, ZoneSize, NumberOfBytes) \
   TEST_F(TestSuite, TestTryAllocateBytes_WillFail_##TestName) {                                  \
     MemoryRegion region(ZoneSize);                                                               \
@@ -41,7 +27,8 @@ namespace poseidon{
     ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));                                      \
     Zone zone(region);                                                                          \
     auto new_ptr = zone.TryAllocateBytes(NumberOfBytes);                                        \
-    ASSERT_EQ(*((word*) new_ptr), 0);                                                            \
+    ASSERT_EQ(*((word*) new_ptr), 0);                                                           \
   }
+}
 
 #endif //POSEIDON_HELPERS_H

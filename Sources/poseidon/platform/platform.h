@@ -40,12 +40,7 @@ namespace poseidon{
 
  typedef intptr_t word;
  typedef uintptr_t uword;
-
-#ifdef ARCHITECTURE_IS_X32
- typedef uint32_t ObjectSize;
-#else
- typedef int64_t ObjectSize; //TODO: change to uint64_t
-#endif
+ typedef word ObjectSize;
 
 #ifdef ARCHITECTURE_IS_X32
  static constexpr int kWordSizeLog2 = kInt32SizeLog2;

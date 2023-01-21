@@ -80,6 +80,11 @@ namespace poseidon {
 
    void MarkAllIntersectedBy(Region* region);
 
+   inline void
+   MarkAllIntersectedBy(Region region) {
+     return MarkAllIntersectedBy(&region);
+   }
+
    explicit operator BitSet() const {
      return marked_;
    }

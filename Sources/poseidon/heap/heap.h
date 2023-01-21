@@ -28,8 +28,6 @@ namespace poseidon{
      }
    }
   private:
-   uword start_;
-   int64_t size_;
    NewZone* new_zone_;
    OldZone* old_zone_;
 
@@ -38,25 +36,12 @@ namespace poseidon{
    uword AllocateLargeObject(int64_t size);
   public:
    explicit Heap(const MemoryRegion& region):
-    start_(region.GetStartingAddress()),
-    size_(region.GetSize()),
+    Region(region.GetStartingAddress(), region.GetSize()),
     new_zone_(NewZone::New(MemoryRegion::Subregion(region, 0, flags::GetNewZoneSize()))),
     old_zone_(new OldZone(MemoryRegion::Subregion(region, flags::GetNewZoneSize(), flags::GetOldZoneSize()))) {
    }
    Heap(const Heap& rhs) = default;
    ~Heap() override = default;
-
-   uword GetStartingAddress() const override {
-     return start_;
-   }
-
-   word GetSize() const override {
-     return size_;
-   }
-
-   int64_t GetTotalSize() const {
-     return GetSize();
-   }
 
    NewZone* new_zone() const {
      return new_zone_;

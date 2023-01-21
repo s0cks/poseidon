@@ -8,13 +8,8 @@
 namespace poseidon{
  class Section : public Region {
   protected:
-   uword start_;
-   word size_;
-
-   explicit Section(const uword start = 0, const word size = 0):
-    Region(),
-    start_(start),
-    size_(size) {
+   explicit Section(const uword start = 0, const RegionSize size = 0):
+    Region(start, size) {
    }
 
    void Protect(MemoryRegion::ProtectionMode mode);
@@ -110,14 +105,6 @@ namespace poseidon{
    }
   public:
    ~Section() override = default;
-
-   uword GetStartingAddress() const override {
-     return start_;
-   }
-
-   word GetSize() const override {
-     return size_;
-   }
 
    virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
    virtual bool VisitPointers(const std::function<bool(Pointer*)>& vis) = 0;

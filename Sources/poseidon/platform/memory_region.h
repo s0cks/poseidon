@@ -38,9 +38,6 @@ namespace poseidon{
       }
     }
    private:
-    uword start_;
-    int64_t size_;
-
     inline void
     CopyFrom(const MemoryRegion& rhs) const{//TODO: size check / refactor
       memcpy(GetStartingAddressPointer(), rhs.GetStartingAddressPointer(), rhs.GetSize());
@@ -49,10 +46,7 @@ namespace poseidon{
     /**
      * Create an empty {@link MemoryRegion}.
      */
-    MemoryRegion():
-      start_(0),
-      size_(0){
-    }
+    MemoryRegion() = default;
 
     /**
      * Create a new {@link MemoryRegion} of a specific size.
@@ -68,8 +62,7 @@ namespace poseidon{
      * @param size The size of the {@link MemoryRegion}
      */
     MemoryRegion(uword start, int64_t size):
-      start_(start),
-      size_(size){
+      Region(start, size) {
     }
 
     /**
@@ -91,19 +84,8 @@ namespace poseidon{
       MemoryRegion(parent, 0, size){
     }
 
-    MemoryRegion(const MemoryRegion& rhs):
-      start_(rhs.GetStartingAddress()),
-      size_(rhs.GetSize()){
-    }
+    MemoryRegion(const MemoryRegion& rhs) = default;
     ~MemoryRegion() override = default;
-
-    uword GetStartingAddress() const override {
-      return start_;
-    }
-
-    word GetSize() const override {
-      return size_;
-    }
 
     virtual void FreeRegion();
     virtual void ClearRegion();

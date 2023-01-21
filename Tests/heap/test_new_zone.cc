@@ -160,7 +160,7 @@ namespace poseidon{
    ASSERT_TRUE(LongEq(kDefaultWordValue, ptr));
 
    // the object should be inside the fromspace
-   ASSERT_TRUE(fromspace.Intersects(*ptr->raw_ptr()));
+   ASSERT_TRUE(fromspace.Intersects((Region) *ptr->raw_ptr()));
 
    // the object should be in the first page, and the page should be marked
    DLOG(INFO) << "new-zone table: " << (const PageTable)zone;

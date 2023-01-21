@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <glog/logging.h>
 
 #include "poseidon/utils/size.h"
 
@@ -68,5 +69,13 @@ namespace poseidon{
 #ifndef UNALLOCATED
 #define UNALLOCATED 0
 #endif // UNALLOCATED
+
+namespace poseidon {
+ template<class Zone, const google::LogSeverity Severity=google::FATAL>
+ static inline void
+ CannotAllocate(Zone* zone, const ObjectSize object_size) {
+   LOG_AT_LEVEL(Severity) << "cannot allocate " << Bytes(object_size) << " in " << (*zone) << ".";
+ }
+}
 
 #endif //POSEIDON_COMMON_H

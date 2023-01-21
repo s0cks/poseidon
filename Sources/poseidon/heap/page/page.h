@@ -73,16 +73,8 @@ namespace poseidon {
    Page(const Page& rhs) = default;
    ~Page() override = default;
 
-   uword GetStartingAddress() const override {
-     return start_;
-   }
-
    PageIndex GetIndex() const {
      return index_;
-   }
-
-   word GetSize() const override {
-     return size_;
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override {

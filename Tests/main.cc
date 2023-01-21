@@ -9,6 +9,9 @@
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 
+#define PRINT_SIZEOF(Level, Type) \
+  DLOG(Level) << "sizeof(" << #Type << ") := " << (sizeof(Type));
+
 int main(int argc, char** argv){
   using namespace poseidon;
   ::google::InitGoogleLogging(argv[0]);
@@ -18,7 +21,14 @@ int main(int argc, char** argv){
   ::google::ParseCommandLineFlags(&argc, &argv, false);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
 
+#ifdef PSDN_DEBUG
+  PRINT_SIZEOF(INFO, word);
+  PRINT_SIZEOF(INFO, uword);
+  PRINT_SIZEOF(INFO, Pointer);
+  PRINT_SIZEOF(INFO, PointerTag);
+  PRINT_SIZEOF(INFO, FreePointer);
   flags::FlagsPrinter::PrintFlags();
+#endif //PSDN_DEBUG
 
   Heap::Initialize();
   Class::Initialize();

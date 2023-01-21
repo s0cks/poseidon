@@ -7,16 +7,18 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
- class FreeObject;
- class FreeObjectVisitor {
+ class FreePointer;
+ class FreePointerVisitor {
   protected:
-   FreeObjectVisitor() = default;
+   FreePointerVisitor() = default;
   public:
-   virtual ~FreeObjectVisitor() = default;
-   virtual bool Visit(FreeObject* node) = 0;
+   virtual ~FreePointerVisitor() = default;
+   virtual bool VisitFreeListStart() { return true; }
+   virtual bool VisitFreePointer(FreePointer* free_ptr) = 0;
+   virtual bool VisitFreeListEnd() { return true; }
  };
 
- class FreeObject : public Region {
+ class FreePointer {
    friend class FreeList;
   protected:
    RelaxedAtomic<RawPointerTag> tag_;
@@ -46,8 +48,8 @@ namespace poseidon {
      forwarding_ = value;
    }
 
-   inline void SetNext(FreeObject* node) {
-     return SetNextAddress(node->GetStartingAddress());
+   inline void SetNext(FreePointer* node) {
+     return SetNextAddress(node != nullptr ? node->GetStartingAddress() : 0);
    }
 
    inline void SetOldBit(const bool value = true) {
@@ -66,36 +68,45 @@ namespace poseidon {
      return SetFreeBit(false);
    }
   public:
-   FreeObject():
-    Region(),
+   FreePointer():
     tag_(),
     forwarding_() {
      SetSize(0);
      SetNextAddress(0);
    }
-   explicit FreeObject(const PointerTag& tag):
-    Region(),
+   explicit FreePointer(const PointerTag& tag):
     tag_(tag.raw()),
     forwarding_(0) {
    }
-   explicit FreeObject(const Region& region): //TODO: remove
-    Region(region),
+   explicit FreePointer(const Region& region): //TODO: remove
     tag_(),
     forwarding_() {
      SetSize(region.GetSize());
    }
-   FreeObject(const FreeObject& rhs) = default;
-   ~FreeObject() override = default;
+   FreePointer(const FreePointer& rhs) = default;
+   virtual ~FreePointer() = default;
 
-   uword GetStartingAddress() const override {
+   uword GetStartingAddress() const {
      return (uword)this;
+   }
+
+   void* GetStartingAddressPointer() const {
+     return (void*) GetStartingAddress();
    }
 
    inline uword GetAddress() const {
      return GetStartingAddress();
    }
 
-   word GetSize() const override {
+   uword GetEndingAddress() const {
+     return GetStartingAddress() + GetSize();
+   }
+
+   void* GetEndingAddressPointer() const {
+     return (void*) GetEndingAddress();
+   }
+
+   word GetSize() const {
      return PointerTag::SizeTag::Decode(raw_tag());
    }
 
@@ -115,14 +126,22 @@ namespace poseidon {
      return (uword)forwarding_;
    }
 
-   FreeObject* GetNext() const {
-     return (FreeObject*)GetNextAddress();
+   FreePointer* GetNext() const {
+     return (FreePointer*)GetNextAddress();
    }
 
-   FreeObject& operator=(const FreeObject& rhs) = default;
+   bool HasNext() const {
+     return GetNextAddress() != UNALLOCATED;
+   }
 
-   friend std::ostream& operator<<(std::ostream& stream, const FreeObject& val) {
-     stream << "FreeObject(";
+   FreePointer& operator=(const FreePointer& rhs) = default;
+
+   explicit operator Region() const {
+     return Region(GetStartingAddress(), GetSize());
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const FreePointer& val) {
+     stream << "FreePointer(";
      stream << "tag=" << val.tag() << ", ";
      stream << "start=" <<  val.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
@@ -131,26 +150,26 @@ namespace poseidon {
      return stream;
    }
 
-   friend bool operator==(const FreeObject& lhs, const FreeObject& rhs) {
+   friend bool operator==(const FreePointer& lhs, const FreePointer& rhs) {
      return lhs.GetStartingAddress() == rhs.GetStartingAddress() &&
             lhs.GetSize() == rhs.GetSize() &&
             lhs.raw_tag() == rhs.raw_tag();
    }
 
-   friend bool operator!=(const FreeObject& lhs, const FreeObject& rhs) {
+   friend bool operator!=(const FreePointer& lhs, const FreePointer& rhs) {
      return !operator==(lhs, rhs);
    }
 
-   friend bool operator<(const FreeObject& lhs, const FreeObject& rhs) {
+   friend bool operator<(const FreePointer& lhs, const FreePointer& rhs) {
      return Compare(lhs, rhs) < 0;
    }
 
-   friend bool operator>(const FreeObject& lhs, const FreeObject& rhs) {
+   friend bool operator>(const FreePointer& lhs, const FreePointer& rhs) {
      return Compare(lhs, rhs) > 0;
    }
   public:
-   static int Compare(const FreeObject& lhs, const FreeObject& rhs);
-   static FreeObject* From(const Region& region);
+   static int Compare(const FreePointer& lhs, const FreePointer& rhs);
+   static FreePointer* From(const Region& region);
  };
 }
 

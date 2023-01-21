@@ -2,8 +2,7 @@
 
 namespace poseidon{
  MemoryRegion::MemoryRegion(const MemoryRegion* parent, int64_t offset, int64_t size)://TODO: Refactor
-   start_(0),
-   size_(0){
+  Region(0, 0) {
    if(size >= parent->GetSize()){
      LOG(WARNING) << "cannot allocate MemoryRegion of " << Bytes(size) << ", size is larger than parent.";
      return;

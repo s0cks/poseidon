@@ -46,7 +46,7 @@ namespace poseidon{
    ASSERT_NE(ptr, nullptr);
    ASSERT_TRUE(IsInt(ptr->raw_ptr()));
    ASSERT_TRUE(IntEq(kAValue, ptr));
-   ASSERT_TRUE(a.Intersects(*ptr->raw_ptr()));
+   ASSERT_TRUE(a.Intersects((Region) *ptr->raw_ptr()));
 
    // b == r2
    MemoryRegion r2(flags::GetNewZoneSemispaceSize());
@@ -55,7 +55,7 @@ namespace poseidon{
    ASSERT_EQ(b.GetStartingAddress(), r2.GetStartingAddress());
    ASSERT_EQ(b.GetCurrentAddress(), r2.GetStartingAddress());
    ASSERT_EQ(b.GetSize(), r2.GetSize());
-   ASSERT_FALSE(b.Intersects(*ptr->raw_ptr()));
+   ASSERT_FALSE(b.Intersects((Region) *ptr->raw_ptr()));
 
    ASSERT_NE(a, b);
    ASSERT_NO_FATAL_FAILURE(std::swap(a, b));
@@ -66,13 +66,13 @@ namespace poseidon{
    ASSERT_EQ(a.GetStartingAddress(), r2.GetStartingAddress());
    ASSERT_EQ(a.GetCurrentAddress(), r2.GetStartingAddress());
    ASSERT_EQ(a.GetSize(), r2.GetSize());
-   ASSERT_FALSE(a.Intersects(*ptr->raw_ptr()));
+   ASSERT_FALSE(a.Intersects((Region) *ptr->raw_ptr()));
 
    // b == r1
    ASSERT_EQ(b.GetStartingAddress(), r1.GetStartingAddress());
    ASSERT_EQ(b.GetCurrentAddress(), r1.GetStartingAddress() + ptr->raw_ptr()->GetTotalSize());
    ASSERT_EQ(b.GetSize(), r1.GetSize());
-   ASSERT_TRUE(b.Intersects(*ptr->raw_ptr()));
+   ASSERT_TRUE(b.Intersects((Region) *ptr->raw_ptr()));
  }
 
 #define DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(TestName, NumberOfBytes) \

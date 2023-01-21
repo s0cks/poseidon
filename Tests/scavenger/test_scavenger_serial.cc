@@ -87,7 +87,7 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(a.raw_ptr()->IsMarked());
    ASSERT_FALSE(a.raw_ptr()->IsRemembered());
-   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects((Region) *a.raw_ptr()));
    DLOG(INFO) << "a: " << (*a.raw_ptr());
 
    ASSERT_TRUE(SerialScavenge(heap));
@@ -96,7 +96,7 @@ namespace poseidon {
    ASSERT_NE(raw_a, nullptr);
    ASSERT_TRUE(IsInt(raw_a->raw_ptr()));
    ASSERT_TRUE(IntEq(kAValue, raw_a));
-   ASSERT_TRUE(tospace.Intersects((*a.raw_ptr())));
+   ASSERT_TRUE(tospace.Intersects(((Region) *a.raw_ptr())));
 
    DLOG(INFO) << "a: " << (*a.raw_ptr());
    ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
@@ -125,7 +125,7 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(a.raw_ptr()->IsMarked());
    ASSERT_FALSE(a.raw_ptr()->IsRemembered());
-   ASSERT_FALSE(tospace.Intersects(*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects((Region) *a.raw_ptr()));
    DLOG(INFO) << "a (before): " << (*a.raw_ptr());
 
    static constexpr const RawInt kBValue = 33;
@@ -137,7 +137,7 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(b.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(b.raw_ptr()->IsMarked());
    ASSERT_FALSE(b.raw_ptr()->IsRemembered());
-   ASSERT_FALSE(tospace.Intersects(*b.raw_ptr()));
+   ASSERT_FALSE(tospace.Intersects((Region) *b.raw_ptr()));
    DLOG(INFO) << "b (before): " << (*b.raw_ptr());
    
    MockScavenger scavenger(heap);
@@ -156,14 +156,14 @@ namespace poseidon {
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsInt(a.raw_ptr()));
    ASSERT_TRUE(IntEq(kAValue, a.Get()));
-   ASSERT_TRUE(fromspace.Intersects((*a.raw_ptr())));
+   ASSERT_TRUE(fromspace.Intersects((Region) *a.raw_ptr()));
    DLOG(INFO) << "a (after): " << (*a.raw_ptr());
 
    ASSERT_FALSE(b.raw_ptr()->IsMarked());
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsInt(b.raw_ptr()));
    ASSERT_TRUE(IntEq(kAValue, b.Get()));
-   ASSERT_TRUE(fromspace.Intersects((*b.raw_ptr())));
+   ASSERT_TRUE(fromspace.Intersects((Region) *b.raw_ptr()));
    DLOG(INFO) << "b (after): " << (*b.raw_ptr());
 
    DLOG(INFO) << "New Zone (after):";

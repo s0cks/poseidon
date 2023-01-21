@@ -14,7 +14,7 @@ ADD_EXECUTABLE(poseidon-tests
                helpers/assertions.h
                heap/test_new_page.cc
                heap/test_old_zone.cc
-               heap/test_freelist.cc
+               freelist/test_freelist.cc
                heap/test_free_object.cc
                marker/test_marker_serial.cc
                sweeper/test_sweeper_serial.cc
@@ -40,7 +40,14 @@ ADD_EXECUTABLE(poseidon-tests
                assertions/assertions.h
                assertions/pointers_eq.h
                assertions/type_assertions.h
-               mock_raw_object_visitor.h heap/page/test_page_tag.cc helpers/type_alloc_helpers.h utils/test_size.cc heap/page/test_page_table.cc)
+               mock_raw_object_visitor.h
+               heap/page/test_page_tag.cc
+               helpers/type_alloc_helpers.h
+               utils/test_size.cc
+               heap/page/test_page_table.cc
+               freelist/mock_free_list.h
+               freelist/mock_free_pointer.h
+               freelist/is_free_ptr_to.h)
 TARGET_LINK_LIBRARIES(poseidon-tests
                       poseidon
                       ${CMAKE_THREAD_LIBS_INIT}

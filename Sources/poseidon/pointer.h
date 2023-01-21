@@ -38,7 +38,7 @@ namespace poseidon{
     virtual Pointer* Next() = 0;
   };
 
-  class Pointer : public Region {
+  class Pointer {
     friend class RawObjectTest;
 
     //TODO: cleanup friends
@@ -55,23 +55,25 @@ namespace poseidon{
     RelaxedAtomic<uword> forwarding_;
 
     explicit Pointer(PointerTag tag):
-      Region(),
       tag_(tag.raw()),
       forwarding_(0){
     }
    public:
-    Pointer():
-      Region(), //TODO: make private
+    Pointer(): //TODO: make private
       tag_(0),
       forwarding_(0){
     }
-    ~Pointer() override = default;
+    ~Pointer() = default;
 
-    uword GetStartingAddress() const override {
+    uword GetStartingAddress() const {
       return (uword)this;
     }
 
-    word GetSize() const override {
+    void* GetStartingAddressPointer() const {
+      return (void*) GetStartingAddress();
+    }
+
+    word GetSize() const {
       return tag().GetSize();
     }
 
@@ -95,7 +97,7 @@ namespace poseidon{
       return (void*)GetForwardingAddress();
     }
 
-    uword GetEndingAddress() const override {
+    uword GetEndingAddress() const {
       return GetStartingAddress() + GetTotalSize();
     }
 
@@ -203,6 +205,10 @@ namespace poseidon{
     }
 
     ObjectSize VisitPointers(RawObjectVisitor* vis);
+
+    explicit operator Region() const {
+      return Region(GetStartingAddress(), GetTotalSize());
+    }
    public:
     template<class T>
     static inline uword
