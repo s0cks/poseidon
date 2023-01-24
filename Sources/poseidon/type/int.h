@@ -72,6 +72,13 @@ namespace poseidon {
      return (void*)address;
    }
 
+   void* operator new(size_t, const Region& region) noexcept {
+     CHECK_CLASS_IS_INITIALIZED(FATAL);
+     LOG_IF(FATAL, region.GetStartingAddress() <= UNALLOCATED) << "cannot allocate new " << kClassName << " @ " << region;
+     LOG_IF(FATAL, region.GetSize() < GetClass()->GetAllocationSize()) << "cannot allocate " << kClassName << " @ " << region;
+     return region.GetStartingAddressPointer();
+   }
+
    void operator delete(void*) noexcept { /* do nothing */ }
 
    static inline int
@@ -82,6 +89,10 @@ namespace poseidon {
        return +1;
      PSDN_ASSERT(lhs.Get() == rhs.Get());
      return 0;
+   }
+
+   static inline Int* TryAllocateAt(const Region& region, const RawInt value = 0) {
+     return new (region)Int(value);
    }
 
    template<class Z>

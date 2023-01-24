@@ -45,11 +45,11 @@ namespace poseidon {
 
  static ThreadLocal<LocalPage> kLocalPageThreadLocal("LocalPage");
 
- void LocalPage::SetForCurrentThread(LocalPage* page) {
+ void SetLocalPageForCurrentThread(LocalPage* page) {
    kLocalPageThreadLocal.Set(page);
  }
 
- LocalPage* LocalPage::GetForCurrentThread() {
+ LocalPage* GetLocalPageForCurrentThread() {
    return kLocalPageThreadLocal.Get();
  }
 }

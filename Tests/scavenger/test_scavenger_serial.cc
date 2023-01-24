@@ -33,8 +33,8 @@ namespace poseidon {
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_DoesNothing) {
    MemoryRegion page_region(LocalPage::CalculateLocalPageSize(32));
    ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
-   LocalPage page(page_region);
-   ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
+   LocalPage* page = LocalPage::New();
+   ASSERT_NO_FATAL_FAILURE(SetLocalPageForCurrentThread(page));
 
    MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
@@ -62,14 +62,14 @@ namespace poseidon {
    ASSERT_EQ(tospace.GetStartingAddress(), zone->fromspace().GetStartingAddress());
    ASSERT_EQ(tospace.GetSize(), zone->fromspace().GetSize());
 
-   ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
+   ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
  }
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneObject) {
    MemoryRegion page_region(LocalPage::CalculateLocalPageSize(32));
    ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
-   LocalPage page(page_region);
-   ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
+   LocalPage* page = LocalPage::New();
+   ASSERT_NO_FATAL_FAILURE(SetLocalPageForCurrentThread(page));
 
    MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
@@ -99,15 +99,15 @@ namespace poseidon {
    ASSERT_TRUE(tospace.Intersects(((Region) *a.raw_ptr())));
 
    DLOG(INFO) << "a: " << (*a.raw_ptr());
-   ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
+   ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
  }
 
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesMultipleObjects) {
    MemoryRegion page_region(LocalPage::CalculateLocalPageSize(32));
    ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
-   LocalPage page(page_region);
-   ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(&page));
+   LocalPage* page = LocalPage::New();
+   ASSERT_NO_FATAL_FAILURE(SetLocalPageForCurrentThread(page));
 
    MemoryRegion region(flags::GetTotalInitialHeapSize());
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
@@ -170,7 +170,7 @@ namespace poseidon {
    SemispacePrinter::Print(&fromspace);
    SemispacePrinter::Print(&tospace);
 
-   ASSERT_NO_FATAL_FAILURE(LocalPage::SetForCurrentThread(nullptr));
+   ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
  }
 
 // TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_PromotesOneObject) {

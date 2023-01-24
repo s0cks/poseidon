@@ -11,10 +11,7 @@ namespace poseidon {
  class MockMarker : public Marker {
   public:
    explicit MockMarker():
-    Marker() {
-     ON_CALL(*this, Mark)
-      .WillByDefault(Return(false));
-   }
+    Marker() { }
    ~MockMarker() override = default;
    MOCK_METHOD(bool, Mark, (Pointer*), (override));
  };

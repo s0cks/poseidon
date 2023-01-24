@@ -12,7 +12,7 @@ namespace poseidon {
 
  bool SerialScavenger::ProcessRoots() {
    TIMED_SECTION("ProcessRoots", {
-     auto page = LocalPage::GetForCurrentThread();
+     auto page = GetLocalPageForCurrentThread();
      for(auto idx = 0; idx < page->GetNumberOfLocals(); idx++) {
        auto ptr = page->GetLocalAt(idx);
        if((*ptr) != nullptr) {

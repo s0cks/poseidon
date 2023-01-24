@@ -26,7 +26,7 @@ namespace poseidon {
   public:
    Local():
     address_(0) {
-     auto page = LocalPage::GetForCurrentThread();
+     auto page = GetLocalPageForCurrentThread();
      if(page == nullptr) {
        LOG(WARNING) << "cannot allocate Local on thread " << GetCurrentThreadName() << " with missing LocalPage";
        return;

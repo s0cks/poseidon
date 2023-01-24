@@ -7,9 +7,13 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
- class LocalPage : public Section { //TODO: make linked list
+ class LocalPage : public AllocationSection { //TODO: make linked list
    friend class SerialScavenger;
   public:
+   static constexpr const word kMinimumSize = 1;
+   static constexpr const word kDefaultSize = 32;
+   static constexpr const word kMaximumSize = 65535;
+
    class LocalPageIterator : public RawObjectPointerIterator {
     protected:
      const LocalPage* page_;
@@ -36,7 +40,7 @@ namespace poseidon {
 
      bool HasNext() const override {
        return current_address() >= page()->GetStartingAddress() &&
-              current_address() < page()->GetEndingAddress();
+              current_address() < page()->GetCurrentAddress();
      }
 
      Pointer* Next() override {
@@ -45,9 +49,25 @@ namespace poseidon {
        return (*next);
      }
    };
+
+   static inline Region
+   CalculateLocalPageRegion(const uword start, const word num_locals) {
+     static constexpr const auto kLocalPageSize = static_cast<RegionSize>(sizeof(LocalPage));
+     return { start, CalculateLocalPageSize(num_locals) + kLocalPageSize };
+   }
+
+   static inline Region
+   CalculateLocalPageDataRegion(const Region& region, const word num_locals) {
+     static constexpr const auto kLocalPageSize = static_cast<RegionSize>(sizeof(LocalPage));
+     return Region::Subregion(region, kLocalPageSize, CalculateLocalPageSize(num_locals));
+   }
   protected:
-   uword current_;
    BitSet slots_;
+
+   explicit LocalPage(const word num_locals):
+    AllocationSection(CalculateLocalPageDataRegion(CalculateLocalPageRegion((uword) this, num_locals), num_locals)),
+    slots_(num_locals) {
+   }
 
    uword GetLocalAddressAt(const word index) const {
      if(index < 0 || index > GetNumberOfLocals())
@@ -56,33 +76,12 @@ namespace poseidon {
    }
 
    Pointer** GetLocalAt(const word index) const {
-     return (Pointer**) GetLocalAddressAt(index);
+     return (Pointer**)GetLocalAddressAt(index);
    }
   public:
-   LocalPage() = default;
-   LocalPage(const uword start, const word size):
-     Section(start, size),
-     current_(start) {
-
-     SetWritable();
-     Clear();
-   }
-   explicit LocalPage(const MemoryRegion& region):
-    LocalPage(region.GetStartingAddress(), region.GetSize()) {
-   }
-   explicit LocalPage(const word size):
-    LocalPage(MemoryRegion(CalculateLocalPageSize(size))) {
-   }
-   LocalPage(const LocalPage& rhs) = default;
+   LocalPage() = delete;
+   LocalPage(const LocalPage& rhs) = delete;
    ~LocalPage() override = default;
-
-   uword GetCurrentAddress() const {
-     return current_;
-   }
-
-   void* GetCurrentAddressPointer() const {
-     return (void*)GetCurrentAddress();
-   }
 
    word GetNumberOfLocals() const {
      return GetSize() / kWordSize;
@@ -102,6 +101,11 @@ namespace poseidon {
 
    uword TryAllocate();
 
+   inline bool
+   IsInitialized() const {
+     return GetSize() > 0 && GetCurrentAddress() > 0;
+   }
+
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitPointers(const std::function<bool(Pointer*)>& vis) override;
    bool VisitNewPointers(RawObjectVisitor* vis);
@@ -111,50 +115,54 @@ namespace poseidon {
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override;
 
-   LocalPage& operator=(const LocalPage& rhs) = default;
+   LocalPage& operator=(const LocalPage& rhs) = delete;
 
    friend std::ostream& operator<<(std::ostream& stream, const LocalPage& value) {
      stream << "LocalPage(";
      stream << "start=" << value.GetStartingAddressPointer() << ", ";
-     stream << "size=" << value.GetNumberOfLocals() << " " << Bytes(value.GetSize()) << ", ";
+     stream << "size=" << Bytes(value.GetSize()) << ", ";
+     stream << "num_locals=" << value.GetNumberOfLocals() << ", ";
+     stream << "end=" << value.GetEndingAddressPointer();
      stream << ")";
      return stream;
    }
   public:
-   static inline constexpr word
+   static inline constexpr ObjectSize
    CalculateLocalPageSize(const word num_locals) {
-     return num_locals * kWordSize;
+     return static_cast<ObjectSize>(sizeof(LocalPage)) + (num_locals * kWordSize);
+   }
+  public:
+   void* operator new(size_t sz, word num_locals) noexcept {
+     PSDN_ASSERT(sz == sizeof(LocalPage));
+     MemoryRegion region(CalculateLocalPageSize(num_locals));
+     LOG_IF(FATAL, !region.Protect(MemoryRegion::kReadWrite)) << "cannot protect " << region << " for new local page w/ " << num_locals << " locals";
+     region.ClearRegion();
+     return region.GetStartingAddressPointer();
    }
 
-   static void SetForCurrentThread(LocalPage* page);
-   static LocalPage* GetForCurrentThread();
-
-   static inline bool
-   ExistsInCurrentThread() {
-     return GetForCurrentThread() != nullptr;
+   void operator delete(void* ptr) noexcept {
+     MemoryRegion region((uword) ptr, 1); //TODO: fix this
+     region.FreeRegion();
    }
 
-   static inline void
-   RemoveFromCurrentThread() {
-     LOG(ERROR) << "cannot remove existing LocalPage so just overwriting it";
-     NOT_IMPLEMENTED(ERROR); //TODO: implement
-     SetForCurrentThread(nullptr);
-   }
-
-   static inline void
-   InitializeForCurrentThread(const MemoryRegion& region) {
-     if(ExistsInCurrentThread())
-       RemoveFromCurrentThread();
-     return SetForCurrentThread(new LocalPage(region));
-   }
-
-   static inline void
-   InitializeForCurrentThread(const word size) {
-     if(ExistsInCurrentThread())
-       RemoveFromCurrentThread();
-     return SetForCurrentThread(new LocalPage(size));
+   static inline LocalPage*
+   New(const word num_locals = kDefaultSize) {
+     return new (num_locals)LocalPage(num_locals);
    }
  };
+
+ LocalPage* GetLocalPageForCurrentThread();
+
+ inline bool LocalPageExistsForCurrentThread() {
+   return GetLocalPageForCurrentThread() != nullptr;
+ }
+
+ void SetLocalPageForCurrentThread(LocalPage* page);
+
+ inline void
+ RemoveLocalPageForCurrentThread() {
+   return SetLocalPageForCurrentThread(nullptr);
+ }
 }
 
 #endif // POSEIDON_LOCAL_PAGE_H

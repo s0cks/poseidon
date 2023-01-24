@@ -193,6 +193,10 @@ namespace poseidon{
       return static_cast<int64_t>(sizeof(Pointer)) + GetPointerSize();
     }
 
+    Region GetPointerRegion() const {
+      return { GetObjectPointerAddress(), GetPointerSize() };
+    }
+
     friend std::ostream& operator<<(std::ostream& stream, const Pointer& value) {
       stream << "Pointer(";
       stream << "tag=" << value.tag() << ", ";
@@ -207,9 +211,15 @@ namespace poseidon{
     ObjectSize VisitPointers(RawObjectVisitor* vis);
 
     explicit operator Region() const {
-      return Region(GetStartingAddress(), GetTotalSize());
+      return { GetStartingAddress(), GetTotalSize() };
     }
    public:
+    static inline Pointer*
+    From(const Region& region, const PointerTag tag = PointerTag::Empty()) {
+      //TODO: make assertions
+      return new (region.GetStartingAddressPointer())Pointer(tag);
+    }
+
     template<class T>
     static inline uword
     TryAllocateIn(T* area, int64_t size){

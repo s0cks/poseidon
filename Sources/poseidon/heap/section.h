@@ -11,6 +11,9 @@ namespace poseidon{
    explicit Section(const uword start = 0, const RegionSize size = 0):
     Region(start, size) {
    }
+   explicit Section(const Region& region):
+    Region(region) {
+   }
 
    void Protect(MemoryRegion::ProtectionMode mode);
 
@@ -18,8 +21,10 @@ namespace poseidon{
    inline bool
    IteratePointers(RawObjectVisitor* vis) {
      Iterator iter((Z*) this);
+     DLOG(INFO) << "visiting pointers in " << (*((Z*)this));
      while(iter.HasNext()) {
        auto next = iter.Next();
+       DLOG(INFO) << "next: " << (*next);
        if(!vis->Visit(next))
          return false;
      }
@@ -174,6 +179,11 @@ namespace poseidon{
    AllocationSection(const uword start, const word size):
     Section(start, size),
     current_(start) {
+   }
+
+   explicit AllocationSection(const Region& region):
+    Section(region),
+    current_(region.GetStartingAddress()) {
    }
   public:
    AllocationSection() = default;

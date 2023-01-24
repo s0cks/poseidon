@@ -1,4 +1,5 @@
 #include "poseidon/local/local_page.h"
+#include "poseidon/platform/os_thread.h"
 #include "poseidon/marker/marker_serial.h"
 
 namespace poseidon {
@@ -6,8 +7,18 @@ namespace poseidon {
    return Mark(ptr);
  }
 
- bool SerialMarker::MarkAllRoots() {
-   auto page = LocalPage::GetForCurrentThread();
+ bool SerialMarker::MarkAllRoots() { //TODO: iterate pages for roots
+   if(!LocalPageExistsForCurrentThread()) {
+     DLOG(ERROR) << "no local page exists for current thread `" << GetCurrentThreadName() << "`";
+     return false;
+   }
+
+   auto page = GetLocalPageForCurrentThread();
+   if(page->IsEmpty()) {
+     DLOG(WARNING) << "local page is empty, skipping marking.";
+     return false;
+   }
+
    return page->VisitPointers(this);
  }
 

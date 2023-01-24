@@ -5,7 +5,6 @@
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
 #include "poseidon/type/class.h"
-#include "poseidon/local/local_page.h"
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 
@@ -30,9 +29,10 @@ int main(int argc, char** argv){
   flags::FlagsPrinter::PrintFlags();
 #endif //PSDN_DEBUG
 
+  SetCurrentThreadName("poseidon");
+
   Heap::Initialize();
   Class::Initialize();
   Runtime::Initialize();
-  LocalPage::InitializeForCurrentThread(1024); //TODO: fix
   return RUN_ALL_TESTS();
 }
