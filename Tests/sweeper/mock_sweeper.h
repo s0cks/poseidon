@@ -9,9 +9,7 @@
 namespace poseidon {
  class MockSweeper : public Sweeper {
   public:
-   explicit MockSweeper(OldZone* zone):
-    Sweeper(zone) {
-   }
+   MockSweeper() = default;
    ~MockSweeper() override = default;
    MOCK_METHOD(bool, Sweep, (Pointer*), (override));
  };

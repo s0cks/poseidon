@@ -5,11 +5,12 @@
 #include "poseidon/freelist/free_ptr.h"
 
 namespace poseidon {
- class MockFreePointer : public FreePointer {
-  public:
-   MockFreePointer() = default;
-   ~MockFreePointer() override = default;
- };
+//TODO:
+// class MockFreePointer : public FreePointer {
+//  public:
+//   MockFreePointer() = default;
+//   ~MockFreePointer() override = default;
+// };
 
  class MockFreePointerVisitor : public FreePointerVisitor {
   public:

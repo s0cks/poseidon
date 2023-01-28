@@ -35,7 +35,7 @@ namespace poseidon{
   protected:
    FreeList free_list_;
 
-   OldZone(const uword start_address, const int64_t size):
+   OldZone(const uword start_address, const word size):
     Zone(start_address, size, flags::GetOldPageSize()),
     free_list_(start_address, size) {
      SetWritable();
@@ -45,7 +45,7 @@ namespace poseidon{
    explicit OldZone(const MemoryRegion& region):
     OldZone(region.GetStartingAddress(), region.GetSize()) {
    }
-   explicit OldZone(const int64_t size):
+   explicit OldZone(const word size):
     OldZone(MemoryRegion(size)) {
    }
    OldZone(const OldZone& rhs) = delete;
@@ -63,16 +63,22 @@ namespace poseidon{
      return IteratePointers<OldZone, OldZoneIterator>(vis);
    }
 
-   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IteratePointers<OldZone, OldZoneIterator>(vis);
-   }
-
    bool VisitMarkedPointers(RawObjectVisitor* vis) override {
      return IterateMarkedPointers<OldZone, OldZoneIterator>(vis);
    }
 
-   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IterateMarkedPointers<OldZone, OldZoneIterator>(vis);
+   bool VisitNewPointers(RawObjectVisitor* vis) override {
+     return false; // does not compute
+   }
+
+   bool VisitOldPointers(RawObjectVisitor* vis) override {
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     return false;
+   }
+
+   void ClearOldZone() {
+     free_list().ClearFreeList();
+     free_list().Insert((const Region&)*this);
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const OldZone& val){

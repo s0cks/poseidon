@@ -100,7 +100,6 @@ namespace poseidon{
    ASSERT_EQ(tospace.GetSize(), kSemispaceSize);
    ASSERT_TRUE(tospace.IsEmpty());
 
-   DLOG(INFO) << "new-zone table: " << (const PageTable)*zone;
    for(auto idx = 0; idx < flags::GetNumberOfNewPages(); idx++) {
 //TODO:
 //     ASSERT_FALSE(zone->IsMarked(idx));
@@ -163,7 +162,6 @@ namespace poseidon{
    ASSERT_TRUE(fromspace.Intersects((Region) *ptr->raw_ptr()));
 
    // the object should be in the first page, and the page should be marked
-   DLOG(INFO) << "new-zone table: " << (const PageTable)zone;
 //TODO:
 //   static const int64_t kFirstPageIndex = 0;
 //   ASSERT_TRUE(zone.IsMarked(kFirstPageIndex));

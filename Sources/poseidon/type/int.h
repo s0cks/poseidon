@@ -67,7 +67,7 @@ namespace poseidon {
    template<class Z>
    void* operator new(size_t, Z* zone) noexcept {
      CHECK_CLASS_IS_INITIALIZED(FATAL);
-     auto address = zone->TryAllocateBytes(kClass->GetAllocationSize());
+     auto address = zone->TryAllocateBytes(GetClass()->GetAllocationSize());
      LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate new " << kClassName;
      return (void*)address;
    }

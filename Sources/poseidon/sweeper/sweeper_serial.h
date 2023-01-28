@@ -10,15 +10,20 @@ namespace poseidon {
    friend class Sweeper;
    friend class SerialSweeperTest;
   protected:
-   explicit SerialSweeper(Sweeper* sweeper):
-     SweeperVisitor<false>(sweeper) {
+   FreeList* free_list_;
+
+   SerialSweeper(Sweeper* sweeper, FreeList* free_list):
+     SweeperVisitor<false>(sweeper),
+     free_list_(free_list) {
+   }
+
+   inline FreeList* free_list() const {
+     return free_list_;
    }
 
    bool Visit(Pointer* raw) override;
   public:
    ~SerialSweeper() override = default;
-
-   bool SweepPage(Page* page) override;
  };
 }
 

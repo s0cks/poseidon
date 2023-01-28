@@ -18,14 +18,14 @@ namespace poseidon {
    //return free_list->Insert(raw->GetStartingAddress(), raw->GetTotalSize());
  }
 
- bool Sweeper::SerialSweep(Sweeper* sweeper){
+ bool Sweeper::SerialSweep(Sweeper* sweeper, FreeList* free_list){
    if(IsSweeping()) {
      DLOG(WARNING) << "already sweeping";
      return false;
    }
 
    SetSweeping();
-   SerialSweeper serial_sweeper(sweeper);
+   SerialSweeper serial_sweeper(sweeper, free_list);
    TIMED_SECTION("SerialSweep", {
      serial_sweeper.Sweep();
    });
@@ -33,20 +33,20 @@ namespace poseidon {
    return true;
  }
 
- bool Sweeper::ParallelSweep(Sweeper* sweeper){
+ bool Sweeper::ParallelSweep(Sweeper* sweeper, FreeList* free_list){
    NOT_IMPLEMENTED(ERROR); //TODO: implement
    return false;
  }
 
- bool Sweeper::Sweep(OldZone* zone){
+ bool Sweeper::Sweep(FreeList* free_list) {
    if(IsSweeping()) {
      DLOG(WARNING) << "sweep called while already sweeping, skipping.";
      return false;
    }
 
-   Sweeper sweeper(zone);
+   Sweeper sweeper;
    return flags::FLAGS_num_workers > 0 ?
-          ParallelSweep(&sweeper) :
-          SerialSweep(&sweeper);
+          ParallelSweep(&sweeper, free_list) :
+          SerialSweep(&sweeper, free_list);
  }
 }

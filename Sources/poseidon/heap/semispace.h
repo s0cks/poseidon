@@ -120,16 +120,17 @@ namespace poseidon{
      return IteratePointers<Semispace, SemispaceIterator>(vis);
    }
 
-   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IteratePointers<Semispace, SemispaceIterator>(vis);
-   }
-
    bool VisitMarkedPointers(RawObjectVisitor* vis) override {
      return IterateMarkedPointers<Semispace, SemispaceIterator>(vis);
    }
 
-   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IterateMarkedPointers<Semispace, SemispaceIterator>(vis);
+   bool VisitNewPointers(RawObjectVisitor* vis) override {
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     return false;
+   }
+
+   bool VisitOldPointers(RawObjectVisitor* vis) override {
+     return false; // does not compute
    }
 
    Semispace& operator=(const Semispace& rhs){

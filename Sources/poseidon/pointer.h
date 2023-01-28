@@ -9,17 +9,19 @@
 #include "poseidon/region.h"
 #include "poseidon/pointer_tag.h"
 
+#include "poseidon/utils/visitor.h"
+
 namespace poseidon{
  typedef const std::function<bool(Pointer*)>& RawObjectVisitorFunction;
 
   class Pointer;
-  class RawObjectVisitor{
+  class RawObjectVisitor : public Visitor<Pointer> {
    protected:
     RawObjectVisitor() = default;
    public:
-    virtual ~RawObjectVisitor() = default;
-    virtual bool Visit(Pointer* val) = 0;
+    ~RawObjectVisitor() override = default;
   };
+  DEFINE_VISITOR_WRAPPER(RawObjectVisitor, Pointer);
 
   class RawObjectPointerVisitor{
    protected:

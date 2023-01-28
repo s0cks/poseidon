@@ -69,22 +69,18 @@ namespace poseidon {
    }
   public:
    FreePointer():
-    tag_(),
-    forwarding_() {
-     SetSize(0);
-     SetNextAddress(0);
-   }
+    tag_(PointerTag::Free(0)),
+    forwarding_(0) { }
    explicit FreePointer(const PointerTag& tag):
     tag_(tag.raw()),
-    forwarding_(0) {
-   }
+    forwarding_(0) { }
    explicit FreePointer(const Region& region): //TODO: remove
     tag_(),
     forwarding_() {
      SetSize(region.GetSize());
    }
    FreePointer(const FreePointer& rhs) = default;
-   virtual ~FreePointer() = default;
+   ~FreePointer() = default;
 
    uword GetStartingAddress() const {
      return (uword)this;
@@ -134,7 +130,7 @@ namespace poseidon {
      return GetNextAddress() != UNALLOCATED;
    }
 
-   FreePointer& operator=(const FreePointer& rhs) = default;
+   FreePointer& operator=(const FreePointer& rhs) = delete;
 
    explicit operator Region() const {
      return { GetStartingAddress(), GetSize() };
@@ -149,26 +145,7 @@ namespace poseidon {
      stream << ")";
      return stream;
    }
-
-   friend bool operator==(const FreePointer& lhs, const FreePointer& rhs) {
-     return lhs.GetStartingAddress() == rhs.GetStartingAddress() &&
-            lhs.GetSize() == rhs.GetSize() &&
-            lhs.raw_tag() == rhs.raw_tag();
-   }
-
-   friend bool operator!=(const FreePointer& lhs, const FreePointer& rhs) {
-     return !operator==(lhs, rhs);
-   }
-
-   friend bool operator<(const FreePointer& lhs, const FreePointer& rhs) {
-     return Compare(lhs, rhs) < 0;
-   }
-
-   friend bool operator>(const FreePointer& lhs, const FreePointer& rhs) {
-     return Compare(lhs, rhs) > 0;
-   }
   public:
-   static int Compare(const FreePointer& lhs, const FreePointer& rhs);
    static FreePointer* From(const Region& region);
  };
 }

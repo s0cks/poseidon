@@ -207,6 +207,11 @@ namespace poseidon {
    OldFree(const ObjectSize size) {
      return Old(size) | FreeBit::Encode(true);
    }
+
+   static inline constexpr RawPointerTag
+   Free(const ObjectSize size) {
+     return Empty() | SizeTag::Encode(size) | FreeBit::Encode(true);
+   }
  };
 }
 

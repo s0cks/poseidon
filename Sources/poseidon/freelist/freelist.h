@@ -206,9 +206,18 @@ namespace poseidon{ //TODO: atomic support?
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override;
+
+   bool VisitNewPointers(RawObjectVisitor* vis) override {
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     return false;
+   }
+
+   bool VisitOldPointers(RawObjectVisitor* vis) override {
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     return false;
+   }
+
    virtual bool VisitFreePointers(FreePointerVisitor* vis);
    virtual bool VisitFreePointers(const std::function<bool(FreePointer*)>& vis);
 

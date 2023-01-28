@@ -106,8 +106,7 @@ ADD_LIBRARY(poseidon
             poseidon/local/local.h
             poseidon/type/tuple.cc
             poseidon/type/tuple.h
-            poseidon/utils/region.cc
-            poseidon/utils/region.h poseidon/freelist/freelist_printer.h)
+            poseidon/freelist/freelist_printer.h poseidon/array.h poseidon/utils/visitor.h)
 TARGET_LINK_LIBRARIES(poseidon
                       ${CMAKE_THREAD_LIBS_INIT}
                       glog::glog

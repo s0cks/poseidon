@@ -4,12 +4,15 @@
 #include "poseidon/flags.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
+#include "poseidon/type/all.h"
 #include "poseidon/type/class.h"
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 
 #define PRINT_SIZEOF(Level, Type) \
   DLOG(Level) << "sizeof(" << #Type << ") := " << (sizeof(Type));
+#define PRINT_ALLOC_SIZE(Level, Type) \
+  DLOG(Level) << "sizeof(" << #Type << ") := " << Bytes((Type::GetClassAllocationSize()));
 
 int main(int argc, char** argv){
   using namespace poseidon;
@@ -20,19 +23,29 @@ int main(int argc, char** argv){
   ::google::ParseCommandLineFlags(&argc, &argv, false);
   LOG(INFO) << "Running unit tests for poseidon v" << poseidon::GetVersion() << "....";
 
-#ifdef PSDN_DEBUG
-  PRINT_SIZEOF(INFO, word);
-  PRINT_SIZEOF(INFO, uword);
-  PRINT_SIZEOF(INFO, Pointer);
-  PRINT_SIZEOF(INFO, PointerTag);
-  PRINT_SIZEOF(INFO, FreePointer);
-  flags::FlagsPrinter::PrintFlags();
-#endif //PSDN_DEBUG
-
   SetCurrentThreadName("poseidon");
 
   Heap::Initialize();
   Class::Initialize();
   Runtime::Initialize();
+
+#ifdef PSDN_DEBUG
+  PRINT_SIZEOF(INFO, word);
+  PRINT_SIZEOF(INFO, uword);
+  PRINT_SIZEOF(INFO, RelaxedAtomic<uword>);
+  PRINT_SIZEOF(INFO, Pointer);
+  PRINT_SIZEOF(INFO, RawPointerTag);
+  PRINT_SIZEOF(INFO, RelaxedAtomic<RawPointerTag>);
+  PRINT_SIZEOF(INFO, PointerTag);
+  PRINT_SIZEOF(INFO, FreePointer);
+
+  PRINT_ALLOC_SIZE(INFO, Bool);
+  PRINT_ALLOC_SIZE(INFO, Byte);
+  PRINT_ALLOC_SIZE(INFO, Short);
+  PRINT_ALLOC_SIZE(INFO, Int);
+  PRINT_ALLOC_SIZE(INFO, Long);
+
+  flags::FlagsPrinter::PrintFlags();
+#endif //PSDN_DEBUG
   return RUN_ALL_TESTS();
 }

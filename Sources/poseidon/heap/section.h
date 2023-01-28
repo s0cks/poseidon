@@ -32,33 +32,11 @@ namespace poseidon{
    }
 
    template<class Z, class Iterator>
-   inline bool IteratePointers(const std::function<bool(Pointer*)>& vis) {
-     Iterator iter((Z*) this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(!vis(next))
-         return false;
-     }
-     return true;
-   }
-
-   template<class Z, class Iterator>
    inline bool IterateNewPointers(RawObjectVisitor* vis) {
      Iterator iter((Z*) this);
      while(iter.HasNext()) {
        auto next = iter.Next();
        if(next->IsNew() && !vis->Visit(next))
-         return false;
-     }
-     return true;
-   }
-
-   template<class Z, class Iterator>
-   inline bool IterateNewPointers(const std::function<bool(Pointer*)>& vis) {
-     Iterator iter((Z*) this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(next->IsNew() && !vis(next))
          return false;
      }
      return true;
@@ -76,17 +54,6 @@ namespace poseidon{
    }
 
    template<class Z, class Iterator>
-   inline bool IterateOldPointers(const std::function<bool(Pointer*)>& vis) {
-     Iterator iter((Z*) this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(next->IsOld() && !vis(next))
-         return false;
-     }
-     return true;
-   }
-
-   template<class Z, class Iterator>
    inline bool
    IterateMarkedPointers(RawObjectVisitor* vis) {
      Iterator iter((Z*) this);
@@ -97,25 +64,36 @@ namespace poseidon{
      }
      return true;
    }
-
-   template<class Z, class Iterator>
-   inline bool IterateMarkedPointers(const std::function<bool(Pointer*)>& vis) {
-     Iterator iter((Z*) this);
-     while(iter.HasNext()) {
-       auto next = iter.Next();
-       if(next->IsMarked() && !vis(next))
-         return false;
-     }
-     return true;
-   }
   public:
    ~Section() override = default;
 
    virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
-   virtual bool VisitPointers(const std::function<bool(Pointer*)>& vis) = 0;
+
+   virtual bool VisitPointers(const RawObjectVisitor::VisitorFunction& function) {
+     auto vis = RawObjectVisitorWrapper(function);
+     return VisitPointers(&vis);
+   }
 
    virtual bool VisitMarkedPointers(RawObjectVisitor* vis) = 0;
-   virtual bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) = 0;
+
+   virtual bool VisitMarkedPointers(const RawObjectVisitor::VisitorFunction& function) {
+     auto vis = RawObjectVisitorWrapper(function);
+     return VisitMarkedPointers(&vis);
+   }
+
+   virtual bool VisitNewPointers(RawObjectVisitor* vis) = 0;
+
+   virtual bool VisitNewPointers(const RawObjectVisitor::VisitorFunction& function) {
+     auto vis = RawObjectVisitorWrapper(function);
+     return VisitNewPointers(&vis);
+   }
+
+   virtual bool VisitOldPointers(RawObjectVisitor* vis) = 0;
+
+   virtual bool VisitOldPointers(const RawObjectVisitor::VisitorFunction& function) {
+     auto vis = RawObjectVisitorWrapper(function);
+     return VisitOldPointers(&vis);
+   }
 
    inline void SetReadOnly() { //TODO: visible for testing
      return Protect(MemoryRegion::kReadOnly);

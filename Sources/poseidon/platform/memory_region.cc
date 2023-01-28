@@ -1,7 +1,7 @@
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{
- MemoryRegion::MemoryRegion(const MemoryRegion* parent, int64_t offset, int64_t size)://TODO: Refactor
+ MemoryRegion::MemoryRegion(const MemoryRegion* parent, word offset, word size)://TODO: Refactor
   Region(0, 0) {
    if(size >= parent->GetSize()){
      LOG(WARNING) << "cannot allocate MemoryRegion of " << Bytes(size) << ", size is larger than parent.";

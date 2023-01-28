@@ -14,11 +14,6 @@ namespace poseidon {
    }
 
    auto page = GetLocalPageForCurrentThread();
-   if(page->IsEmpty()) {
-     DLOG(WARNING) << "local page is empty, skipping marking.";
-     return false;
-   }
-
    return page->VisitPointers(this);
  }
 

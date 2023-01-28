@@ -93,16 +93,17 @@ namespace poseidon{
      return IteratePointers<NewZone, NewZoneIterator>(vis);
    }
 
-   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IteratePointers<NewZone, NewZoneIterator>(vis);
-   }
-
    bool VisitMarkedPointers(RawObjectVisitor* vis) override {
      return IterateMarkedPointers<NewZone, NewZoneIterator>(vis);
    }
 
-   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IterateMarkedPointers<NewZone, NewZoneIterator>(vis);
+   bool VisitNewPointers(RawObjectVisitor* vis) override {
+     NOT_IMPLEMENTED(ERROR); //TODO: implement
+     return false;
+   }
+
+   bool VisitOldPointers(RawObjectVisitor* vis) override {
+     return false; // does not compute
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){

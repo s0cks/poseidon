@@ -22,14 +22,23 @@ namespace poseidon {
  DEFINE_INSERT_FAILS_TEST(-1, SizeLessThanZero);
  DEFINE_INSERT_FAILS_TEST(0, SizeEqualsZero);
  DEFINE_INSERT_FAILS_TEST(FreeList::GetMinimumSize() - 1, SizeLessThanMinimum);
- DEFINE_INSERT_FAILS_TEST(FreeList::GetMaximumSize() + 1, SizeGreaterThanMaximum);
+ DEFINE_INSERT_FAILS_TEST(free_list().GetSize() + 1, SizeGreaterThanMaximum);
 
  TEST_F(FreeListTest, TestInsert_WillFail_ExistingStartingAddress) {
    ASSERT_TRUE(Insert(free_list().GetStartingAddress(), kWordSize));
    ASSERT_FALSE(Insert(free_list().GetStartingAddress(), kWordSize));
  }
 
- TEST_F(FreeListTest, TestInsert_WillPass) {
+ TEST_F(FreeListTest, TestInsert_WillPass_MaximumSize) {
+   const auto r1 = Region(test_region());
+   ASSERT_TRUE(Insert(r1));
+   MockFreePointerVisitor visitor;
+   EXPECT_CALL(visitor, VisitFreePointer(IsFreePointerTo(r1)))
+    .WillOnce(Return(true));
+   ASSERT_TRUE(free_list().VisitFreePointers(&visitor));
+ }
+
+ TEST_F(FreeListTest, TestInsert_WillPass_MinimumSize) {
    const auto r1 = Region::Subregion(test_region(), kWordSize);
    ASSERT_TRUE(Insert(r1));
    MockFreePointerVisitor visitor;
@@ -50,12 +59,17 @@ namespace poseidon {
  DEFINE_REMOVE_FAILS_TEST(-1, SizeLessThanZero);
  DEFINE_REMOVE_FAILS_TEST(0, SizeEqualsZero);
  DEFINE_REMOVE_FAILS_TEST(FreeList::GetMinimumSize() - 1, SizeLessThanMinimum);
- DEFINE_REMOVE_FAILS_TEST(FreeList::GetMaximumSize() + 1, SizeGreaterThanMaximum);
+ DEFINE_REMOVE_FAILS_TEST(free_list().GetSize() + 1, SizeGreaterThanMaximum);
 
- TEST_F(FreeListTest, TestRemove_WillPass) {
-   const auto r1 = Region::Subregion(test_region(), kWordSize);
+ TEST_F(FreeListTest, TestRemove_WillPass_MinimumSize) {
+   const auto r1 = Region::Subregion(test_region(), FreeList::GetMinimumSize());
    ASSERT_TRUE(Insert(r1));
    ASSERT_TRUE(Remove(r1));
+ }
+
+ TEST_F(FreeListTest, TestRemove_WillPass_MaximumSize) {
+   ASSERT_TRUE(Insert((const Region&)free_list()));
+   ASSERT_TRUE(Remove((const Region&)free_list()));
  }
 
 #define DEFINE_FIND_FAILS_TEST(NumberOfBytes, Reason) \

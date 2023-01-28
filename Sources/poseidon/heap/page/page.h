@@ -10,13 +10,13 @@
 
 namespace poseidon {
  class Page;
- class PageVisitor {
+ class PageVisitor : public Visitor<Page> {
   protected:
    PageVisitor() = default;
   public:
-   virtual ~PageVisitor() = default;
-   virtual bool Visit(Page* page) = 0;
+   ~PageVisitor() override = default;
  };
+ DEFINE_VISITOR_WRAPPER(PageVisitor, Page);
 
  class Page : public Section {
    friend class NewZone;
@@ -81,16 +81,16 @@ namespace poseidon {
      return IteratePointers<Page, PageIterator>(vis);
    }
 
-   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IteratePointers<Page, PageIterator>(vis);
-   }
-
    bool VisitMarkedPointers(RawObjectVisitor* vis) override {
      return IterateMarkedPointers<Page, PageIterator>(vis);
    }
 
-   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override {
-     return IterateMarkedPointers<Page, PageIterator>(vis);
+   bool VisitNewPointers(RawObjectVisitor* vis) override {
+     return IterateNewPointers<Page, PageIterator>(vis);
+   }
+
+   bool VisitOldPointers(RawObjectVisitor* vis) override {
+     return IterateOldPointers<Page, PageIterator>(vis);
    }
 
    Page& operator=(const Page& rhs) {
@@ -105,7 +105,7 @@ namespace poseidon {
      stream << "Page(";
      stream << "index=" << value.GetIndex() << ", ";
      stream << "start=" << value.GetStartingAddressPointer() << ", ";
-     stream << "size=" << value.GetSize();
+     stream << "size=" << Bytes(value.GetSize());
      stream << ")";
      return stream;
    }

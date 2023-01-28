@@ -10,24 +10,21 @@
 #define MAP_FAILED reinterpret_cast<void*>(-1)
 
 namespace poseidon{
-  MemoryRegion::MemoryRegion(int64_t size):
+  MemoryRegion::MemoryRegion(const word size, const ProtectionMode mode):
     MemoryRegion(){
     void* addr = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
-    if(addr == MAP_FAILED){
-      LOG(ERROR) << "failed to mmap memory region of " << size << " bytes: " << strerror(errno);
-      return;
-    }
-
+    LOG_IF(FATAL, addr == MAP_FAILED) << "failed to mmap MemoryRegion of " << Bytes(size) << ": " << strerror(errno);
     start_ = (uword)addr;
     size_ = size;
+    DLOG(INFO) << "allocated " << (*this);
+    Protect(mode);
   }
 
   void MemoryRegion::FreeRegion(){
     if(size_ > 0){
-      int err;
-      if((err = munmap((void*)start_, size_)) != 0)
-        LOG(FATAL) << "failed to munmap memory region of " << Bytes(size_) << " bytes: " << strerror(err);
-      DLOG(INFO) << "freed MemoryRegion (" << Bytes(size_) << ")";
+      int err = munmap(GetStartingAddressPointer(), GetSize());
+      LOG_IF(FATAL, err != 0)  << "failed to munmap MemoryRegion of " << Bytes(GetSize()) << ": " << strerror(err);
+      DLOG(INFO) << "freed MemoryRegion (" << Bytes(GetSize()) << ")";
     }
   }
 
@@ -50,12 +47,8 @@ namespace poseidon{
         protection = PROT_READ|PROT_WRITE|PROT_EXEC;
         break;
     }
-
-    int err;
-    if((err = mprotect(GetStartingAddressPointer(), GetSize(), protection)) != 0){
-      LOG(ERROR) << "failed to " << mode << " protect memory region of " << GetSize() << " bytes @" << GetStartingAddressPointer() << ": " << strerror(err);
-      return false;
-    }
+    int err = mprotect(GetStartingAddressPointer(), GetSize(), protection);
+    LOG_IF(FATAL, err != 0) << "failed to set ProtectionMode `" << mode << "` to " << (*this) << ": " << strerror(err);
     return true;
   }
 }

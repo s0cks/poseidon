@@ -1,5 +1,5 @@
-#ifndef POSEIDON_MEMORY_REGION_H
-#define POSEIDON_MEMORY_REGION_H
+#ifndef PSDN_MEMORY_REGION_H
+#define PSDN_MEMORY_REGION_H
 
 #include <cstring>
 #include <ostream>
@@ -53,7 +53,7 @@ namespace poseidon{
      *
      * @param size The size of the new {@link MemoryRegion}
      */
-    explicit MemoryRegion(int64_t size);
+    explicit MemoryRegion(word size, ProtectionMode mode = ProtectionMode::kNoAccess);
 
     /**
      * Create a new {@link MemoryRegion} using the specified starting address & size.
@@ -61,7 +61,7 @@ namespace poseidon{
      * @param start The starting address of the {@link MemoryRegion}
      * @param size The size of the {@link MemoryRegion}
      */
-    MemoryRegion(uword start, int64_t size):
+    MemoryRegion(uword start, word size):
       Region(start, size) {
     }
 
@@ -72,7 +72,7 @@ namespace poseidon{
      * @param offset The offset in the parent {@link MemoryRegion}
      * @param size The size of the {@link MemoryRegion}
      */
-    MemoryRegion(const MemoryRegion* parent, int64_t offset, int64_t size);
+    MemoryRegion(const MemoryRegion* parent, word offset, word size);
 
     /**
      * Create a {@link MemoryRegion} that is a sub-section of the parent region.
@@ -80,7 +80,7 @@ namespace poseidon{
      * @param parent The parent {@link MemoryRegion}
      * @param size The size of the {@link MemoryRegion}
      */
-    MemoryRegion(const MemoryRegion* parent, int64_t size):
+    MemoryRegion(const MemoryRegion* parent, word size):
       MemoryRegion(parent, 0, size){
     }
 
@@ -111,7 +111,7 @@ namespace poseidon{
     }
 
     static inline MemoryRegion
-    Subregion(const MemoryRegion& region, int64_t offset, int64_t size) {
+    Subregion(const MemoryRegion& region, word offset, word size) {
       auto starting_address = region.GetStartingAddress() + offset;
       auto ending_address = starting_address + size;
       if(!region.Contains(starting_address) || !region.Contains(ending_address))
@@ -121,4 +121,4 @@ namespace poseidon{
   };
 }
 
-#endif //POSEIDON_MEMORY_REGION_H
+#endif //PSDN_MEMORY_REGION_H

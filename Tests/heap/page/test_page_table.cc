@@ -11,46 +11,57 @@ namespace poseidon {
 
  class PageTableTest : public Test {
   protected:
-   PageTableTest() = default;
+   MemoryRegion test_region_;
+   PageTable table_;
+
+   PageTableTest():
+    test_region_(flags::GetNewZoneSize()),
+    table_((const Region&) test_region_, flags::GetNewPageSize()) {
+   }
+
+   MemoryRegion& region() {
+     return test_region_;
+   }
+
+   PageTable& table() {
+     return table_;
+   }
   public:
    ~PageTableTest() override = default;
+
+   void SetUp() override {
+     ASSERT_TRUE(region().Protect(MemoryRegion::kReadOnly));
+     ASSERT_NO_FATAL_FAILURE(PageTablePrinter<>::Print(table(), 50, "Before"));
+     for(auto idx = 0; idx < table().GetNumberOfPages(); idx++)
+       ASSERT_FALSE(table().IsMarked(idx));
+     ASSERT_TRUE(region().Protect(MemoryRegion::kReadWrite));
+     ASSERT_NO_FATAL_FAILURE(region().ClearRegion());
+     ASSERT_NO_FATAL_FAILURE(table().Clear());
+   }
+
+   void TearDown() override {
+     ASSERT_TRUE(region().Protect(MemoryRegion::kReadOnly));
+     ASSERT_NO_FATAL_FAILURE(PageTablePrinter<>::Print(table(), 50, "After"));
+   }
  };
 
- TEST_F(PageTableTest, TestConstructor) {
-   MemoryRegion region(flags::GetNewZoneSize());
-   ASSERT_NO_FATAL_FAILURE(region.Protect(MemoryRegion::kReadWrite));
-   NewZone zone(region);
-
-   PageTable table(zone.GetStartingAddress(), zone.GetSize(), flags::GetNewPageSize());
-   DLOG(INFO) << "table: " << table;
- }
-
  TEST_F(PageTableTest, TestIsMarked_WillPass) {
-   MemoryRegion region(flags::GetNewZoneSize());
-   ASSERT_NO_FATAL_FAILURE(region.Protect(MemoryRegion::kReadWrite));
-   NewZone zone(region);
-   PageTable table(zone.GetStartingAddress(), zone.GetSize(), flags::GetNewPageSize());
-   ASSERT_FALSE(table.IsMarked(0));
-   ASSERT_NO_FATAL_FAILURE(table.Mark(0));
-   ASSERT_TRUE(table.IsMarked(0));
-   ASSERT_NO_FATAL_FAILURE(table.Unmark(0));
-   ASSERT_FALSE(table.IsMarked(0));
+   NewZone zone(region());
+   ASSERT_FALSE(table().IsMarked(0));
+   ASSERT_NO_FATAL_FAILURE(table().Mark(0));
+   ASSERT_TRUE(table().IsMarked(0));
+   ASSERT_NO_FATAL_FAILURE(table().Unmark(0));
+   ASSERT_FALSE(table().IsMarked(0));
  }
 
  TEST_F(PageTableTest, TestMarkAllIntersectedBy_WillPass) {
-   MemoryRegion region(flags::GetNewZoneSize());
-   ASSERT_NO_FATAL_FAILURE(region.Protect(MemoryRegion::kReadWrite));
-   NewZone zone(region);
-   PageTable table(zone.GetStartingAddress(), zone.GetSize(), flags::GetNewPageSize());
-
+   NewZone zone(region());
    auto p1 = Long::TryAllocateIn(&zone, 10);
    ASSERT_NE(p1, nullptr);
    ASSERT_TRUE(IsLong(p1->raw_ptr()));
    ASSERT_TRUE(LongEq(10, p1));
 
-   ASSERT_NO_FATAL_FAILURE(table.MarkAllIntersectedBy((Region) *p1->raw_ptr()));
-
-   ASSERT_TRUE(table.IsMarked(0));
-   DLOG(INFO) << "table: " << table;
+   ASSERT_NO_FATAL_FAILURE(table().MarkAllIntersectedBy((Region) *p1->raw_ptr()));
+   ASSERT_TRUE(table().IsMarked(0));
  }
 }

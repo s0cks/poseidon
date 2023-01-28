@@ -35,6 +35,7 @@ namespace poseidon{
      if(BitSet::size() == size)
        return;
      auto nwords = GetLengthInWords(size);
+     DLOG(INFO) << "creating bitset w/ " << nwords << " words";
      words_ = (uword*)realloc(words_, sizeof(uword) * nwords);
      num_words_ = nwords;
    }
@@ -113,9 +114,9 @@ namespace poseidon{
 
    friend std::ostream& operator<<(std::ostream& stream , const BitSet& val){
      for(auto idx = 0; idx < val.size(); idx++){
-       PrintBits(stream, val[idx]) << " ";
+       PrintBits(stream, val[idx]);
        if(((idx + 1) % 2) == 0)
-         stream << std::endl;
+         stream << " ";
      }
      return stream;
    }

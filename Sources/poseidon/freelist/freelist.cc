@@ -16,7 +16,7 @@ namespace poseidon{
  DLOG(Level) << "cannot insert " << (Region) << " into freelist: " << (Reason);
 
 #define PSDN_CANNOT_REMOVE(Level, Region, Reason) \
- DLOG(Level) << "cannot remove " << (Region) << " from freelist: " << (Reason);
+ DLOG(Level) << "cannot remove " << (Region) << " from " << (*this) << ": " << (Reason);
 
 #define PSDN_CANNOT_FIND(Level, Size, Reason) \
  DLOG(Level) << "cannot find " << Bytes((Size)) << " in freelist: " << (Reason);
@@ -40,17 +40,7 @@ namespace poseidon{
    return false;
  }
 
- bool FreeList::VisitPointers(const std::function<bool(Pointer*)>& vis) {
-   NOT_IMPLEMENTED(FATAL);
-   return false;
- }
-
  bool FreeList::VisitMarkedPointers(RawObjectVisitor* vis) {
-   NOT_IMPLEMENTED(FATAL);
-   return false;
- }
-
- bool FreeList::VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) {
    NOT_IMPLEMENTED(FATAL);
    return false;
  }
@@ -128,10 +118,11 @@ namespace poseidon{
  }
 
  bool FreeList::Remove(const Region region) {
-   if(GetMinimumSize() > region.GetSize() || region.GetSize() > GetMaximumSize()) {
+   if(GetMinimumSize() > region.GetSize() || region.GetSize() > GetSize()) {
      PSDN_CANNOT_REMOVE(WARNING, region, "invalid size");
      return false;
    }
+
    auto bucket = GetBucketIndexFor(region.GetSize());
    auto entry = buckets_[bucket];
    FreePointer* previous = nullptr;
@@ -168,7 +159,7 @@ namespace poseidon{
  }
 
   bool FreeList::Insert(const Region region) {
-   if(region.GetSize() < GetMinimumSize() || region.GetSize() > GetMaximumSize()) {
+   if(region.GetSize() < GetMinimumSize() || region.GetSize() > GetSize()) {
      PSDN_CANNOT_INSERT(WARNING, region, "invalid size");
      return false;
    }

@@ -26,7 +26,8 @@ namespace poseidon {
   static constexpr const char* kClassName = #Name; \
   static const constexpr TypeId kTypeId = TypeId::k##Name##TypeId; \
   TypeId GetTypeId() const override { return kTypeId; }            \
-  static Class* GetClass() { return kClass; }                      \
+  static Class* GetClass() { return kClass; }      \
+  static ObjectSize GetClassAllocationSize() { CHECK_CLASS_IS_INITIALIZED(FATAL); return GetClass()->GetAllocationSize(); } \
  private:                   \
   static Class* kClass;     \
   static Class* CreateClass();

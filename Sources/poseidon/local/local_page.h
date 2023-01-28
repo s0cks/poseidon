@@ -107,13 +107,9 @@ namespace poseidon {
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitPointers(const std::function<bool(Pointer*)>& vis) override;
    bool VisitNewPointers(RawObjectVisitor* vis);
-   bool VisitNewPointers(const std::function<bool(Pointer*)>& vis);
    bool VisitOldPointers(RawObjectVisitor* vis);
-   bool VisitOldPointers(const std::function<bool(Pointer*)>& vis);
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(const std::function<bool(Pointer*)>& vis) override;
 
    LocalPage& operator=(const LocalPage& rhs) = delete;
 
@@ -163,6 +159,28 @@ namespace poseidon {
  RemoveLocalPageForCurrentThread() {
    return SetLocalPageForCurrentThread(nullptr);
  }
+
+ class LocalScope {
+  private:
+   LocalPage* page_;
+  public:
+   explicit LocalScope(const word num_locals = LocalPage::kDefaultSize):
+    page_(LocalPage::New(num_locals)) {
+     LOG_IF(FATAL, !page_) << "failed to initialize LocalPage()";
+     LOG_IF(FATAL, !page_->IsInitialized()) << "failed to initialize " << (*page());
+     SetLocalPageForCurrentThread(page());
+   }
+   LocalScope(const LocalScope& rhs) = delete;
+   ~LocalScope() {
+     RemoveLocalPageForCurrentThread();
+   }
+
+   LocalPage* page() const {
+     return page_;
+   }
+
+   LocalScope& operator=(const LocalScope& rhs) = delete;
+ };
 }
 
 #endif // POSEIDON_LOCAL_PAGE_H

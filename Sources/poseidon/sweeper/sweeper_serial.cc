@@ -7,13 +7,4 @@ namespace poseidon {
      return true; // dont sweep marked objects
    return sweeper()->Sweep(raw);
  }
-
- bool SerialSweeper::SweepPage(Page* page){
-   TIMED_SECTION("SweepPage", {
-     if(!page->VisitPointers(this))
-       return false;
-     //TODO: zone()->Unmark(page->GetIndex());
-   });
-   return true;
- }
 }
