@@ -3,7 +3,7 @@
 #include "helpers/alloc_helpers.h"
 #include "mock_raw_object_visitor.h"
 #include "poseidon/heap/semispace.h"
-#include "poseidon/type/int.h"
+#include "poseidon/type.h"
 #include "assertions/type_assertions.h"
 
 namespace poseidon{

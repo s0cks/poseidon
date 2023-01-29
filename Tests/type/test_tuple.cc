@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "poseidon/type/int.h"
-#include "poseidon/type/tuple.h"
+#include "poseidon/type.h"
 
 #include "assertions/assertions.h"
 #include "matchers/is_pointer_to.h"

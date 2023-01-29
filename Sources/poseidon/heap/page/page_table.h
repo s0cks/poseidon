@@ -145,6 +145,10 @@ namespace poseidon {
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+     return IterateUnmarkedPointers<PageTable, PageTablePointerIterator>(vis);
+   }
+
    bool VisitNewPointers(RawObjectVisitor* vis) override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;

@@ -1,4 +1,4 @@
-#include "poseidon/type/class.h"
+#include "poseidon/type.h"
 #include "freelist.h"
 #include "freelist_printer.h"
 
@@ -123,6 +123,7 @@ namespace poseidon{
      return false;
    }
 
+   DLOG(INFO) << "removing " << region << " from " << (*this);
    auto bucket = GetBucketIndexFor(region.GetSize());
    auto entry = buckets_[bucket];
    FreePointer* previous = nullptr;

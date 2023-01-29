@@ -1,4 +1,4 @@
-#include "poseidon/type/class.h"
+#include "poseidon/type.h"
 #include "poseidon/heap/page_marker.h"
 #include "poseidon/heap/zone/old_zone.h"
 #include "poseidon/collector/collector.h"
@@ -10,6 +10,7 @@ namespace poseidon{
      return UNALLOCATED;
    }
 
+   DLOG(INFO) << "allocating " << Bytes(size) << " in " << (*this);
    Pointer* new_ptr = nullptr;
    if((new_ptr = free_list_.TryAllocatePointer(size)) == UNALLOCATED) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));

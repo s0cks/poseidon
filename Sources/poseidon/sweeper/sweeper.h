@@ -18,8 +18,8 @@ namespace poseidon {
      return SetSweeping(false);
    }
 
-   static bool SerialSweep(Sweeper* sweeper, FreeList* free_list);
-   static bool ParallelSweep(Sweeper* sweeper, FreeList* free_list);
+   static bool SerialSweep(Sweeper* sweeper, OldZone* zone);
+   static bool ParallelSweep(Sweeper* sweeper, OldZone* zone);
   protected:
    Sweeper() = default;
    virtual bool Sweep(Pointer* raw);
@@ -30,7 +30,7 @@ namespace poseidon {
    Sweeper& operator=(const Sweeper& rhs) = delete;
   public:
    static bool IsSweeping();
-   static bool Sweep(FreeList* free_list);
+   static bool Sweep(OldZone* zone);
  };
 }
 

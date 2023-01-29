@@ -8,12 +8,18 @@ namespace poseidon {
  class SweeperVisitor : public RawObjectVisitor {
   protected:
    Sweeper* sweeper_;
+   OldZone* zone_;
 
-   explicit SweeperVisitor(Sweeper* sweeper):
-    sweeper_(sweeper) { }
+   explicit SweeperVisitor(Sweeper* sweeper, OldZone* zone):
+    sweeper_(sweeper),
+    zone_(zone) { }
 
    inline Sweeper* sweeper() const {
      return sweeper_;
+   }
+
+   inline OldZone* zone() const {
+     return zone_;
    }
   public:
    ~SweeperVisitor() override = default;
@@ -24,8 +30,7 @@ namespace poseidon {
 
    virtual bool Sweep() {
      TIMED_SECTION("Sweep", {
-//       if(!zone()->VisitMarkedPages(this))
-//         return false;
+       ((Section*)zone())->VisitUnmarkedPointers(this);
      });
      return true;
    }

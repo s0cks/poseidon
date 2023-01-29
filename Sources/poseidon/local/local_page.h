@@ -107,8 +107,13 @@ namespace poseidon {
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitNewPointers(RawObjectVisitor* vis);
-   bool VisitOldPointers(RawObjectVisitor* vis);
+
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+     return IterateUnmarkedPointers<LocalPage, LocalPageIterator>(vis);
+   }
+
+   bool VisitNewPointers(RawObjectVisitor* vis) override;
+   bool VisitOldPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
 
    LocalPage& operator=(const LocalPage& rhs) = delete;

@@ -1,6 +1,5 @@
 #include "pointer.h"
-#include "type/instance.h"
-#include "heap/heap.h"
+#include "poseidon/type.h"
 
 namespace poseidon{
  ObjectSize Pointer::VisitPointers(RawObjectVisitor* vis) {

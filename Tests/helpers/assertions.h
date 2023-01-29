@@ -3,7 +3,7 @@
 
 #include <gtest/gtest.h>
 
-#include "poseidon/type/long.h"
+#include "poseidon/type.h"
 #include "poseidon/local/local.h"
 
 namespace poseidon{ //TODO: cleanup & organize this file

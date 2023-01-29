@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "poseidon/type/bool.h"
+#include "poseidon/type.h"
 
 namespace poseidon {
  using namespace ::testing;

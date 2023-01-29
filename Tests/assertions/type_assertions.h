@@ -6,13 +6,7 @@
 #endif // POSEIDON_ASSERTIONS_H
 
 #include <gtest/gtest.h>
-#include "poseidon/type/int.h"
-#include "poseidon/type/bool.h"
-#include "poseidon/type/null.h"
-#include "poseidon/type/long.h"
-#include "poseidon/type/byte.h"
-#include "poseidon/type/tuple.h"
-#include "poseidon/type/short.h"
+#include "poseidon/type.h"
 
 namespace poseidon {
 #define DEFINE_IS_TYPE_ASSERTION(Name) \

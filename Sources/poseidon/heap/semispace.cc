@@ -1,5 +1,5 @@
 #include "poseidon/heap/heap.h"
-#include "poseidon/type/class.h"
+#include "poseidon/type.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{

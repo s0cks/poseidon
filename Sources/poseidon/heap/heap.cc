@@ -1,7 +1,7 @@
 #include <glog/logging.h>
 
 #include "poseidon/heap/heap.h"
-#include "poseidon/type/class.h"
+#include "poseidon/type.h"
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{

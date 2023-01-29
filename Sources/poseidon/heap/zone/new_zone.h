@@ -97,6 +97,10 @@ namespace poseidon{
      return IterateMarkedPointers<NewZone, NewZoneIterator>(vis);
    }
 
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+     return IterateUnmarkedPointers<NewZone, NewZoneIterator>(vis);
+   }
+
    bool VisitNewPointers(RawObjectVisitor* vis) override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;

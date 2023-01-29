@@ -2,7 +2,7 @@
 #define POSEIDON_TYPE_ALLOC_HELPERS_H
 
 #include <gtest/gtest.h>
-#include "poseidon/type/all.h"
+#include "poseidon/type.h"
 
 #include "matchers/is_pointer_to.h"
 #include "mock_raw_object_visitor.h"

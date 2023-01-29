@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "poseidon/type.h"
 #include "poseidon/flags.h"
-#include "poseidon/type/all.h"
 #include "marker/mock_marker.h"
 #include "poseidon/local/local.h"
 #include "helpers/alloc_helpers.h"

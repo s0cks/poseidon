@@ -120,6 +120,10 @@ namespace poseidon{
      return IteratePointers<Semispace, SemispaceIterator>(vis);
    }
 
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+     return IterateUnmarkedPointers<Semispace, SemispaceIterator>(vis);
+   }
+
    bool VisitMarkedPointers(RawObjectVisitor* vis) override {
      return IterateMarkedPointers<Semispace, SemispaceIterator>(vis);
    }

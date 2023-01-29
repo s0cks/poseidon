@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "poseidon/flags.h"
-#include "poseidon/type/all.h"
+#include "poseidon/type.h"
 #include "assertions/assertions.h"
 #include "freelist/test_freelist.h"
 #include "freelist/is_free_ptr_to.h"

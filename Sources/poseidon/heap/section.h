@@ -64,6 +64,22 @@ namespace poseidon{
      }
      return true;
    }
+
+   template<class Z, class Iterator>
+   inline bool
+   IterateUnmarkedPointers(RawObjectVisitor* vis) {
+     Iterator iter((Z*) this);
+     while(iter.HasNext()) {
+       auto next = iter.Next();
+       DLOG(INFO) << "next: " << (*next);
+       if(next->IsMarked())
+         continue;
+
+       if(!vis->Visit(next))
+         return false;
+     }
+     return true;
+   }
   public:
    ~Section() override = default;
 
@@ -79,6 +95,13 @@ namespace poseidon{
    virtual bool VisitMarkedPointers(const RawObjectVisitor::VisitorFunction& function) {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitMarkedPointers(&vis);
+   }
+
+   virtual bool VisitUnmarkedPointers(RawObjectVisitor* vis) = 0;
+
+   virtual bool VisitUnmarkedPointers(const RawObjectVisitor::VisitorFunction& func) {
+     auto vis = RawObjectVisitorWrapper(func);
+     return VisitUnmarkedPointers(&vis);
    }
 
    virtual bool VisitNewPointers(RawObjectVisitor* vis) = 0;

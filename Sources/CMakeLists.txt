@@ -80,33 +80,10 @@ ADD_LIBRARY(poseidon
             poseidon/scavenger/scavenger_serial.h
             poseidon/marker/marker_stats.h
             poseidon/pointer_counter.h
-            poseidon/type/number.h
-            poseidon/type/instance.h
-            poseidon/type/type.h
-            poseidon/type/object.h
-            poseidon/type/class.h
-            poseidon/type/field.h
-            poseidon/type/null.h
-            poseidon/type/null.cc
-            poseidon/type/instance.cc
-            poseidon/type/class.cc
-            poseidon/type/bool.cc
-            poseidon/type/bool.h
-            poseidon/type/number.cc
-            poseidon/type/byte.cc
-            poseidon/type/byte.h
-            poseidon/type/short.cc
-            poseidon/type/short.h
-            poseidon/type/int.cc
-            poseidon/type/int.h
-            poseidon/type/long.cc
-            poseidon/type/long.h
             poseidon/local/local_page.h
             poseidon/local/local_page.cc
             poseidon/local/local.h
-            poseidon/type/tuple.cc
-            poseidon/type/tuple.h
-            poseidon/freelist/freelist_printer.h poseidon/array.h poseidon/utils/visitor.h)
+            poseidon/freelist/freelist_printer.h poseidon/array.h poseidon/utils/visitor.h poseidon/type.h poseidon/type.cc)
 TARGET_LINK_LIBRARIES(poseidon
                       ${CMAKE_THREAD_LIBS_INIT}
                       glog::glog

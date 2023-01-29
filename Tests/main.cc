@@ -4,8 +4,7 @@
 #include "poseidon/flags.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
-#include "poseidon/type/all.h"
-#include "poseidon/type/class.h"
+#include "poseidon/type.h"
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 

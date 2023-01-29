@@ -1,4 +1,4 @@
-#include "poseidon/type/class.h"
+#include "poseidon/type.h"
 #include "poseidon/heap/page_marker.h"
 #include "poseidon/heap/zone/new_zone.h"
 #include "poseidon/heap/page/new_page.h"

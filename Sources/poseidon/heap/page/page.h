@@ -85,6 +85,10 @@ namespace poseidon {
      return IterateMarkedPointers<Page, PageIterator>(vis);
    }
 
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+     return IterateUnmarkedPointers<Page, PageIterator>(vis);
+   }
+
    bool VisitNewPointers(RawObjectVisitor* vis) override {
      return IterateNewPointers<Page, PageIterator>(vis);
    }

@@ -67,6 +67,10 @@ namespace poseidon{
      return IterateMarkedPointers<OldZone, OldZoneIterator>(vis);
    }
 
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+     return IterateUnmarkedPointers<OldZone, OldZoneIterator>(vis);
+   }
+
    bool VisitNewPointers(RawObjectVisitor* vis) override {
      return false; // does not compute
    }

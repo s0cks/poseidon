@@ -132,6 +132,7 @@ namespace poseidon{ //TODO: atomic support?
    }
 
    inline bool SplitAfterAndInsert(FreePointer* parent, const ObjectSize& size){
+     DLOG(INFO) << "splitting " << Bytes(size) << " from " << (*parent);
      // we need to split from the end
      const auto next_address = parent->GetStartingAddress() + size;
      const auto new_size = parent->GetSize() - size;
@@ -207,6 +208,11 @@ namespace poseidon{ //TODO: atomic support?
 
    bool VisitPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+     NOT_IMPLEMENTED(FATAL); //TODO: implement
+     return false;
+   }
 
    bool VisitNewPointers(RawObjectVisitor* vis) override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement

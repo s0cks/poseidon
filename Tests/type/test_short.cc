@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "poseidon/type/short.h"
+#include "poseidon/type.h"
 
 namespace poseidon {
  using namespace ::testing;
