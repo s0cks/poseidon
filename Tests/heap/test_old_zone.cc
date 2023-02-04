@@ -66,20 +66,20 @@ namespace poseidon {
  TEST_F(OldZoneTest, TestTryAllocate_##Type##_WillPass) {          \
    auto new_ptr = Type::TryAllocateIn<>(&zone(), Value);           \
    ASSERT_NE(new_ptr, nullptr);                                    \
-   ASSERT_TRUE(IsInt(new_ptr->raw_ptr()));                         \
+   ASSERT_TRUE(Is##Type(new_ptr->raw_ptr()));                         \
    ASSERT_TRUE(Type##Eq(Value, new_ptr));                          \
  }
 
- DEFINE_TRY_ALLOCATE_TYPE_PASSES_OLD_ZONE_TEST(Int, 42);
+ DEFINE_TRY_ALLOCATE_TYPE_PASSES_OLD_ZONE_TEST(Int32, 42);
 
  TEST_F(OldZoneTest, TestVisitPointers_WillPass) {
    MockRawObjectVisitor visitor;
    static const constexpr int64_t kNumberOfPointers = 3;
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
-     auto new_ptr = Int::TryAllocateIn(&zone(), idx);
+     auto new_ptr = Int32::TryAllocateIn(&zone(), idx);
      ASSERT_NE(new_ptr, nullptr);
-     ASSERT_TRUE(IsInt(new_ptr->raw_ptr()));
-     ASSERT_TRUE(IntEq(idx, new_ptr));
+     ASSERT_TRUE(IsInt32(new_ptr->raw_ptr()));
+     ASSERT_TRUE(Int32Eq(idx, new_ptr));
 
      ON_CALL(visitor, Visit(IsPointerTo<>(new_ptr)))
       .WillByDefault(Return(true));
@@ -93,10 +93,10 @@ namespace poseidon {
    MockRawObjectVisitor visitor;
    static const constexpr int64_t kNumberOfPointers = 3;
    for(auto idx = 0; idx < kNumberOfPointers; idx++){
-     auto new_ptr = Int::TryAllocateIn(&zone(), idx);
+     auto new_ptr = Int32::TryAllocateIn(&zone(), idx);
      ASSERT_NE(new_ptr, nullptr);
-     ASSERT_TRUE(IsInt(new_ptr->raw_ptr()));
-     ASSERT_TRUE(IntEq(idx, new_ptr));
+     ASSERT_TRUE(IsInt32(new_ptr->raw_ptr()));
+     ASSERT_TRUE(Int32Eq(idx, new_ptr));
 
      ON_CALL(visitor, Visit(IsPointerTo<>(new_ptr)))
       .WillByDefault(Return(false));
@@ -104,10 +104,10 @@ namespace poseidon {
 
    static const constexpr int64_t kNumberOfMarkedPointers = 3;
    for(auto idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto new_ptr = Int::TryAllocateIn(&zone(), idx);
+     auto new_ptr = Int32::TryAllocateIn(&zone(), idx);
      ASSERT_NE(new_ptr, nullptr);
-     ASSERT_TRUE(IsInt(new_ptr->raw_ptr()));
-     ASSERT_TRUE(IntEq(idx, new_ptr));
+     ASSERT_TRUE(IsInt32(new_ptr->raw_ptr()));
+     ASSERT_TRUE(Int32Eq(idx, new_ptr));
 
      ON_CALL(visitor, Visit(IsPointerTo<>(new_ptr)))
       .WillByDefault(Return(true));

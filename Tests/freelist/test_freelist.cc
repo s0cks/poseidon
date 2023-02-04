@@ -113,10 +113,10 @@ namespace poseidon {
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    FreeList free_list(region);
 
-   static const constexpr RawInt kAValue = 10;
-   auto ptr = Int::TryAllocateIn<>(&free_list, kAValue);
+   static const constexpr RawInt32 kAValue = 10;
+   auto ptr = Int32::TryAllocateIn<>(&free_list, kAValue);
    ASSERT_NE(ptr, nullptr);
-   ASSERT_TRUE(IsInt(ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, ptr));
+   ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, ptr));
  }
 }

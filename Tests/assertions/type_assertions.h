@@ -9,44 +9,44 @@
 #include "poseidon/type.h"
 
 namespace poseidon {
-#define DEFINE_IS_TYPE_ASSERTION(Name) \
- static inline ::testing::AssertionResult \
- Is##Name(Pointer* ptr) {              \
-  if(ptr == UNALLOCATED)               \
-    return ::testing::AssertionFailure() << "expected " << Name::kClassName << ", but was UNALLOCATED"; \
-  if(ptr->GetSize() != Name::GetClass()->GetAllocationSize())                                           \
-    return ::testing::AssertionFailure() << "sizeof " << (*ptr) << " does not equal " << Name::kClassName << "::GetClass()->GetAllocationSize() (" << Bytes(Name::GetClass()->GetAllocationSize()) << ")"; \
-  return ::testing::AssertionSuccess();\
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsPtr(Pointer* ptr) {
+   if(ptr == nullptr)
+     return ::testing::AssertionFailure() << "expected " << T::GetClassName() << ", but was nullptr.";
+   if(ptr->GetSize() != T::GetClassAllocationSize())
+     return ::testing::AssertionFailure() << "expected an instanceof " << T::GetClass() << ", but was: " << (*ptr);
+   return ::testing::AssertionSuccess();
  }
+
+#define DEFINE_IS_TYPE_ASSERTION(Name) \
+ static inline ::testing::AssertionResult Is##Name(Pointer* ptr) { return IsPtr<Name>(ptr); }
+
  DEFINE_IS_TYPE_ASSERTION(Bool);
- DEFINE_IS_TYPE_ASSERTION(Byte);
- DEFINE_IS_TYPE_ASSERTION(Short);
- DEFINE_IS_TYPE_ASSERTION(Int);
- DEFINE_IS_TYPE_ASSERTION(Long);
+ FOR_EACH_INT_TYPE(DEFINE_IS_TYPE_ASSERTION);
  DEFINE_IS_TYPE_ASSERTION(Null);
  DEFINE_IS_TYPE_ASSERTION(Tuple);
 
-#define DEFINE_TYPE_EQ_ASSERTION(Name) \
- static inline ::testing::AssertionResult \
- Name##Eq(Name* expected, Name* actual) { \
-   if(expected == UNALLOCATED && actual == UNALLOCATED) \
-     return ::testing::AssertionSuccess();\
-   if(expected == UNALLOCATED && actual != UNALLOCATED) \
-     return ::testing::AssertionFailure() << "expected UNALLOCATED but was: " << (*actual); \
-   if(expected != UNALLOCATED && actual == UNALLOCATED) \
-     return ::testing::AssertionFailure() << "expected " << (*expected) << " but was UNALLOCATED"; \
-   if(expected->Get() != actual->Get())\
-     return ::testing::AssertionFailure() << "expected " << (*expected) << " but was " << (*actual); \
-   return ::testing::AssertionSuccess();  \
+ template<class T>
+ static inline ::testing::AssertionResult
+ PtrEq(T* expected, T* actual) {
+   if(expected == nullptr && actual == nullptr)
+     return ::testing::AssertionSuccess();
+   if(expected == nullptr && actual != nullptr)
+     return ::testing::AssertionFailure() << "expected nullptr, but was " << (*actual);
+   if(expected != nullptr && actual == nullptr)
+     return ::testing::AssertionFailure() << "expected " << (*expected) << ", but was nullptr";
+   if(expected->Get() != actual->Get())
+     return ::testing::AssertionFailure() << "expected " << (*expected) << ", but was " << (*actual);
+   return ::testing::AssertionSuccess();
  }
+
+#define DEFINE_TYPE_EQ_ASSERTION(Name) \
+ static inline ::testing::AssertionResult Name##Eq(Name* expected, Name* actual) { return PtrEq<Name>(expected, actual); }
 
  DEFINE_TYPE_EQ_ASSERTION(Bool);
  DEFINE_TYPE_EQ_ASSERTION(Null);
-
- DEFINE_TYPE_EQ_ASSERTION(Byte);
- DEFINE_TYPE_EQ_ASSERTION(Short);
- DEFINE_TYPE_EQ_ASSERTION(Int);
- DEFINE_TYPE_EQ_ASSERTION(Long);
+ FOR_EACH_INT_TYPE(DEFINE_TYPE_EQ_ASSERTION);
 
 #define DEFINE_TYPE_EQ_RAW_ASSERTION(Name) \
  static inline ::testing::AssertionResult  \
@@ -61,11 +61,7 @@ namespace poseidon {
  }
 
  DEFINE_TYPE_EQ_RAW_ASSERTION(Bool);
-
- DEFINE_TYPE_EQ_RAW_ASSERTION(Byte);
- DEFINE_TYPE_EQ_RAW_ASSERTION(Short);
- DEFINE_TYPE_EQ_RAW_ASSERTION(Int);
- DEFINE_TYPE_EQ_RAW_ASSERTION(Long);
+ FOR_EACH_INT_TYPE(DEFINE_TYPE_EQ_RAW_ASSERTION);
 }
 
 #endif // POSEIDON_INT_ASSERTIONS_H

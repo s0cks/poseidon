@@ -1,30 +1,45 @@
 #include "poseidon/type.h"
 
 namespace poseidon {
- Class* Class::kObjectClass = nullptr;
- Class* Class::kNullClass = nullptr;
- Class* Class::kBoolClass = nullptr;
- Class* Class::kByteClass = nullptr;
- Class* Class::kShortClass = nullptr;
- Class* Class::kIntClass = nullptr;
- Class* Class::kLongClass = nullptr;
- Class* Class::kNumberClass = nullptr;
- Class* Class::kTupleClass = nullptr;
+#define REQUIRE_UNINITIALIZED_CLASS(Level) \
+ LOG_IF(Level, kClass != nullptr) << "class `" << GetClassName() << "` is already initialized.";
+
+#define REQUIRE_INITIALIZED_CLASS(Level) \
+ LOG_IF(Level, kClass == nullptr) << "class `" << GetClassName() << "` is not initialized.";
+
+ Class* Object::kClass = nullptr;
+
+ void Object::InitializeClass() {
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   kClass = new Class(kClassName, kTypeId, nullptr);
+ }
+
+ Class* Class::kClass = nullptr;
+
+ Class* Class::CreateClass() {
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   return new Class(kClassName, kTypeId, Object::GetClass());
+ }
+
+ Class* Field::kClass = nullptr;
+
+ Class* Field::CreateClass() {
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   return new Class(kClassName, kTypeId, Object::GetClass());
+ }
 
  void Class::Initialize(){
-   if(kObjectClass != nullptr) { //TODO: handle better
-     DLOG(WARNING) << "already initialized.";
-     return;
-   }
-
-   kObjectClass = new Class("Object", TypeId::kObjectTypeId, nullptr);
-   kBoolClass = Bool::CreateClass();
-   kNumberClass = Number::CreateClass();
-   kByteClass = Byte::CreateClass();
-   kShortClass = Short::CreateClass();
-   kIntClass = Int::CreateClass();
-   kLongClass = Long::CreateClass();
-   kTupleClass = Tuple::CreateClass();
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   Object::InitializeClass();
+   Bool::InitializeClass();
+   Tuple::InitializeClass();
+   Number::InitializeClass();
+   UInt8::InitializeClass();
+   Int8::InitializeClass();
+   UInt16::InitializeClass();
+   Int16::InitializeClass();
+   UInt32::InitializeClass();
+   Int32::InitializeClass();
  }
 
  Field* Class::CreateField(std::string name, Class* type) {
@@ -33,8 +48,10 @@ namespace poseidon {
    return field;
  }
 
- int64_t Class::GetAllocationSize() const{ //TODO: cache value
-   int64_t offset = sizeof(Instance);
+ ObjectSize Class::GetAllocationSize() const { //TODO: cache value
+   auto offset = HasParent() ?
+       GetParent()->GetAllocationSize() :
+       static_cast<ObjectSize>(sizeof(Instance));
    for(auto field : fields_) {
      field->SetOffset(offset);
      offset += kWordSize;
@@ -72,10 +89,15 @@ namespace poseidon {
  Field* Bool::kValueField = nullptr;
 
  Class* Bool::CreateClass() {
-   LOG_IF(FATAL, kClass != nullptr) << kClassName << " class is already initialized";
-   auto cls = kClass = new Class(kClassName, kTypeId);
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   auto cls = new Class(kClassName, kTypeId);
    kValueField = cls->CreateField("value", cls);
    return cls;
+ }
+
+ void Bool::InitializeClass() {
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   kClass = Bool::CreateClass();
  }
 
  static Bool* kTrue = nullptr;
@@ -97,96 +119,43 @@ namespace poseidon {
  Class* Number::kClass = nullptr;
  Field* Number::kValueField = nullptr;
 
- void* Number::operator new(size_t) noexcept {
-   if(kClass == nullptr)
-     LOG(FATAL) << "Number class not initialized";
-   return malloc(kClass->GetAllocationSize()); //TODO: change to heap
- }
-
- void Number::operator delete(void* ptr) noexcept {
-   // do nothing?
-   free(ptr); //TODO: change to heap
- }
-
  Class* Number::CreateClass() {
-   auto cls = kClass = new Class("Number", kTypeId);
+   auto cls = new Class(kClassName, kTypeId);
    kValueField = cls->CreateField("value", cls);
    return cls;
  }
 
- Number::Number(const uword value):
-     Instance(kClass, kTypeId) {
-   Set(value);
+ void Number::InitializeClass() {
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   kClass = Number::CreateClass();
  }
 
- uword Number::Get() const {
-   return *((uword*) (((uword) this) + kValueField->GetOffset()));
- }
+#define DEFINE_NUMBER_TYPE_CLASS(Name) \
+ Class* Name::kClass = nullptr;        \
+ Class* Name::CreateClass() { REQUIRE_UNINITIALIZED_CLASS(FATAL); return new Class(kClassName, kTypeId, Number::GetClass()); } \
+ void Name::InitializeClass() { REQUIRE_UNINITIALIZED_CLASS(FATAL); kClass = Name::CreateClass(); }
 
- void Number::Set(const uword value) {
-   *((uword*) (((uword) this) + kValueField->GetOffset())) = value;
- }
-
- Class* Byte::kClass = nullptr;
- Field* Byte::kValueField = nullptr;
-
- Class* Byte::CreateClass() {
-   LOG_IF(FATAL, kClass != nullptr) << kClassName << " class is already initialized";
-   auto cls = kClass = new Class(kClassName, kTypeId, Class::kNumberClass);
-   kValueField = cls->CreateField("value", cls);
-   return cls;
- }
-
- Class* Short::kClass = nullptr;
- Field* Short::kValueField = nullptr;
-
- Class* Short::CreateClass() {
-   LOG_IF(FATAL, kClass != nullptr) << kClassName << " is already initialized";
-   auto cls = kClass = new Class(kClassName, kTypeId, Class::kNumberClass);
-   kValueField = cls->CreateField("value", cls);
-   return cls;
- }
-
- Class* Int::kClass = nullptr;
- Field* Int::kValueField = nullptr;
-
- Class* Int::CreateClass() {
-   LOG_IF(FATAL, kClass != nullptr) << kClassName << " class is already initialized";
-   auto cls = kClass = new Class(kClassName, kTypeId, Class::kNumberClass);
-   kValueField = cls->CreateField("value", cls);
-   return cls;
- }
-
- Class* Long::kClass = nullptr;
- Field* Long::kValueField = nullptr;
-
- Class* Long::CreateClass() {
-   LOG_IF(FATAL, kClass != nullptr) << kClassName << " class is already initialized";
-   auto cls = kClass = new Class(kClassName, kTypeId, Class::kNumberClass);
-   kValueField = cls->CreateField("value", cls);
-   return cls;
- }
+ DEFINE_NUMBER_TYPE_CLASS(UInt8);
+ DEFINE_NUMBER_TYPE_CLASS(Int8);
+ DEFINE_NUMBER_TYPE_CLASS(UInt16);
+ DEFINE_NUMBER_TYPE_CLASS(Int16);
+ DEFINE_NUMBER_TYPE_CLASS(UInt32);
+ DEFINE_NUMBER_TYPE_CLASS(Int32);
 
  Class* Tuple::kClass = nullptr;
  Field* Tuple::kCarField = nullptr;
  Field* Tuple::kCdrField = nullptr;
 
- void* Tuple::operator new(const size_t) noexcept {
-   LOG_IF(FATAL, kClass == nullptr) << "Tuple class not initialized";
-   auto heap = Heap::GetCurrentThreadHeap();
-   auto address = heap->TryAllocateClassBytes(kClass);
-   LOG_IF(FATAL, address == UNALLOCATED) << "cannot allocate Tuple";
-   return ((Pointer*)address)->GetPointer();
- }
-
- void Tuple::operator delete(void*) noexcept {
-   // do nothing
- }
-
  Class* Tuple::CreateClass() {
-   auto cls = kClass = new Class("Tuple", kTypeId);
-   kCarField = cls->CreateField("car", Class::kObjectClass);
-   kCdrField = cls->CreateField("cdr", Class::kObjectClass);
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   auto cls = new Class("Tuple", kTypeId);
+   kCarField = cls->CreateField("car", Object::GetClass());
+   kCdrField = cls->CreateField("cdr", Object::GetClass());
    return cls;
+ }
+
+ void Tuple::InitializeClass() {
+   REQUIRE_UNINITIALIZED_CLASS(FATAL);
+   kClass = Tuple::CreateClass();
  }
 }

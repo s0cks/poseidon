@@ -152,11 +152,11 @@ namespace poseidon{
 
    Semispace& fromspace = zone.fromspace();
 
-   static const constexpr RawLong kDefaultWordValue = 42;
-   auto ptr = Long::TryAllocateIn(&zone, kDefaultWordValue);
+   static const constexpr RawInt32 kDefaultWordValue = 42;
+   auto ptr = Int32::TryAllocateIn(&zone, kDefaultWordValue);
    ASSERT_NE(ptr, nullptr);
-   ASSERT_TRUE(IsLong(ptr->raw_ptr()));
-   ASSERT_TRUE(LongEq(kDefaultWordValue, ptr));
+   ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kDefaultWordValue, ptr));
 
    // the object should be inside the fromspace
    ASSERT_TRUE(fromspace.Intersects((Region) *ptr->raw_ptr()));
@@ -174,7 +174,7 @@ namespace poseidon{
 
    MockRawObjectVisitor visitor;
    static constexpr const int64_t kNumberOfPointers = 4;
-   GenerateUnmarkedLongsInZone(&zone, kNumberOfPointers);
+   GenerateUnmarkedInt32sInZone(&zone, kNumberOfPointers);
 
    EXPECT_CALL(visitor, Visit(_))
     .Times(kNumberOfPointers);
@@ -187,9 +187,9 @@ namespace poseidon{
 
    MockRawObjectVisitor visitor;
    static constexpr const int64_t kNumberOfUnmarkedPointers = 4;
-   GenerateUnmarkedLongsInZone(&zone, kNumberOfUnmarkedPointers);
+   GenerateUnmarkedInt32sInZone(&zone, kNumberOfUnmarkedPointers);
    static constexpr const int64_t kNumberOfMarkedPointers = 3;
-   GenerateMarkedLongsInZone(&zone, kNumberOfMarkedPointers);
+   GenerateMarkedInt32sInZone(&zone, kNumberOfMarkedPointers);
 
    EXPECT_CALL(visitor, Visit(_))
      .Times(kNumberOfUnmarkedPointers + kNumberOfMarkedPointers);
@@ -202,10 +202,10 @@ namespace poseidon{
 
    MockRawObjectVisitor visitor;
    static const constexpr int64_t kNumberOfPointers = 4;
-   GenerateUnmarkedLongsInZone(&zone, kNumberOfPointers);
+   GenerateUnmarkedInt32sInZone(&zone, kNumberOfPointers);
 
    static constexpr const int64_t kNumberOfMarkedPointers = 3;
-   GenerateMarkedLongsInZone(&zone, kNumberOfMarkedPointers);
+   GenerateMarkedInt32sInZone(&zone, kNumberOfMarkedPointers);
 
    EXPECT_CALL(visitor, Visit(_))
     .Times(kNumberOfMarkedPointers);

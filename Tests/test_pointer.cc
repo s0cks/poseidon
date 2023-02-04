@@ -38,9 +38,9 @@ namespace poseidon{
  };
 
  TEST_F(PointerTest, TestTryAllocateIn_WillPass) {
-   auto i1 = Int::TryAllocateIn<>(zone());
+   auto i1 = Int32::TryAllocateIn<>(zone());
    ASSERT_NE(i1, nullptr);
-   ASSERT_TRUE(IsInt(i1->raw_ptr()));
-   ASSERT_TRUE(IntEq((const RawInt) 0, i1));
+   ASSERT_TRUE(IsInt32(i1->raw_ptr()));
+   ASSERT_TRUE(Int32Eq((const RawInt32) 0, i1));
  }
 }

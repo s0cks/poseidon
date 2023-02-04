@@ -37,12 +37,11 @@ int main(int argc, char** argv){
   PRINT_SIZEOF(INFO, RelaxedAtomic<RawPointerTag>);
   PRINT_SIZEOF(INFO, PointerTag);
   PRINT_SIZEOF(INFO, FreePointer);
+  PRINT_SIZEOF(INFO, Instance);
 
   PRINT_ALLOC_SIZE(INFO, Bool);
-  PRINT_ALLOC_SIZE(INFO, Byte);
-  PRINT_ALLOC_SIZE(INFO, Short);
-  PRINT_ALLOC_SIZE(INFO, Int);
-  PRINT_ALLOC_SIZE(INFO, Long);
+  PRINT_ALLOC_SIZE(INFO, UInt8);
+  PRINT_ALLOC_SIZE(INFO, Int8);
 
   flags::FlagsPrinter::PrintFlags();
 #endif //PSDN_DEBUG

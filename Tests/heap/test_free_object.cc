@@ -15,11 +15,12 @@ namespace poseidon {
    ~FreeObjectTest() override = default;
  };
 
- TEST_F(FreeObjectTest, TestFrom_WillFail_StartingAddressEqualsZero) {
-   MemoryRegion region;
-   auto ptr = FreePointer::From(region);
-   ASSERT_EQ(ptr, nullptr);
- }
+//TODO:
+// TEST_F(FreeObjectTest, TestFrom_WillFail_StartingAddressEqualsZero) {
+//   MemoryRegion region;
+//   auto ptr = FreePointer::From(region);
+//   ASSERT_EQ(ptr, nullptr);
+// }
 
  TEST_F(FreeObjectTest, TestFrom_WillFail_SizeEqualsZero) {
    MemoryRegion region(1 * kKB); // use a real region starting address

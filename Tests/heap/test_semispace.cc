@@ -42,10 +42,10 @@ namespace poseidon{
    ASSERT_EQ(a.GetSize(), r1.GetSize());
 
    static constexpr const word kAValue = 1034;
-   auto ptr = Int::TryAllocateIn<>(&a, kAValue);
+   auto ptr = Int32::TryAllocateIn<>(&a, kAValue);
    ASSERT_NE(ptr, nullptr);
-   ASSERT_TRUE(IsInt(ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, ptr));
+   ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, ptr));
    ASSERT_TRUE(a.Intersects((Region) *ptr->raw_ptr()));
 
    // b == r2
@@ -59,8 +59,8 @@ namespace poseidon{
 
    ASSERT_NE(a, b);
    ASSERT_NO_FATAL_FAILURE(std::swap(a, b));
-   ASSERT_TRUE(IsInt(ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, ptr));
+   ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, ptr));
 
    // a == r2
    ASSERT_EQ(a.GetStartingAddress(), r2.GetStartingAddress());
@@ -97,8 +97,8 @@ namespace poseidon{
    auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
    ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
 
-   static const constexpr RawInt kDefaultValue = 42;
-   auto ptr = Int::TryAllocateIn<>(&semispace, kDefaultValue);
+   static const constexpr RawInt32 kDefaultValue = 42;
+   auto ptr = Int32::TryAllocateIn<>(&semispace, kDefaultValue);
    ASSERT_NE(ptr, nullptr);
    ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
    ASSERT_TRUE(IsNew(ptr->raw_ptr()));
@@ -106,8 +106,8 @@ namespace poseidon{
    ASSERT_FALSE(IsMarked(ptr->raw_ptr()));
    ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
    ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-   ASSERT_TRUE(IsInt(ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kDefaultValue, ptr));
+   ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kDefaultValue, ptr));
 
    ASSERT_TRUE(SemispacePrinter::Print(&semispace));
  }
@@ -117,8 +117,8 @@ namespace poseidon{
    ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
 
    static const constexpr int64_t kNumberOfPointers = 3;
-   for(RawInt idx = 0; idx < kNumberOfPointers; idx++){
-     auto ptr = Int::TryAllocateIn(&semispace, idx);
+   for(RawInt32 idx = 0; idx < kNumberOfPointers; idx++){
+     auto ptr = Int32::TryAllocateIn(&semispace, idx);
      ASSERT_NE(ptr, nullptr);
      ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
      ASSERT_TRUE(IsNew(ptr->raw_ptr()));
@@ -126,8 +126,8 @@ namespace poseidon{
      ASSERT_FALSE(IsMarked(ptr->raw_ptr()));
      ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
      ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-     ASSERT_TRUE(IsInt(ptr->raw_ptr()));
-     ASSERT_TRUE(IntEq(idx, ptr));
+     ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+     ASSERT_TRUE(Int32Eq(idx, ptr));
    }
 
    MockRawObjectVisitor visitor;
@@ -145,8 +145,8 @@ namespace poseidon{
    static const constexpr int64_t kNumberOfUnmarkedPointers = 1;
    static const constexpr int64_t kNumberOfMarkedPointers = 3;
 
-   for(RawInt idx = 0; idx < kNumberOfUnmarkedPointers; idx++){
-     auto ptr = Int::TryAllocateIn(&semispace, idx);
+   for(RawInt32 idx = 0; idx < kNumberOfUnmarkedPointers; idx++){
+     auto ptr = Int32::TryAllocateIn(&semispace, idx);
      ASSERT_NE(ptr, nullptr);
      ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
      ASSERT_TRUE(IsNew(ptr->raw_ptr()));
@@ -154,12 +154,12 @@ namespace poseidon{
      ASSERT_FALSE(IsMarked(ptr->raw_ptr()));
      ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
      ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-     ASSERT_TRUE(IsInt(ptr->raw_ptr()));
-     ASSERT_TRUE(IntEq(idx, ptr));
+     ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+     ASSERT_TRUE(Int32Eq(idx, ptr));
    }
 
-   for(RawInt idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto ptr = Int::TryAllocateIn(&semispace, idx);
+   for(RawInt32 idx = 0; idx < kNumberOfMarkedPointers; idx++){
+     auto ptr = Int32::TryAllocateIn(&semispace, idx);
      ptr->raw_ptr()->SetMarkedBit(); //TODO: cleanup
 
      ASSERT_NE(ptr, nullptr);
@@ -169,8 +169,8 @@ namespace poseidon{
      ASSERT_TRUE(IsMarked(ptr->raw_ptr()));
      ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
      ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-     ASSERT_TRUE(IsInt(ptr->raw_ptr()));
-     ASSERT_TRUE(IntEq(idx, ptr));
+     ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+     ASSERT_TRUE(Int32Eq(idx, ptr));
    }
 
    MockRawObjectVisitor visitor;

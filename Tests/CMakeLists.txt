@@ -28,10 +28,6 @@ ADD_EXECUTABLE(poseidon-tests
                scavenger/test_scavenger_serial.cc
                scavenger/mock_scavenger.h
                type/test_bool.cc
-               type/test_byte.cc
-               type/test_short.cc
-               type/test_int.cc
-               type/test_long.cc
                local/test_local_page.cc
                matchers/is_pointer_to.h
                matchers/object_tag_matcher.h
@@ -48,7 +44,7 @@ ADD_EXECUTABLE(poseidon-tests
                freelist/test_freelist.cc
                freelist/mock_free_list.h
                freelist/mock_free_pointer.h
-               freelist/is_free_ptr_to.h)
+               freelist/is_free_ptr_to.h type/test_uint8.cc)
 TARGET_LINK_LIBRARIES(poseidon-tests
                       poseidon
                       ${CMAKE_THREAD_LIBS_INIT}

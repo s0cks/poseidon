@@ -43,11 +43,11 @@ namespace poseidon {
    auto fromspace = zone->fromspace();
    auto tospace = zone->tospace();
 
-   static constexpr const RawInt kAValue = 33;
-   auto a = Int::TryAllocateIn(zone, kAValue);
+   static constexpr const RawInt32 kAValue = 33;
+   auto a = Int32::TryAllocateIn(zone, kAValue);
    ASSERT_NE(a, nullptr);
-   ASSERT_TRUE(IsInt(a->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, a));
+   ASSERT_TRUE(IsInt32(a->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
 
    MockScavenger scavenger(heap);
    ASSERT_TRUE(SerialScavenge(&scavenger));
@@ -78,12 +78,12 @@ namespace poseidon {
    auto fromspace = zone->fromspace();
    auto tospace = zone->tospace();
 
-   static constexpr const RawInt kAValue = 33;
-   auto raw_a = Int::TryAllocateIn(zone, kAValue);
+   static constexpr const RawInt32 kAValue = 33;
+   auto raw_a = Int32::TryAllocateIn(zone, kAValue);
    ASSERT_NE(raw_a, nullptr);
-   ASSERT_TRUE(IsInt(raw_a->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, raw_a));
-   Local<Int> a(raw_a->raw_ptr());
+   ASSERT_TRUE(IsInt32(raw_a->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, raw_a));
+   Local<Int32> a(raw_a->raw_ptr());
    ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(a.raw_ptr()->IsMarked());
    ASSERT_FALSE(a.raw_ptr()->IsRemembered());
@@ -94,8 +94,8 @@ namespace poseidon {
 
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_NE(raw_a, nullptr);
-   ASSERT_TRUE(IsInt(raw_a->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, raw_a));
+   ASSERT_TRUE(IsInt32(raw_a->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, raw_a));
    ASSERT_TRUE(tospace.Intersects(((Region) *a.raw_ptr())));
 
    DLOG(INFO) << "a: " << (*a.raw_ptr());
@@ -116,24 +116,24 @@ namespace poseidon {
    auto& fromspace = zone->fromspace();
    auto& tospace = zone->tospace();
 
-   static constexpr const RawInt kAValue = 33;
-   auto raw_a = Int::TryAllocateIn(zone, kAValue);
+   static constexpr const RawInt32 kAValue = 33;
+   auto raw_a = Int32::TryAllocateIn(zone, kAValue);
    ASSERT_NE(raw_a, nullptr);
-   ASSERT_TRUE(IsInt(raw_a->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, raw_a));
-   Local<Int> a(raw_a->raw_ptr());
+   ASSERT_TRUE(IsInt32(raw_a->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, raw_a));
+   Local<Int32> a(raw_a->raw_ptr());
    ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(a.raw_ptr()->IsMarked());
    ASSERT_FALSE(a.raw_ptr()->IsRemembered());
    ASSERT_FALSE(tospace.Intersects((Region) *a.raw_ptr()));
    DLOG(INFO) << "a (before): " << (*a.raw_ptr());
 
-   static constexpr const RawInt kBValue = 33;
-   auto raw_b = Int::TryAllocateIn(zone, kBValue);
+   static constexpr const RawInt32 kBValue = 33;
+   auto raw_b = Int32::TryAllocateIn(zone, kBValue);
    ASSERT_NE(raw_b, nullptr);
-   ASSERT_TRUE(IsInt(raw_b->raw_ptr()));
-   ASSERT_TRUE(IntEq(kBValue, raw_b));
-   Local<Int> b(raw_b->raw_ptr());
+   ASSERT_TRUE(IsInt32(raw_b->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kBValue, raw_b));
+   Local<Int32> b(raw_b->raw_ptr());
    ASSERT_NO_FATAL_FAILURE(b.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(b.raw_ptr()->IsMarked());
    ASSERT_FALSE(b.raw_ptr()->IsRemembered());
@@ -154,15 +154,15 @@ namespace poseidon {
    
    ASSERT_FALSE(a.raw_ptr()->IsMarked());
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
-   ASSERT_TRUE(IsInt(a.raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, a.Get()));
+   ASSERT_TRUE(IsInt32(a.raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, a.Get()));
    ASSERT_TRUE(fromspace.Intersects((Region) *a.raw_ptr()));
    DLOG(INFO) << "a (after): " << (*a.raw_ptr());
 
    ASSERT_FALSE(b.raw_ptr()->IsMarked());
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
-   ASSERT_TRUE(IsInt(b.raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, b.Get()));
+   ASSERT_TRUE(IsInt32(b.raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, b.Get()));
    ASSERT_TRUE(fromspace.Intersects((Region) *b.raw_ptr()));
    DLOG(INFO) << "b (after): " << (*b.raw_ptr());
 

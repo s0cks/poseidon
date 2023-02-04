@@ -50,11 +50,11 @@ namespace poseidon {
  };
 
  TEST_F(SerialSweeperTest, TestSweep_WillPass_SweepsNothing) {
-   static constexpr const RawInt kAValue = 33;
-   auto a_ptr = Int::TryAllocateIn(&zone(), kAValue);
+   static constexpr const RawInt32 kAValue = 33;
+   auto a_ptr = Int32::TryAllocateIn(&zone(), kAValue);
    ASSERT_NE(a_ptr, nullptr);
-   ASSERT_TRUE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, a_ptr));
+   ASSERT_TRUE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, a_ptr));
    ASSERT_NO_FATAL_FAILURE(a_ptr->raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(IsMarked(a_ptr->raw_ptr()));
 
@@ -66,18 +66,18 @@ namespace poseidon {
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsOneObject_First) {
-   static constexpr const RawInt kAValue = 33;
-   auto a_ptr = Int::TryAllocateIn(&zone(), kAValue);
+   static constexpr const RawInt32 kAValue = 33;
+   auto a_ptr = Int32::TryAllocateIn(&zone(), kAValue);
    ASSERT_NE(a_ptr, nullptr);
-   ASSERT_TRUE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, a_ptr));
+   ASSERT_TRUE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, a_ptr));
    ASSERT_FALSE(IsMarked(a_ptr->raw_ptr()));
 
-   static constexpr const RawInt kBValue = 99;
-   auto b_ptr = Int::TryAllocateIn(&zone(), kBValue);
+   static constexpr const RawInt32 kBValue = 99;
+   auto b_ptr = Int32::TryAllocateIn(&zone(), kBValue);
    ASSERT_NE(b_ptr, nullptr);
-   ASSERT_TRUE(IsInt(b_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kBValue, b_ptr));
+   ASSERT_TRUE(IsInt32(b_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kBValue, b_ptr));
    ASSERT_NO_FATAL_FAILURE(b_ptr->raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(IsMarked(b_ptr->raw_ptr()));
 
@@ -92,30 +92,30 @@ namespace poseidon {
     });
    ASSERT_TRUE(SerialSweep(&sweeper));
 
-   //TODO: ASSERT_FALSE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_FALSE(IntEq(kAValue, a_ptr));
+   //TODO: ASSERT_FALSE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_FALSE(Int32Eq(kAValue, a_ptr));
    ASSERT_FALSE(IsMarked(a_ptr->raw_ptr()));
    ASSERT_TRUE(IsFree(a_ptr->raw_ptr()));
 
-   ASSERT_TRUE(IsInt(b_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kBValue, b_ptr));
+   ASSERT_TRUE(IsInt32(b_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kBValue, b_ptr));
    ASSERT_TRUE(IsMarked(b_ptr->raw_ptr())); //TODO: should we unmark the object after sweeping?
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsOneObject_Second) {
-   static constexpr const RawInt kAValue = 33;
-   auto a_ptr = Int::TryAllocateIn(&zone(), kAValue);
+   static constexpr const RawInt32 kAValue = 33;
+   auto a_ptr = Int32::TryAllocateIn(&zone(), kAValue);
    ASSERT_NE(a_ptr, nullptr);
-   ASSERT_TRUE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, a_ptr));
+   ASSERT_TRUE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, a_ptr));
    ASSERT_NO_FATAL_FAILURE(a_ptr->raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(IsMarked(a_ptr->raw_ptr()));
 
-   static constexpr const RawInt kBValue = 99;
-   auto b_ptr = Int::TryAllocateIn(&zone(), kBValue);
+   static constexpr const RawInt32 kBValue = 99;
+   auto b_ptr = Int32::TryAllocateIn(&zone(), kBValue);
    ASSERT_NE(b_ptr, nullptr);
-   ASSERT_TRUE(IsInt(b_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kBValue, b_ptr));
+   ASSERT_TRUE(IsInt32(b_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kBValue, b_ptr));
    ASSERT_FALSE(IsMarked(b_ptr->raw_ptr()));
 
    MockSweeper sweeper;
@@ -129,29 +129,29 @@ namespace poseidon {
      });
    ASSERT_TRUE(SerialSweep(&sweeper));
 
-   ASSERT_TRUE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, a_ptr));
+   ASSERT_TRUE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, a_ptr));
    ASSERT_TRUE(IsMarked(a_ptr->raw_ptr())); //TODO: should we unmark the object after sweeping?
 
-   //TODO: ASSERT_FALSE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_FALSE(IntEq(kBValue, b_ptr));
+   //TODO: ASSERT_FALSE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_FALSE(Int32Eq(kBValue, b_ptr));
    ASSERT_FALSE(IsMarked(b_ptr->raw_ptr()));
    ASSERT_TRUE(IsFree(b_ptr->raw_ptr()));
  }
 
  TEST_F(SerialSweeperTest, TestSweepPage_WillPass_SweepsMultipleContiguousObjects) {
-   static constexpr const RawInt kAValue = 33;
-   auto a_ptr = Int::TryAllocateIn(&zone(), kAValue);
+   static constexpr const RawInt32 kAValue = 33;
+   auto a_ptr = Int32::TryAllocateIn(&zone(), kAValue);
    ASSERT_NE(a_ptr, nullptr);
-   ASSERT_TRUE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kAValue, a_ptr));
+   ASSERT_TRUE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kAValue, a_ptr));
    ASSERT_FALSE(IsMarked(a_ptr->raw_ptr()));
 
-   static constexpr const RawInt kBValue = 99;
-   auto b_ptr = Int::TryAllocateIn(&zone(), kBValue);
+   static constexpr const RawInt32 kBValue = 99;
+   auto b_ptr = Int32::TryAllocateIn(&zone(), kBValue);
    ASSERT_NE(b_ptr, nullptr);
-   ASSERT_TRUE(IsInt(b_ptr->raw_ptr()));
-   ASSERT_TRUE(IntEq(kBValue, b_ptr));
+   ASSERT_TRUE(IsInt32(b_ptr->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(kBValue, b_ptr));
    ASSERT_FALSE(IsMarked(b_ptr->raw_ptr()));
 
    MockSweeper sweeper;
@@ -173,13 +173,13 @@ namespace poseidon {
      });
    ASSERT_TRUE(SerialSweep(&sweeper));
 
-   //TODO: ASSERT_FALSE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_FALSE(IntEq(kAValue, a_ptr));
+   //TODO: ASSERT_FALSE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_FALSE(Int32Eq(kAValue, a_ptr));
    ASSERT_FALSE(IsMarked(a_ptr->raw_ptr()));
    ASSERT_TRUE(IsFree(a_ptr->raw_ptr()));
 
-   //TODO: ASSERT_FALSE(IsInt(a_ptr->raw_ptr()));
-   ASSERT_FALSE(IntEq(kBValue, b_ptr));
+   //TODO: ASSERT_FALSE(IsInt32(a_ptr->raw_ptr()));
+   ASSERT_FALSE(Int32Eq(kBValue, b_ptr));
    ASSERT_FALSE(IsMarked(b_ptr->raw_ptr()));
    ASSERT_TRUE(IsFree(b_ptr->raw_ptr()));
  }

@@ -20,44 +20,44 @@ namespace poseidon {
    auto a = Tuple::New();
    DLOG(INFO) << "a: " << (*a);
 
-   static const constexpr RawInt kBValue = 10;
-   auto b = Int::New(kBValue);
+   static const constexpr RawInt32 kBValue = 10;
+   auto b = Int32::New(kBValue);
    DLOG(INFO) << "b: " << (*b) << " " << (*b->raw_ptr());
    ASSERT_NO_FATAL_FAILURE(a->SetCar(b->raw_ptr()));
 
-   static const constexpr RawInt kCValue = 48;
-   auto c = Int::New(kCValue);
+   static const constexpr RawInt32 kCValue = 48;
+   auto c = Int32::New(kCValue);
    DLOG(INFO) << "c: " << (*c) << " " << (*c->raw_ptr());
    ASSERT_NO_FATAL_FAILURE(a->SetCdr(c->raw_ptr()));
 
    DLOG(INFO) << "a: " << (*a);
 
-   ASSERT_TRUE(IsInt(a->GetCar<Int>()->raw_ptr()));
-   ASSERT_TRUE(IntEq(a->GetCar<Int>(), b));
-   ASSERT_TRUE(IntEq(a->GetCdr<Int>(), c));
+   ASSERT_TRUE(IsInt32(a->GetCar<Int32>()->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(a->GetCar<Int32>(), b));
+   ASSERT_TRUE(Int32Eq(a->GetCdr<Int32>(), c));
  }
 
  TEST_F(TupleTest, TestVisitPointers_WillPass) {
    auto a = Tuple::New();
    DLOG(INFO) << "a: " << (*a) << " " << (*a->raw_ptr());
 
-   static const constexpr RawInt kBValue = 10;
-   auto b = Int::New(kBValue);
+   static const constexpr RawInt32 kBValue = 10;
+   auto b = Int32::New(kBValue);
    DLOG(INFO) << "b: " << (*b) << " " << (*b->raw_ptr());
    ASSERT_NO_FATAL_FAILURE(a->SetCar(b->raw_ptr()));
 
-   static const constexpr RawInt kCValue = 48;
-   auto c = Int::New(kCValue);
+   static const constexpr RawInt32 kCValue = 48;
+   auto c = Int32::New(kCValue);
    DLOG(INFO) << "c: " << (*c) << " " << (*c->raw_ptr());
    ASSERT_NO_FATAL_FAILURE(a->SetCdr(c->raw_ptr()));
 
    DLOG(INFO) << "a: " << (*a);
 
    MockRawObjectVisitor visitor;
-   EXPECT_CALL(visitor, Visit(IsPointerTo<Int>(b)))
+   EXPECT_CALL(visitor, Visit(IsPointerTo<Int32>(b)))
      .Times(1)
      .WillOnce(Return(true));
-   EXPECT_CALL(visitor, Visit(IsPointerTo<Int>(c)))
+   EXPECT_CALL(visitor, Visit(IsPointerTo<Int32>(c)))
      .Times(1)
      .WillOnce(Return(true));
    ASSERT_EQ(a->raw_ptr()->VisitPointers(&visitor), a->raw_ptr()->GetSize());

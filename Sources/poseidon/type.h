@@ -5,17 +5,30 @@
 #include "poseidon/heap/heap.h"
 
 namespace poseidon {
+#define FOR_EACH_SIGNED_INT_TYPE(V) \
+ V(Int8)                            \
+ V(Int16)                           \
+ V(Int32)                           \
+ V(Int64)
+
+#define FOR_EACH_UNSIGNED_INT_TYPE(V) \
+ V(UInt8)                             \
+ V(UInt16)                            \
+ V(UInt32)                            \
+ V(UInt64)
+
+#define FOR_EACH_INT_TYPE(V) \
+ FOR_EACH_SIGNED_INT_TYPE(V) \
+ FOR_EACH_UNSIGNED_INT_TYPE(V)
+
 #define FOR_EACH_TYPE(V) \
  V(Object)               \
  V(Null)                 \
  V(Bool)                 \
- V(Byte)                 \
- V(Short)                \
- V(Int)                  \
- V(Long)                 \
  V(Class)                \
  V(Field)                \
  V(Number)               \
+ FOR_EACH_INT_TYPE(V)    \
  V(Tuple)
 
 #define DEFINE_TYPE_ID(Name) k##Name##TypeId,
@@ -31,6 +44,13 @@ namespace poseidon {
 #undef FORWARD_DECLARE
 
  class Object{
+   friend class Class;
+  private:
+   static constexpr const TypeId kTypeId = TypeId::kObjectTypeId;
+   static constexpr const char* kClassName = "Object";
+   static Class* kClass;
+
+   static void InitializeClass();
   protected:
    Object() = default;
   public:
@@ -44,9 +64,30 @@ namespace poseidon {
    Pointer* raw_ptr() const {
      return (Pointer*)(GetStartingAddress() - sizeof(Pointer));
    }
+
+   static inline const char* GetClassName() {
+     return kClassName;
+   }
+
+   static inline Class* GetClass() {
+     return kClass;
+   }
  };
 
+#define DEFINE_TYPE(Name) \
+ public:                    \
+  static constexpr const char* kClassName = #Name; \
+  static const constexpr TypeId kTypeId = TypeId::k##Name##TypeId; \
+  TypeId GetTypeId() const override { return kTypeId; }            \
+  static Class* GetClass() { return kClass; }      \
+  static ObjectSize GetClassAllocationSize() { CHECK_CLASS_IS_INITIALIZED(FATAL); return GetClass()->GetAllocationSize(); } \
+ private:                 \
+  static Class* kClass;   \
+  static Class* CreateClass();                     \
+  static void InitializeClass();
+
 #define DEFINE_OBJECT(Name) \
+  DEFINE_TYPE(Name);        \
  public:                    \
   void* operator new(size_t) noexcept { \
     CHECK_CLASS_IS_INITIALIZED(FATAL);  \
@@ -57,20 +98,12 @@ namespace poseidon {
   }                         \
   template<class Z>         \
   void* operator new(size_t, Z* zone) noexcept {                                                                               \
-    CHECK_CLASS_IS_INITIALIZED(FATAL); \
+    CHECK_CLASS_IS_INITIALIZED(FATAL);  \
     auto address = zone->TryAllocateClassBytes(GetClass());                                                                    \
     LOG_IF(FATAL, address == UNALLOCATED) << "failed to allocate new " << kClassName;                                          \
     return (void*)address;  \
   }                         \
   void operator delete(void*) noexcept { /* do nothing */ }                                                                    \
-  static constexpr const char* kClassName = #Name; \
-  static const constexpr TypeId kTypeId = TypeId::k##Name##TypeId; \
-  TypeId GetTypeId() const override { return kTypeId; }            \
-  static Class* GetClass() { return kClass; }      \
-  static ObjectSize GetClassAllocationSize() { CHECK_CLASS_IS_INITIALIZED(FATAL); return GetClass()->GetAllocationSize(); } \
- private:                   \
-  static Class* kClass;     \
-  static Class* CreateClass();
 
 #define CHECK_CLASS_IS_INITIALIZED(Severity) \
   LOG_IF(FATAL, kClass == nullptr) << "Class " << kClassName << " is not initialized";
@@ -83,11 +116,11 @@ namespace poseidon {
    Class* parent_;
    std::vector<Field*> fields_;
   public:
-   explicit Class(std::string name, const TypeId type_id, Class* parent = kObjectClass):
-       name_(std::move(name)),
-       parent_(parent),
-       fields_(),
-       type_id_(type_id) {
+   explicit Class(std::string name, const TypeId type_id, Class* parent = Object::GetClass()):
+     name_(std::move(name)),
+     parent_(parent),
+     fields_(),
+     type_id_(type_id) {
    }
    ~Class() override = default;
 
@@ -99,6 +132,10 @@ namespace poseidon {
      return parent_;
    }
 
+   bool HasParent() const {
+     return parent_ != nullptr;
+   }
+
    size_t GetFieldCount() const {
      return fields_.size();
    }
@@ -107,7 +144,7 @@ namespace poseidon {
      return fields_[index];
    }
 
-   int64_t GetAllocationSize() const;
+   ObjectSize GetAllocationSize() const;
    Field* CreateField(std::string name, Class* type);
 
    friend std::ostream& operator<<(std::ostream& stream, const Class& value) {
@@ -120,18 +157,8 @@ namespace poseidon {
      return stream;
    }
 
-  DEFINE_OBJECT(Class);
+   DEFINE_TYPE(Class);
   public:
-   static Class* kObjectClass;
-   static Class* kNullClass;
-   static Class* kBoolClass;
-   static Class* kByteClass;
-   static Class* kShortClass;
-   static Class* kIntClass;
-   static Class* kLongClass;
-   static Class* kNumberClass;
-   static Class* kTupleClass;
-
    static void Initialize();
  };
 
@@ -172,7 +199,7 @@ namespace poseidon {
      return offset_;
    }
 
-  DEFINE_OBJECT(Field);
+  DEFINE_TYPE(Field);
  };
 
  class Instance : public Object {
@@ -181,9 +208,9 @@ namespace poseidon {
    TypeId type_id_;
 
    explicit Instance(Class* type, const TypeId type_id = TypeId::kUnknownTypeId):
-       Object(),
-       type_(type),
-       type_id_(type_id) {
+     Object(),
+     type_(type),
+     type_id_(type_id) {
    }
 
    uword FieldAddrAtOffset(int64_t offset) const {
@@ -250,9 +277,9 @@ namespace poseidon {
  class Bool : public Instance {
    friend class Class;
    friend class Instance;
-  protected:
+  private:
    static Field* kValueField;
-  protected:
+
    explicit Bool(const RawBool value):
      Instance(kClass, kTypeId) {
      Set(value);
@@ -294,7 +321,7 @@ namespace poseidon {
    static Bool* False();
  };
 
- typedef uint8_t RawByte;
+ typedef uword RawNumber;
 
  class Number : public Instance {
    friend class Class;
@@ -302,12 +329,27 @@ namespace poseidon {
   protected:
    static Field* kValueField;
 
-   explicit Number(uword value);
-   void Set(uword value);
+   Number(Class* cls, const TypeId type_id, const RawNumber value = 0):
+    Instance(cls, type_id) {
+     Set(value);
+   }
+
+   explicit Number(const RawNumber value = 0):
+    Instance(kClass, kTypeId) {
+     Set(value);
+   }
   public:
    ~Number() override = default;
 
-   uword Get() const;
+   RawNumber Get() const {
+     uword addr = ((uword)this) + Number::GetValueField()->GetOffset();
+     return *((RawNumber*)addr);
+   }
+
+   void Set(const RawNumber value) {
+     uword addr = ((uword)this) + Number::GetValueField()->GetOffset();
+     *((RawNumber*)addr) = value;
+   }
 
    friend std::ostream& operator<<(std::ostream& stream, const Number& value) {
      stream << "Number(";
@@ -318,227 +360,282 @@ namespace poseidon {
 
    DEFINE_OBJECT(Number);
   public:
-   static inline Number* New(const uword value) {
+   static inline Field*
+   GetValueField() {
+     CHECK_CLASS_IS_INITIALIZED(FATAL);
+     return kValueField;
+   }
+
+   static inline Number* New(const RawNumber value = 0) {
      return new Number(value);
    }
-
-   static inline Number* New() {
-     return New(0);
-   }
  };
 
- class Byte : public Instance {
+ typedef uint8_t RawByte;
+ typedef uint8_t RawUInt8;
+
+ class UInt8 : public Number {
    friend class Class;
-   friend class Instance;
   protected:
-   static Field* kValueField;
-  protected:
-   explicit Byte(RawByte value):
-     Instance(kClass, kTypeId) {
-     Set(value);
-   }
-  public:
-   ~Byte() override = default;
-
-   RawByte Get() const {
-     CHECK_CLASS_IS_INITIALIZED(FATAL);
-     return *((RawByte*) FieldAddrAtOffset(kValueField->GetOffset()));
-   }
-
-   void Set(const RawByte value) {
-     CHECK_CLASS_IS_INITIALIZED(FATAL);
-     *((RawByte*) FieldAddrAtOffset(kValueField->GetOffset())) = value;
-   }
-
-   friend std::ostream& operator<<(std::ostream& stream, const Byte& value) {
-     stream << "Byte(";
-     stream << "value=" << +value.Get();
-     stream << ")";
-     return stream;
-   }
-
-   DEFINE_OBJECT(Byte);
-  public:
-   static inline Byte* New(const RawByte value = 0) {
-     return new Byte(value);
-   }
-
-   template<class Z>
-   static inline Byte* TryAllocateIn(Z* zone, const RawByte value = 0) {
-     return new (zone)Byte(value);
-   }
- };
-
- typedef uint16_t RawShort;
-
- class Short : public Instance {
-   friend class Class;
-   friend class Instance;
-  protected:
-   static Field* kValueField;
-
-   explicit Short(RawShort value):
-       Instance(kClass, kTypeId) {
-     Set(value);
-   }
-  public:
-   ~Short() override = default;
-
-   RawShort Get() const {
-     LOG_IF(FATAL, kClass == nullptr) << "Short class is not initialized";
-     return *((RawShort*) FieldAddrAtOffset(kValueField->GetOffset()));
-   }
-
-   void Set(const RawShort value) {
-     LOG_IF(FATAL, kClass == nullptr) << "Short class is not initialized";
-     *((RawShort*) FieldAddrAtOffset(kValueField->GetOffset())) = value;
-   }
-
-   friend std::ostream& operator<<(std::ostream& stream, const Short& value) {
-     stream << "Short(";
-     stream << "value=" << +value.Get();
-     stream << ")";
-     return stream;
-   }
-
-  DEFINE_OBJECT(Short);
-  public:
-   template<class Z>
-   static inline Short*
-   TryAllocateIn(Z* zone, const RawShort value = 0) {
-     return new (zone)Short(value);
-   }
-
-   static inline Short*
-   New(const RawShort value = 0) {
-     return new Short(value);
-   }
- };
-
- typedef uint32_t RawInt;
-
- class Int : public Instance {
-   friend class Class;
-   friend class Instance;
-  protected:
-   static Field* kValueField;
-
-   explicit Int(RawInt value):
-       Instance(kClass, kTypeId) {
-     Set(value);
-   }
-  public:
-   ~Int() override = default;
-
-   void Set(const RawInt value) {
-     CHECK_CLASS_IS_INITIALIZED(FATAL);
-     *((RawInt*) FieldAddrAtOffset(kValueField->GetOffset())) = value;
-   }
-
-   RawInt Get() const {
-     CHECK_CLASS_IS_INITIALIZED(FATAL);
-     return *((RawInt*) FieldAddrAtOffset(kValueField->GetOffset()));
-   }
-
-   friend std::ostream& operator<<(std::ostream& stream, const Int& value) {
-     stream << "Int(";
-     stream << "value=" << +value.Get();
-     stream << ")";
-     return stream;
-   }
-
-   friend bool operator==(const Int& lhs, const Int& rhs) {
-     return Compare(lhs, rhs) == 0;
-   }
-
-   friend bool operator!=(const Int& lhs, const Int& rhs) {
-     return Compare(lhs, rhs) != 0;
-   }
-
-   friend bool operator<(const Int& lhs, const Int& rhs) {
-     return Compare(lhs, rhs) < 0;
-   }
-
-   friend bool operator>(const Int& lhs, const Int& rhs) {
-     return Compare(lhs, rhs) > 0;
-   }
-
-  DEFINE_OBJECT(Int);
-  public:
-   void* operator new(size_t, const Region& region) noexcept {
-     CHECK_CLASS_IS_INITIALIZED(FATAL);
-     LOG_IF(FATAL, region.GetStartingAddress() <= UNALLOCATED) << "cannot allocate new " << kClassName << " @ " << region;
-     LOG_IF(FATAL, region.GetSize() < GetClass()->GetAllocationSize()) << "cannot allocate " << kClassName << " @ " << region;
-     return region.GetStartingAddressPointer();
+   explicit UInt8(const RawUInt8 value):
+    Number(kClass, kTypeId, value){
    }
 
    static inline int
-   Compare(const Int& lhs, const Int& rhs) {
-     if(lhs.Get() < rhs.Get())
+   CompareRaw(const RawUInt8 lhs, const RawUInt8 rhs) {
+     if(lhs < rhs)
        return -1;
-     else if(lhs.Get() > rhs.Get())
+     else if(lhs > rhs)
        return +1;
-     PSDN_ASSERT(lhs.Get() == rhs.Get());
      return 0;
    }
+  public:
+   ~UInt8() override = default;
 
-   static inline Int* TryAllocateAt(const Region& region, const RawInt value = 0) {
-     return new (region)Int(value);
+   RawUInt8 Get() const {
+     return static_cast<RawUInt8>(Number::Get());
+   }
+
+   void Set(const RawUInt8 value) {
+     return Number::Set(static_cast<RawNumber>(value));
+   }
+
+   int Compare(const RawUInt8 rhs) const {
+     return CompareRaw(Get(), rhs);
+   }
+
+   bool Equals(const RawUInt8 rhs) const {
+     return CompareRaw(Get(), rhs) == 0;
+   }
+
+   DEFINE_OBJECT(UInt8);
+  public:
+   static inline UInt8* New(const RawUInt8 value = 0) {
+     return new UInt8(value);
    }
 
    template<class Z>
-   static inline Int* TryAllocateIn(Z* zone, const RawInt value = 0) {
-     return new (zone)Int(value);
-   }
-
-   static inline Int* New(const RawInt value = 0) {
-     return new Int(value);
+   static inline UInt8* TryAllocateIn(Z* zone, const RawUInt8 value = 0) {
+     return new (zone)UInt8(value);
    }
  };
 
- typedef uint64_t RawLong;
+ typedef int8_t RawInt8;
 
- class Long : public Instance {
+ class Int8 : public Number {
    friend class Class;
-   friend class Instance;
   protected:
-   static Field* kValueField;
+   explicit Int8(const RawInt8 value):
+     Number(kClass, kTypeId, value){
+   }
+  public:
+   ~Int8() override = default;
 
-   explicit Long(RawLong value):
-       Instance(kClass, kTypeId) {
+   RawInt8 Get() const {
+     return static_cast<RawInt8>(Number::Get());
+   }
+
+   void Set(const RawInt8 value) {
+     return Number::Set(static_cast<RawNumber>(value));
+   }
+
+   DEFINE_OBJECT(Int8);
+  public:
+   static inline Int8* New(const RawInt8 value = 0) {
+     return new Int8(value);
+   }
+
+   template<class Z>
+   static inline Int8* TryAllocateIn(Z* zone, const RawInt8 value = 0) {
+     return new (zone)Int8(value);
+   }
+ };
+
+ typedef uint16_t RawUInt16;
+
+ class UInt16 : public Number{
+   friend class Class;
+  private:
+   explicit UInt16(const RawUInt16 value = 0):
+    Number(kClass, kTypeId, value) {
+   }
+  public:
+   ~UInt16() override = default;
+
+   RawUInt16 Get() const {
+     return static_cast<RawUInt16>(Number::Get());
+   }
+
+   void Set(const RawUInt16 value) {
+     Number::Set(static_cast<RawNumber>(value));
+   }
+
+   DEFINE_OBJECT(UInt16);
+  public:
+   static inline UInt16* New(const RawUInt16 value = 0) {
+     return new UInt16(value);
+   }
+
+   template<class Z>
+   static inline UInt16* TryAllocateIn(Z* zone, const RawUInt16 value = 0) {
+     return new (zone)UInt16(value);
+   }
+ };
+
+ typedef int16_t RawInt16;
+
+ class Int16 : public Number {
+   friend class Class;
+  private:
+   explicit Int16(const RawInt16 value = 0):
+     Number(kClass, kTypeId, value) {
+   }
+  public:
+   ~Int16() override = default;
+
+   RawInt16 Get() const {
+     return static_cast<RawInt16>(Number::Get());
+   }
+
+   void Set(const RawInt16 value) {
+     Number::Set(static_cast<RawNumber>(value));
+   }
+
+   DEFINE_OBJECT(Int16);
+  public:
+   static inline Int16* New(const RawInt16 value = 0) {
+     return new Int16(value);
+   }
+
+   template<class Z>
+   static inline Int16* TryAllocateIn(Z* zone, const RawInt16 value = 0) {
+     return new (zone)Int16(value);
+   }
+ };
+
+ typedef uint32_t RawUInt32;
+
+ class UInt32 : public Number{
+   friend class Class;
+  private:
+   explicit UInt32(const RawUInt32 value = 0):
+     Number(kClass, kTypeId, value) {
+   }
+  public:
+   ~UInt32() override = default;
+
+   RawUInt32 Get() const {
+     return static_cast<RawUInt32>(Number::Get());
+   }
+
+   void Set(const RawUInt32 value) {
+     Number::Set(static_cast<RawNumber>(value));
+   }
+
+  DEFINE_OBJECT(UInt32);
+  public:
+   static inline UInt32* New(const RawUInt32 value = 0) {
+     return new UInt32(value);
+   }
+
+   template<class Z>
+   static inline UInt32* TryAllocateIn(Z* zone, const RawUInt32 value = 0) {
+     return new (zone)UInt32(value);
+   }
+ };
+
+ typedef int32_t RawInt32;
+
+ class Int32 : public Number{
+   friend class Class;
+  private:
+   explicit Int32(const RawInt32 value = 0):
+       Number(kClass, kTypeId, value) {
+   }
+  public:
+   ~Int32() override = default;
+
+   RawInt32 Get() const {
+     return static_cast<RawInt32>(Number::Get());
+   }
+
+   void Set(const RawInt32 value) {
+     Number::Set(static_cast<RawNumber>(value));
+   }
+
+  DEFINE_OBJECT(Int32);
+  public:
+   static inline Int32* New(const RawUInt32 value = 0) {
+     return new Int32(value);
+   }
+
+   template<class Z>
+   static inline Int32* TryAllocateIn(Z* zone, const RawInt32 value = 0) {
+     return new (zone)Int32(value);
+   }
+ };
+
+ typedef uint64_t RawUInt64;
+
+ class UInt64 : public Number{
+   friend class Class;
+  private:
+   explicit UInt64(const RawUInt64 value = 0):
+    Number(kClass, kTypeId, value) {
      Set(value);
    }
   public:
-   ~Long() override = default;
+   ~UInt64() override = default;
 
-   RawLong Get() const {
-     CHECK_CLASS_IS_INITIALIZED(FATAL);
-     return *((RawLong*) FieldAddrAtOffset(kValueField->GetOffset()));
+   RawUInt64 Get() const {
+     return static_cast<RawUInt64>(Number::Get());
    }
 
-   void Set(const RawLong value) {
-     CHECK_CLASS_IS_INITIALIZED(FATAL);
-     *((RawLong*) FieldAddrAtOffset(kValueField->GetOffset())) = value;
+   void Set(const RawUInt64 value) {
+     return Number::Set(static_cast<RawNumber>(value));
    }
 
-   friend std::ostream& operator<<(std::ostream& stream, const Long& value) {
-     stream << "Long(";
-     stream << "value=" << +value.Get();
-     stream << ")";
-     return stream;
-   }
-
-  DEFINE_OBJECT(Long);
+   DEFINE_OBJECT(UInt64);
   public:
-   template<class Z>
-   static inline Long*
-   TryAllocateIn(Z* zone, const RawLong value = 0) {
-     return new (zone)Long(value);
+   static inline UInt64* New(const RawUInt64 value = 0) {
+     return new UInt64(value);
    }
 
-   static inline Long*
-   New(const RawLong value = 0) {
-     return new Long(value);
+   template<class Z>
+   static inline UInt64* TryAllocateIn(Z* zone, const RawUInt64 value = 0) {
+     return new (zone)UInt64(value);
+   }
+ };
+
+ typedef int64_t RawInt64;
+
+ class Int64 : public Number {
+   friend class Class;
+  private:
+   explicit Int64(const RawInt64 value = 0):
+    Number(kClass, kTypeId, value) {
+     Set(value);
+   }
+  public:
+   ~Int64() override = default;
+
+   RawInt64 Get() const {
+     return static_cast<RawInt64>(Number::Get());
+   }
+
+   void Set(const RawInt64 value = 0) {
+     return Number::Set(static_cast<RawNumber>(value));
+   }
+
+   DEFINE_OBJECT(Int64);
+  public:
+   static inline Int64* New(const RawInt64 value = 0) {
+     return new Int64(value);
+   }
+
+   template<class Z>
+   static inline Int64* TryAllocateIn(Z* zone, const RawInt64 value = 0) {
+     return new (zone)Int64(value);
    }
  };
 

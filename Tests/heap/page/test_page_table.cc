@@ -56,10 +56,10 @@ namespace poseidon {
 
  TEST_F(PageTableTest, TestMarkAllIntersectedBy_WillPass) {
    NewZone zone(region());
-   auto p1 = Long::TryAllocateIn(&zone, 10);
+   auto p1 = Int32::TryAllocateIn(&zone, 10);
    ASSERT_NE(p1, nullptr);
-   ASSERT_TRUE(IsLong(p1->raw_ptr()));
-   ASSERT_TRUE(LongEq(10, p1));
+   ASSERT_TRUE(IsInt32(p1->raw_ptr()));
+   ASSERT_TRUE(Int32Eq(10, p1));
 
    ASSERT_NO_FATAL_FAILURE(table().MarkAllIntersectedBy((Region) *p1->raw_ptr()));
    ASSERT_TRUE(table().IsMarked(0));
