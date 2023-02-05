@@ -8,6 +8,7 @@
 
 namespace poseidon {
  class PageTable : public Section {
+   friend class PageTableTest;
    friend class PageTablePageIterator;
   public:
    class PageTablePageIterator {

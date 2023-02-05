@@ -11,6 +11,10 @@ namespace poseidon {
   protected:
    uword start_;
    RegionSize size_;
+
+   virtual void Clear() {
+     memset(GetStartingAddressPointer(), 0, GetSize());
+   }
   public:
    Region() = default;
    Region(const uword start, const RegionSize size):

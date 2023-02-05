@@ -49,6 +49,7 @@ namespace poseidon{
     }
     int err = mprotect(GetStartingAddressPointer(), GetSize(), protection);
     LOG_IF(FATAL, err != 0) << "failed to set ProtectionMode `" << mode << "` to " << (*this) << ": " << strerror(err);
+    DLOG(INFO) << "set `" << mode << "` ProtectionMode to " << (*this);
     return true;
   }
 }

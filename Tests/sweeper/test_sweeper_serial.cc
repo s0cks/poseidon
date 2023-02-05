@@ -2,12 +2,13 @@
 #include <gmock/gmock.h>
 
 #include "matchers/is_pointer_to.h"
-#include "helpers/assertions.h"
-#include "poseidon/heap/heap.h"
 #include "sweeper/mock_sweeper.h"
 #include "poseidon/type.h"
 #include "helpers/alloc_helpers.h"
+
+#include "assertions/ptr_assertions.h"
 #include "assertions/type_assertions.h"
+
 #include "poseidon/sweeper/sweeper_serial.h"
 
 namespace poseidon {

@@ -1,14 +1,27 @@
 #ifndef POSEIDON_INT_ASSERTIONS_H
 #define POSEIDON_INT_ASSERTIONS_H
 
-#ifndef POSEIDON_ASSERTIONS_H
-#error "Please #include assertions/assertions.h instead"
-#endif // POSEIDON_ASSERTIONS_H
-
 #include <gtest/gtest.h>
 #include "poseidon/type.h"
+#include "poseidon/local/local.h"
 
 namespace poseidon {
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsUnallocated(const Local<T>& value){
+   return value.IsEmpty() ?
+          ::testing::AssertionSuccess() << (*value) << " is UNALLOCATED" :
+          ::testing::AssertionFailure() << "expected " << (*value) << " to be UNALLOCATED";
+ }
+
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsAllocated(const Local<T>& value){
+   return value.IsEmpty() ?
+          ::testing::AssertionFailure() << "expected " << *(value->raw_ptr()) << " to not be UNALLOCATED" :
+          ::testing::AssertionSuccess() << *(value->raw_ptr()) << " is not UNALLOCATED";
+ }
+
  template<class T>
  static inline ::testing::AssertionResult
  IsPtr(Pointer* ptr) {
@@ -20,7 +33,9 @@ namespace poseidon {
  }
 
 #define DEFINE_IS_TYPE_ASSERTION(Name) \
- static inline ::testing::AssertionResult Is##Name(Pointer* ptr) { return IsPtr<Name>(ptr); }
+ static inline ::testing::AssertionResult Is##Name(Pointer* ptr) { return IsPtr<Name>(ptr); } \
+ static inline ::testing::AssertionResult Is##Name(const Local<Name>& local) { return Is##Name(local->raw_ptr()); } \
+ static inline ::testing::AssertionResult Is##Name(Name* ptr) { return Is##Name(ptr->raw_ptr()); }
 
  DEFINE_IS_TYPE_ASSERTION(Bool);
  FOR_EACH_INT_TYPE(DEFINE_IS_TYPE_ASSERTION);
@@ -58,6 +73,10 @@ namespace poseidon {
    if(expected != actual->Get())           \
      return ::testing::AssertionFailure() << "expected " << expected << " but was " << (*actual); \
    return ::testing::AssertionSuccess();   \
+ }                                         \
+ static inline ::testing::AssertionResult  \
+ Name##Eq(const Raw##Name expected, const Local<Name>& actual) {                                \
+   return Name##Eq(expected, actual.Get());\
  }
 
  DEFINE_TYPE_EQ_RAW_ASSERTION(Bool);

@@ -55,6 +55,10 @@ namespace poseidon{
    Zone(const uword start, const word size, const word page_size):
     Section(start, size) {
    }
+
+   void Clear() override {
+     Section::Clear();
+   }
   public:
    ~Zone() override = default;
 

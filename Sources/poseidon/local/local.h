@@ -39,6 +39,10 @@ namespace poseidon {
     Local() {
      (*GetLocalPointer()) = ptr;
    }
+   explicit Local(T* value):
+    Local() {
+     (*GetLocalPointer()) = value ? value->raw_ptr() : nullptr;
+   }
    Local(Local<T>&& rhs) noexcept = default;
 
    template<typename U>
@@ -128,6 +132,13 @@ namespace poseidon {
    template<typename U>
    Local<U> DynamicCastTo() const {
      return dynamic_cast<U*>(operator T*());
+   }
+
+   friend std::ostream& operator<<(std::ostream& stream, const Local<T>& value) {
+     stream << "Local(";
+     stream << "address=" << (value.IsEmpty() ? "UNALLOCATED" : *value.Get()->raw_ptr());
+     stream << ")";
+     return stream;
    }
  };
 }

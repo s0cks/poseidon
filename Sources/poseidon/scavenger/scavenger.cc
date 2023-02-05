@@ -40,7 +40,7 @@ namespace poseidon {
    if(IsScavenging())
      ALREADY_SCAVENGING;
 
-   Scavenger scavenger(heap);
+   Scavenger scavenger(heap->new_zone(), heap->old_zone());
    return flags::FLAGS_num_workers > 0 ?
           SerialScavenge(&scavenger) :
           ParallelScavenge(&scavenger);

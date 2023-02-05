@@ -62,8 +62,6 @@ namespace poseidon{
   protected:
    Space space_;
 
-   void Clear() override;
-
    static inline constexpr word
    GetTotalSizeNeededFor(const word size) {
      return size + static_cast<word>(sizeof(Pointer));
@@ -73,7 +71,6 @@ namespace poseidon{
    explicit Semispace(const Space space, const uword start, const word size):
     AllocationSection(start, size),
     space_(space) {
-     SetWritable();
    }
    explicit Semispace(const Space space, const MemoryRegion& region):
     Semispace(space, region.GetStartingAddress(), region.GetSize()) {

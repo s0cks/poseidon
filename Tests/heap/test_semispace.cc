@@ -1,10 +1,14 @@
-#include "helpers.h"
-#include "helpers/assertions.h"
-#include "helpers/alloc_helpers.h"
-#include "mock_raw_object_visitor.h"
-#include "poseidon/heap/semispace.h"
+#include <gtest/gtest.h>
+
 #include "poseidon/type.h"
+#include "poseidon/heap/semispace.h"
+
+#include "helpers.h"
+
+#include "assertions/ptr_assertions.h"
 #include "assertions/type_assertions.h"
+
+#include "mock_raw_object_visitor.h"
 
 namespace poseidon{
  using namespace ::testing;
@@ -44,7 +48,7 @@ namespace poseidon{
    static constexpr const word kAValue = 1034;
    auto ptr = Int32::TryAllocateIn<>(&a, kAValue);
    ASSERT_NE(ptr, nullptr);
-   ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+   ASSERT_TRUE(IsInt32(ptr));
    ASSERT_TRUE(Int32Eq(kAValue, ptr));
    ASSERT_TRUE(a.Intersects((Region) *ptr->raw_ptr()));
 

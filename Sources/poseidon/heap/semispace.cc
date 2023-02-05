@@ -1,13 +1,7 @@
-#include "poseidon/heap/heap.h"
 #include "poseidon/type.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
- void Semispace::Clear() {
-   memset(GetStartingAddressPointer(), 0, GetSize());
-   current_ = GetStartingAddress();
- }
-
  Pointer* Semispace::TryAllocatePointer(const word size) {
    if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));

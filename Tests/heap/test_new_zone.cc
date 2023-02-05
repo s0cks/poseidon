@@ -3,11 +3,12 @@
 
 #include "helpers.h"
 #include "poseidon/heap/zone/new_zone.h"
-#include "heap/mock_new_page_visitor.h"
+
+#include "assertions/ptr_assertions.h"
 #include "assertions/type_assertions.h"
+
 #include "mock_raw_object_visitor.h"
 
-#include "matchers/is_pointer_to.h"
 #include "helpers/type_alloc_helpers.h"
 
 namespace poseidon{

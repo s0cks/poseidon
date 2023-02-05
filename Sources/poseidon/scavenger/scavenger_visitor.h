@@ -24,7 +24,7 @@ namespace poseidon {
      return Parallel;
    }
 
-   virtual bool Scavenge() = 0;
+   virtual void Scavenge() = 0;
  };
 }
 

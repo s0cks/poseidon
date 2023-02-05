@@ -16,6 +16,7 @@ namespace poseidon{
 
    friend class Heap;
    friend class NewZoneTest;
+   friend class SerialScavengerTest;
   public:
    class NewZoneIterator : public ZonePointerIterator {
     public:
@@ -41,6 +42,12 @@ namespace poseidon{
     fromspace_(Space::kFromSpace, GetStartingAddress(), semi_size),
     tospace_(Space::kToSpace, GetStartingAddress() + semi_size, semi_size),
     semisize_(semi_size) {
+   }
+
+   void Clear() override {
+     Zone::Clear();
+     fromspace_.Clear();
+     tospace_.Clear();
    }
   public:
    NewZone() = delete;
@@ -123,6 +130,11 @@ namespace poseidon{
    }
   public:
    static NewZone* New(const MemoryRegion& region);
+
+   static inline RegionSize
+   GetNewZoneSize() {
+     return flags::GetNewZoneSize();
+   }
 
    static constexpr word
    GetMinimumObjectSize() {

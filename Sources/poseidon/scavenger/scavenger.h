@@ -33,11 +33,11 @@ namespace poseidon {
    Semispace fromspace_;
    Semispace tospace_;
 
-   explicit Scavenger(Heap* heap):
-    new_zone_(heap->new_zone()),
-    old_zone_(heap->old_zone()),
-    fromspace_(heap->new_zone()->fromspace()),
-    tospace_(heap->new_zone()->tospace()) {
+   explicit Scavenger(NewZone* new_zone, OldZone* old_zone):
+    new_zone_(new_zone),
+    old_zone_(old_zone),
+    fromspace_(new_zone->fromspace()),
+    tospace_(new_zone->tospace()) {
    }
 
    inline NewZone* new_zone() const {

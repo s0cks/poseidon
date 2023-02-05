@@ -16,15 +16,11 @@ namespace poseidon {
    bool ProcessAll();
    bool ProcessRoots();
    bool ProcessToSpace();
-
-   bool Visit(Pointer* vis) override {
-     NOT_IMPLEMENTED(ERROR); //TODO: implement
-     return false;
-   }
+   bool Visit(Pointer* vis) override;
   public:
    ~SerialScavenger() override = default;
 
-   bool Scavenge() override;
+   void Scavenge() override;
  };
 }
 

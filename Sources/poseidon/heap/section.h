@@ -8,11 +8,19 @@
 namespace poseidon{
  class Section : public Region {
   protected:
+   MemoryRegion region_;
+
    explicit Section(const uword start = 0, const RegionSize size = 0):
-    Region(start, size) {
+    Region(start, size),
+    region_(start, size) {
+     SetWritable();
    }
    explicit Section(const Region& region):
     Region(region) {
+   }
+
+   inline MemoryRegion& region() {
+     return region_;
    }
 
    void Protect(MemoryRegion::ProtectionMode mode);
@@ -80,6 +88,18 @@ namespace poseidon{
      }
      return true;
    }
+  public: //TODO: visible for testing
+   inline void SetNoAccess() {
+     Protect(MemoryRegion::kNoAccess);
+   }
+
+   inline void SetReadOnly() {
+     Protect(MemoryRegion::kReadOnly);
+   }
+
+   inline void SetWritable() {
+     Protect(MemoryRegion::kReadWrite);
+   }
   public:
    ~Section() override = default;
 
@@ -116,18 +136,6 @@ namespace poseidon{
    virtual bool VisitOldPointers(const RawObjectVisitor::VisitorFunction& function) {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitOldPointers(&vis);
-   }
-
-   inline void SetReadOnly() { //TODO: visible for testing
-     return Protect(MemoryRegion::kReadOnly);
-   }
-
-   inline void SetWritable() { //TODO: visible for testing
-     return Protect(MemoryRegion::kReadWrite);
-   }
-
-   virtual void Clear() {
-     memset(GetStartingAddressPointer(), 0, GetSize());
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const Section& rhs) {
@@ -185,6 +193,11 @@ namespace poseidon{
    explicit AllocationSection(const Region& region):
     Section(region),
     current_(region.GetStartingAddress()) {
+   }
+
+   void Clear() override {
+     Section::Clear();
+     current_ = GetStartingAddress();
    }
   public:
    AllocationSection() = default;

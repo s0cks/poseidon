@@ -4,6 +4,8 @@ FIND_PACKAGE(Glog REQUIRED)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+ENABLE_TESTING()
+
 ADD_EXECUTABLE(poseidon-tests
                main.cc
                helpers.h
@@ -44,10 +46,12 @@ ADD_EXECUTABLE(poseidon-tests
                freelist/test_freelist.cc
                freelist/mock_free_list.h
                freelist/mock_free_pointer.h
-               freelist/is_free_ptr_to.h type/test_uint8.cc)
+               freelist/is_free_ptr_to.h type/test_uint8.cc assertions/ptr_assertions.h)
 TARGET_LINK_LIBRARIES(poseidon-tests
                       poseidon
                       ${CMAKE_THREAD_LIBS_INIT}
                       GTest::gtest
                       GTest::gmock
                       glog::glog)
+include(GoogleTest)
+GTEST_DISCOVER_TESTS(poseidon-tests)

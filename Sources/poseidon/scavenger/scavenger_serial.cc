@@ -11,17 +11,22 @@ namespace poseidon {
  }
 
  bool SerialScavenger::ProcessRoots() {
+   if(!LocalPageExistsForCurrentThread()) {
+     LOG(WARNING) << "no LocalPage exists for thread `" << GetCurrentThreadName() << "`";
+     return false;
+   }
+
    TIMED_SECTION("ProcessRoots", {
      auto page = GetLocalPageForCurrentThread();
-     for(auto idx = 0; idx < page->GetNumberOfLocals(); idx++) {
-       auto ptr = page->GetLocalAt(idx);
-       if((*ptr) != nullptr) {
-         if((*ptr)->IsNew() && (*ptr)->IsMarked() && !(*ptr)->IsForwarding()){
-           (*ptr) = (Pointer*) scavenger()->Process((*ptr));
-         }
-       }
-     }
+     LOG_IF(FATAL, !page->VisitNewPointers(this)) << "failed to visit new pointers in " << (*page);
    });
+   return true;
+ }
+
+ bool SerialScavenger::Visit(Pointer* ptr) {
+   if(ptr->IsNew() && ptr->IsMarked()) {
+     DLOG(INFO) << "visiting " << (*ptr);
+   }
    return true;
  }
 
@@ -30,8 +35,8 @@ namespace poseidon {
    return false;
  }
 
- bool SerialScavenger::Scavenge() {
+ void SerialScavenger::Scavenge() {
    SwapSpaces();
-   return ProcessRoots();
+   LOG_IF(FATAL, !ProcessRoots()) << "failed to process roots.";
  }
 }

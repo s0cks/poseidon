@@ -18,7 +18,7 @@ namespace poseidon {
   protected:
    FreeListTest():
      Test(),
-     test_region_(flags::GetOldZoneSize()),
+     test_region_(flags::GetOldZoneSize(), MemoryRegion::kReadWrite),
      free_list_(test_region_, false) {
    }
 
@@ -79,10 +79,12 @@ namespace poseidon {
      ASSERT_TRUE(test_region_.Protect(MemoryRegion::kReadWrite));
      ASSERT_NO_FATAL_FAILURE(test_region_.ClearRegion());
      ASSERT_NO_FATAL_FAILURE(free_list_.ClearFreeList());
+     ASSERT_TRUE(test_region().Protect(MemoryRegion::kReadOnly));
 #ifdef PSDN_DEBUG
      DLOG(INFO) << "Freelist (Before):";
      FreeListPrinter::Print(&free_list());
 #endif //PSDN_DEBUG
+     ASSERT_TRUE(test_region().Protect(MemoryRegion::kReadWrite));
    }
 
    void TearDown() override {

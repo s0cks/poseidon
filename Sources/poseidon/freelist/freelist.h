@@ -68,7 +68,7 @@ namespace poseidon{ //TODO: atomic support?
          current_ = current = free_list()->buckets_[current_bucket_index()];
        }
        return current_ptr() != nullptr ||
-              current_bucket_index() <= num_buckets();
+              current_bucket_index() < num_buckets();
      }
 
      FreePointer* Next() {

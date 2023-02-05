@@ -1,18 +1,48 @@
-ARG GCC_VERSION=9.5.0
-ARG CMAKE_BUILD_TYPE=Debug
-FROM gcc:${GCC_VERSION}
+ARG ALPINE_VERSION=3.17.1
+FROM alpine:${ALPINE_VERSION}
+ARG CMAKE_BUILD_TYPE=release
 
-RUN apt-get update -y \
- && apt-get install -y \
+RUN apk update \
+ && apk upgrade \
+ && apk add --no-cache \
+    clang \
+    clang-dev \
+    alpine-sdk \
+    dpkg \
+    make \
     cmake \
-    libgflags-dev \
-    libgoogle-glog-dev \
-    libgtest-dev \
- && mkdir -p /usr/share/poseidon/
+    ccache \
+    python3 \
+    gtest-dev \
+    glog-dev \
+    gflags-dev \
+    libunwind-dev
 
-WORKDIR /usr/share/poseidon/
-COPY * .
-RUN mkdir build/ \
+RUN ln -sf /usr/bin/clang /usr/bin/cc \
+  && ln -sf /usr/bin/clang++ /usr/bin/c++ \
+  && update-alternatives --install /usr/bin/cc cc /usr/bin/clang 10\
+  && update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 10\
+  && update-alternatives --auto cc \
+  && update-alternatives --auto c++ \
+  && update-alternatives --display cc \
+  && update-alternatives --display c++ \
+  && ls -l /usr/bin/cc /usr/bin/c++ \
+  && cc --version \
+  && c++ --version
+
+WORKDIR /usr/src/poseidon/
+COPY Sources/ /usr/src/poseidon/Sources
+COPY Tests/ /usr/src/poseidon/Tests
+COPY CMakeLists.txt /usr/src/poseidon
+
+RUN ls -lash . \
+ && mkdir build/ \
  && cd build/ \
- && cmake -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE .. \
- && cmake build .
+ && export CC=/usr/bin/clang \
+ && export CXX=/usr/bin/clang++ \
+ && cmake \
+    -DCMAKE_BUILD_TYPE=$CMAKE_BUILD_TYPE \
+    .. \
+ && cmake --build . \
+ && cd "build/${CMAKE_BUILD_TYPE}/Tests" \
+ && ctest
