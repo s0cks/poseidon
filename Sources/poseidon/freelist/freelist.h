@@ -35,51 +35,43 @@ namespace poseidon{ //TODO: atomic support?
    class FreeListIterator {
     protected:
      const FreeList* free_list_;
-     int64_t bucket_;
-     FreePointer* current_;
+     uword current_;
 
      inline const FreeList* free_list() const {
        return free_list_;
      }
 
-     inline int64_t current_bucket_index() const {
-       return bucket_;
-     }
-
-     inline int64_t num_buckets() const {
-       return free_list()->num_buckets_;
-     }
-
-     inline FreePointer* current_ptr() const {
+     inline uword current_address() const {
        return current_;
+     }
+
+     inline RawPointerTag current_raw_tag() const {
+       return (RawPointerTag)current_address();
+     }
+
+     inline PointerTag current_tag() const {
+       return (PointerTag)current_raw_tag();
      }
     public:
      explicit FreeListIterator(const FreeList* free_list):
       free_list_(free_list),
-      bucket_(0),
-      current_(free_list->buckets_[current_bucket_index()]) {
+      current_(free_list->GetStartingAddress()) {
      }
      ~FreeListIterator() = default;
 
      bool HasNext() {
-       auto current = current_ptr();
-       while(current == nullptr && current_bucket_index() <= num_buckets()) {
-         bucket_ += 1;
-         current_ = current = free_list()->buckets_[current_bucket_index()];
-       }
-       return current_ptr() != nullptr ||
-              current_bucket_index() < num_buckets();
+       const auto tag = current_tag();
+       DLOG(INFO) << "current tag @" << (void*)current_address() << ": " << tag;
+       return current_address() < free_list()->GetEndingAddress();
      }
 
      FreePointer* Next() {
-       auto next = current_ptr();
-       current_ = next->GetNext();
-       return next;
+       NOT_IMPLEMENTED(FATAL);
+       return nullptr;
      }
    };
   protected:
-   FreePointer** buckets_;
-   int64_t num_buckets_;
+   FreePointer* head_;
    int64_t num_nodes_;
 
    static inline int GetBucketIndexFor(const ObjectSize& size){
@@ -147,25 +139,14 @@ namespace poseidon{ //TODO: atomic support?
    virtual bool FindBestFit(ObjectSize size, FreePointer** result);
   public:
    FreeList() = default;
-   FreeList(const uword start, const RegionSize size, const bool insert_region = true, const word num_buckets = flags::GetNumberOfFreeListBuckets()):
+   FreeList(const uword start, const RegionSize size, const bool insert_region = true):
     Section(start, size),
-     buckets_(),
-     num_buckets_(),
-     num_nodes_(0) {
-     if(num_buckets > 0) {
-       const auto nbuckets = static_cast<word>(RoundUpPowTwo(num_buckets));
-       DLOG(INFO) << "initializing FreeList with " << nbuckets << " buckets....";
-       auto buckets = (FreePointer**)malloc(sizeof(FreePointer*) * nbuckets);
-       LOG_IF(FATAL, !buckets) << "failed to allocate bucket array for FreeList w/ " << nbuckets << " buckets";
-       buckets_ = buckets;
-       num_buckets_ = nbuckets;
-       for(auto idx = 0; idx < nbuckets; idx++)
-         buckets_[idx] = nullptr;
-     }
+      head_(nullptr),
+      num_nodes_(0) {
      LOG_IF(FATAL, insert_region && !InsertHead({ start, size })) << "failed to insert region into freelist";
    }
-   explicit FreeList(const MemoryRegion& region, const bool insert_region = true, const word num_buckets = flags::GetNumberOfFreeListBuckets()):
-    FreeList(region.GetStartingAddress(), region.GetSize(), insert_region, num_buckets) {
+   explicit FreeList(const MemoryRegion& region, const bool insert_region = true):
+    FreeList(region.GetStartingAddress(), region.GetSize(), insert_region) {
    }
    FreeList(const FreeList& rhs) = default;
    ~FreeList() override = default;

@@ -19,7 +19,7 @@ namespace poseidon {
    FreeListTest():
      Test(),
      test_region_(flags::GetOldZoneSize(), MemoryRegion::kReadWrite),
-     free_list_(test_region_, false) {
+     free_list_(test_region_) {
    }
 
    inline MemoryRegion& test_region() {
