@@ -7,12 +7,12 @@
 
 namespace poseidon {
  template<bool Parallel>
- class MarkerVisitor : public RawObjectVisitor {
+ class MarkerVisitor : public Marker {
   protected:
    Marker* marker_;
 
    explicit MarkerVisitor(Marker* marker):
-    RawObjectVisitor(),
+    Marker(),
     marker_(marker) {
    }
 
@@ -20,7 +20,7 @@ namespace poseidon {
      return marker_;
    }
 
-   inline bool Mark(Pointer* ptr) {
+   inline void Mark(Pointer* ptr) override {
      return marker()->Mark(ptr);
    }
   public:

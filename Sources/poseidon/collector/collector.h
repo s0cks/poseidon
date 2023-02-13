@@ -22,13 +22,11 @@ namespace poseidon{
 #define DEFINE_TOSTRING(Name) \
       case k##Name:           \
         return stream << #Name;
-
      switch(val){
        FOR_EACH_COLLECTOR_STATE(DEFINE_TOSTRING)
        default:
          return stream << "[Unknown State: " << (int8_t)val << "]";
      }
-
 #undef DEFINE_TOSTRING
    }
   private:

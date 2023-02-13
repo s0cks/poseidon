@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "poseidon/heap/semispace.h"
 
 #include "helpers.h"
+
+#include "poseidon/marker/marker.h"
 
 #include "assertions/ptr_assertions.h"
 #include "assertions/type_assertions.h"
@@ -162,9 +164,9 @@ namespace poseidon{
      ASSERT_TRUE(Int32Eq(idx, ptr));
    }
 
+   Marker marker;
    for(RawInt32 idx = 0; idx < kNumberOfMarkedPointers; idx++){
      auto ptr = Int32::TryAllocateIn(&semispace, idx);
-     ptr->raw_ptr()->SetMarkedBit(); //TODO: cleanup
 
      ASSERT_NE(ptr, nullptr);
      ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
@@ -179,7 +181,7 @@ namespace poseidon{
 
    MockRawObjectVisitor visitor;
    EXPECT_CALL(visitor, Visit)
-       .Times(kNumberOfMarkedPointers);
+     .Times(kNumberOfMarkedPointers);
    ASSERT_NO_FATAL_FAILURE(semispace.VisitMarkedPointers(&visitor));
 
    ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print(&semispace));

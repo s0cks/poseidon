@@ -40,10 +40,6 @@ namespace poseidon {
      set_raw_tag(value.raw());
    }
 
-   inline void SetSize(const ObjectSize size) {
-     set_raw_tag(PointerTag::SizeTag::Update(size, raw_tag())); //TODO: cleanup
-   }
-
    inline void SetNextAddress(const uword value) {
      forwarding_ = value;
    }
@@ -51,26 +47,8 @@ namespace poseidon {
    inline void SetNext(FreePointer* node) {
      return SetNextAddress(node != nullptr ? node->GetStartingAddress() : 0);
    }
-
-   inline void SetOldBit(const bool value = true) {
-     set_raw_tag(PointerTag::OldBit::Update(value, raw_tag()));
-   }
-
-   inline void ClearOldBit() {
-     return SetOldBit(false);
-   }
-
-   inline void SetFreeBit(const bool value = true) {
-     return set_raw_tag(PointerTag::FreeBit::Update(value, raw_tag()));
-   }
-
-   inline void ClearFreeBit() {
-     return SetFreeBit(false);
-   }
   public:
-   FreePointer():
-    tag_(PointerTag::Free(0)),
-    forwarding_(0) { }
+   FreePointer() = delete;
    explicit FreePointer(const PointerTag& tag):
     tag_(tag.raw()),
     forwarding_(0) { }
@@ -79,43 +57,16 @@ namespace poseidon {
     forwarding_() {
      SetSize(region.GetSize());
    }
-   FreePointer(const FreePointer& rhs) = default;
-   ~FreePointer() = default;
-
-   uword GetStartingAddress() const {
-     return (uword)this;
-   }
-
-   void* GetStartingAddressPointer() const {
-     return (void*) GetStartingAddress();
-   }
+   FreePointer(const FreePointer& rhs) = delete;
+   ~FreePointer() = delete;
+   DEFINE_TAGGED_POINTER;
 
    inline uword GetAddress() const {
      return GetStartingAddress();
    }
 
-   uword GetEndingAddress() const {
-     return GetStartingAddress() + GetSize();
-   }
-
-   void* GetEndingAddressPointer() const {
-     return (void*) GetEndingAddress();
-   }
-
-   word GetSize() const {
-     return PointerTag::SizeTag::Decode(raw_tag());
-   }
-
    ObjectSize GetTotalSize() const {
      return GetSize();
-   }
-
-   bool IsOld() const {
-     return PointerTag::OldBit::Decode(raw_tag());
-   }
-
-   bool IsFree() const {
-     return PointerTag::FreeBit::Decode(raw_tag());
    }
 
    uword GetNextAddress() const {

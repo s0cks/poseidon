@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 
 #include "assertions/assertions.h"
 #include "matchers/is_pointer_to.h"

@@ -2,7 +2,7 @@
 #define POSEIDON_INT_ASSERTIONS_H
 
 #include <gtest/gtest.h>
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "poseidon/local/local.h"
 
 namespace poseidon {
@@ -28,7 +28,7 @@ namespace poseidon {
    if(ptr == nullptr)
      return ::testing::AssertionFailure() << "expected " << T::GetClassName() << ", but was nullptr.";
    if(ptr->GetSize() != T::GetClassAllocationSize())
-     return ::testing::AssertionFailure() << "expected an instanceof " << T::GetClass() << ", but was: " << (*ptr);
+     return ::testing::AssertionFailure() << "expected an instanceof " << (*T::GetClass()) << ", but was: " << (*ptr);
    return ::testing::AssertionSuccess();
  }
 

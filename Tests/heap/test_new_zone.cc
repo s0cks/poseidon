@@ -9,6 +9,8 @@
 
 #include "mock_raw_object_visitor.h"
 
+#include "poseidon/marker/marker.h"
+
 #include "helpers/type_alloc_helpers.h"
 
 namespace poseidon{
@@ -70,9 +72,10 @@ namespace poseidon{
      auto address = TryAllocateBytes(zone, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
+     Marker marker;
      auto ptr = (Pointer*)address;
-     ptr->SetMarkedBit();
      (*((word*)ptr->GetObjectPointerAddress())) = value;
+     marker.Visit(ptr);
      return ptr;
    }
   public:

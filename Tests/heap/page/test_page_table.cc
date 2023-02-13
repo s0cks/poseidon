@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "poseidon/heap/zone/new_zone.h"
 #include "poseidon/heap/page/page_table.h"
 

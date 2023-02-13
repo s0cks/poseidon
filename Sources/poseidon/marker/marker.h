@@ -6,40 +6,27 @@
 #include "poseidon/marker/marker_stats.h"
 
 namespace poseidon {
- class Marker {
-   template<bool Parallel>
+ class Marker : public RawObjectVisitor {
+   template<bool IsParallel>
    friend class MarkerVisitor;
-
-   friend class SerialMarker;
-   friend class ParallelMarker;
-  private:
-   static void SetMarking(bool value = true);
-
-   static inline void
-   ClearMarking() {
-     return SetMarking(true);
-   }
-
-   static bool SerialMark(Marker* marker);
-   static bool ParallelMark(Marker* marker);
   protected:
-   MarkerStats stats_;
+   virtual void Mark(Pointer* ptr);
 
+   static void ClearStats();
+  public:
    Marker() = default;
+   ~Marker() override = default;
 
-   inline MarkerStats& stats() {
-     return stats_;
+   bool Visit(Pointer* ptr) override {
+     if(ptr->IsMarked())
+       return false;
+
+     Mark(ptr);
+     return true;
    }
 
-   virtual bool Mark(Pointer* ptr);
   public:
-   Marker(const Marker& rhs) = delete;
-   virtual ~Marker() = default;
-
-   Marker& operator=(const Marker& rhs) = delete;
-  public:
-   static bool IsMarking();
-   static bool Mark();
+   static MarkerStats GetStats();
  };
 }
 

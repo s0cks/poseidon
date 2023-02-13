@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 
 namespace poseidon {
  class UInt8Test : public ::testing::Test {

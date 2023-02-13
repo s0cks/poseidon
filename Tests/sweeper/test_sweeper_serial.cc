@@ -3,7 +3,7 @@
 
 #include "matchers/is_pointer_to.h"
 #include "sweeper/mock_sweeper.h"
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "helpers/alloc_helpers.h"
 
 #include "assertions/ptr_assertions.h"
@@ -18,10 +18,12 @@ namespace poseidon {
   protected:
    MemoryRegion region_;
    OldZone zone_;
+   Marker marker_;
 
    SerialSweeperTest():
     region_(flags::GetOldZoneSize(), MemoryRegion::kReadWrite),
-    zone_(region_) {
+    zone_(region_),
+    marker_() {
    }
 
    inline MemoryRegion& region() {
@@ -30,6 +32,10 @@ namespace poseidon {
 
    inline OldZone& zone() {
      return zone_;
+   }
+
+   inline Marker& marker() {
+     return marker_;
    }
 
    inline bool
@@ -56,7 +62,7 @@ namespace poseidon {
    ASSERT_NE(a_ptr, nullptr);
    ASSERT_TRUE(IsInt32(a_ptr->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, a_ptr));
-   ASSERT_NO_FATAL_FAILURE(a_ptr->raw_ptr()->SetMarkedBit());
+   //TODO: ASSERT_NO_FATAL_FAILURE(a_ptr->raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(IsMarked(a_ptr->raw_ptr()));
 
    MockSweeper sweeper;
@@ -79,15 +85,16 @@ namespace poseidon {
    ASSERT_NE(b_ptr, nullptr);
    ASSERT_TRUE(IsInt32(b_ptr->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kBValue, b_ptr));
-   ASSERT_NO_FATAL_FAILURE(b_ptr->raw_ptr()->SetMarkedBit());
+   ASSERT_TRUE(marker().Visit(b_ptr->raw_ptr()));
    ASSERT_TRUE(IsMarked(b_ptr->raw_ptr()));
 
    MockSweeper sweeper;
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(a_ptr->raw_ptr())))
     .WillOnce([](Pointer* ptr) {
       DLOG(INFO) << "sweeping " << (*ptr);
-      ptr->ClearMarkedBit();
-      ptr->SetFreeBit();
+//TODO:
+//      ptr->ClearMarkedBit();
+//      ptr->SetFreeBit();
       memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
       return true;
     });
@@ -109,7 +116,7 @@ namespace poseidon {
    ASSERT_NE(a_ptr, nullptr);
    ASSERT_TRUE(IsInt32(a_ptr->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, a_ptr));
-   ASSERT_NO_FATAL_FAILURE(a_ptr->raw_ptr()->SetMarkedBit());
+   ASSERT_TRUE(marker().Visit(a_ptr->raw_ptr()));
    ASSERT_TRUE(IsMarked(a_ptr->raw_ptr()));
 
    static constexpr const RawInt32 kBValue = 99;
@@ -123,8 +130,9 @@ namespace poseidon {
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(b_ptr->raw_ptr())))
      .WillOnce([](Pointer* ptr) {
        DLOG(INFO) << "sweeping " << (*ptr);
-       ptr->ClearMarkedBit();
-       ptr->SetFreeBit();
+//TODO:
+//       ptr->ClearMarkedBit();
+//       ptr->SetFreeBit();
        memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
        return true;
      });
@@ -159,16 +167,18 @@ namespace poseidon {
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(a_ptr->raw_ptr())))
      .WillOnce([](Pointer* ptr) {
        DLOG(INFO) << "sweeping " << (*ptr);
-       ptr->ClearMarkedBit();
-       ptr->SetFreeBit();
+//TODO:
+//       ptr->ClearMarkedBit();
+//       ptr->SetFreeBit();
        memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
        return true;
      });
    EXPECT_CALL(sweeper, Sweep(IsPointerTo(b_ptr->raw_ptr())))
      .WillOnce([](Pointer* ptr) {
        DLOG(INFO) << "sweeping " << (*ptr);
-       ptr->ClearMarkedBit();
-       ptr->SetFreeBit();
+//TODO:
+//       ptr->ClearMarkedBit();
+//       ptr->SetFreeBit();
        memset((void*) ptr->GetObjectPointerAddress(), 0, ptr->GetSize());
        return true;
      });

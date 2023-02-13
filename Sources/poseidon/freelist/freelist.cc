@@ -1,4 +1,4 @@
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "freelist.h"
 #include "freelist_printer.h"
 
@@ -45,31 +45,45 @@ namespace poseidon{
    return false;
  }
 
+ void FreeList::InsertAtHead(const Region& region) {
+   if(IsEmpty()) {
+     head_ = tail_ = FreePointer::From(region);
+     num_nodes_ += 1;
+   } else {
+     auto node = FreePointer::From(region);
+     node->SetNextAddress(GetHead()->GetAddress());
+     head_ = node;
+     num_nodes_ += 1;
+   }
+ }
+
+ void FreeList::InsertAtTail(const Region& region) {
+   if(IsEmpty()) {
+     head_ = tail_ = FreePointer::From(region);
+     num_nodes_ += 1;
+   } else {
+     auto new_node = FreePointer::From(region);
+     tail_->SetNextAddress(new_node->GetAddress());
+     tail_ = new_node;
+     num_nodes_ += 1;
+   }
+ }
+
  Pointer* FreeList::TryAllocatePointer(const ObjectSize size){
    if(size <= 0 || size > flags::GetOldZoneSize())
      return UNALLOCATED;
 
    auto total_size = size + static_cast<ObjectSize>(sizeof(Pointer));
-   FreePointer* free_ptr = nullptr;
-   if(!FindBestFit(size, &free_ptr)){
-#ifdef PSDN_DEBUG
-     LOG(ERROR) << "cannot find free list item for " << Bytes(total_size);
-     FreeListPrinter::Print(this);
-#endif //PSDN_DEBUG
-     CannotAllocate(this, size);
+   FreePointer* free_ptr = FindBestFit(size);
+   if(free_ptr == UNALLOCATED) {
+     //TODO: handle
+     return nullptr;
    }
 
-   if(!Remove(free_ptr)){
-     DLOG(ERROR) << "cannot remove " << (*free_ptr) << " from " << (*this);
-     return UNALLOCATED;
-   }
+   Remove((const Region&)*free_ptr);
 
-   if(CanSplitAfter(free_ptr, total_size)){
-     if(!SplitAfterAndInsert(free_ptr, total_size)){
-       DLOG(ERROR) << "cannot split " << (*free_ptr) << " in " << (*this);
-       return UNALLOCATED; //TODO: add ptr back to freelist
-     }
-   }
+   if(CanSplitAfter(free_ptr, total_size))
+     SplitAfterAndInsert(free_ptr, total_size);
    return new(free_ptr->GetStartingAddressPointer()) Pointer(PointerTag::Old(size));
  }
 
@@ -104,45 +118,12 @@ namespace poseidon{
    return false;
  }
 
- bool FreeList::FindBestFit(const ObjectSize size, FreePointer** result){
-   if(size < GetMinimumSize() || size > GetMaximumSize()){
-     PSDN_CANNOT_FIND(ERROR, size, "invalid size");
-     return false;
-   }
-   const auto bucket = GetBucketIndexFor(size);
-   DLOG(INFO) << "getting " << Bytes(size) << " from list #" << bucket << " in " << (*this) << "....";
-   if(FindFirstFitIn(&buckets_[bucket], size, result))
-     return true;
-   PSDN_CANNOT_FIND(WARNING, size, "cannot find match");
-   return false;
- }
-
- bool FreeList::Remove(const Region region){
+ void FreeList::Remove(const Region& region){
    if(GetMinimumSize() > region.GetSize() || region.GetSize() > GetSize()){
      PSDN_CANNOT_REMOVE(WARNING, region, "invalid size");
-     return false;
+     return;
    }
-
    DLOG(INFO) << "removing " << region << " from " << (*this);
-   auto bucket = GetBucketIndexFor(region.GetSize());
-   auto entry = buckets_[bucket];
-   FreePointer* previous = nullptr;
-   while(entry != nullptr && entry->GetSize() > region.GetSize()
-       && entry->GetStartingAddress() != region.GetStartingAddress()){
-     previous = entry;
-     entry = entry->GetNext();
-   }
-
-   if(entry == nullptr)
-     return false;
-
-   auto next = entry->GetNext();
-   if(previous == nullptr){
-     buckets_[bucket] = next;
-   } else{
-     previous->SetNextAddress(next->GetAddress());
-   }
-   return true;
  }
 
  void FreeList::ClearFreeList(){
@@ -150,13 +131,32 @@ namespace poseidon{
    Insert((const Region&) *this);
  }
 
- bool FreeList::Insert(const Region region){
+ FreePointer* FreeList::FindBestFit(ObjectSize size) {
+   NOT_IMPLEMENTED(FATAL);
+   return nullptr;
+ }
+
+ void FreeList::Insert(const Region& region){
    if(region.GetSize() < GetMinimumSize() || region.GetSize() > GetSize()){
      PSDN_CANNOT_INSERT(WARNING, region, "invalid size");
-     return false;
+     return;
+   }
+   DLOG(INFO) << "inserting " << region << " into " << (*this);
+
+   if(IsEmpty() || GetHead()->GetSize() > region.GetSize()){
+     return InsertAtHead(region);
    }
 
-   InsertTail(&head_, region);
-   return true;
+   auto node = GetHead();
+   while(node->GetSize() < region.GetSize() && node->HasNext()) {
+     if(node->GetNext()->GetSize() >= region.GetSize()) {
+       auto new_node = FreePointer::From(region);
+       new_node->SetNextAddress(node->GetNextAddress());
+       node->SetNextAddress(new_node->GetAddress());
+       break;
+     }
+
+     node = node->GetNext();
+   }
  }
 }

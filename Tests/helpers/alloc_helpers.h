@@ -2,6 +2,7 @@
 #define POSEIDON_ALLOC_HELPERS_H
 
 #include "poseidon/pointer.h"
+#include "poseidon/marker/marker.h"
 
 namespace poseidon {
 #ifndef UNALLOCATED
@@ -31,8 +32,9 @@ namespace poseidon {
    auto address = TryAllocateBytes<Z>(zone, kWordSize);
    if (address == UNALLOCATED)
      return nullptr;
+   Marker marker;
    auto ptr = (Pointer*)address;
-   ptr->SetMarkedBit();
+   marker.Visit(ptr);
    (*((word*)ptr->GetObjectPointerAddress())) = value;
    return ptr;
  }
@@ -44,7 +46,7 @@ namespace poseidon {
    if (address == UNALLOCATED)
      return nullptr;
    auto ptr = (Pointer*)address;
-   ptr->SetRememberedBit();
+   //TODO: ptr->SetRememberedBit();
    (*((word*)ptr->GetObjectPointerAddress())) = value;
    return ptr;
  }

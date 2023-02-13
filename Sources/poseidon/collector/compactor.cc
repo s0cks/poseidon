@@ -70,7 +70,7 @@ namespace poseidon{
      DLOG(INFO) << "copying " << (*src) << " to " << (*dst);
      new (dst)Pointer();
      dst->SetPointerSize(src->GetPointerSize());
-     dst->SetOldBit();
+     //TODO: dst->SetOldBit();
 
 #ifdef PSDN_DEBUG
      assert(src->GetTotalSize() == dst->GetTotalSize());

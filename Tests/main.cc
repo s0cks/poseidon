@@ -4,12 +4,12 @@
 #include "poseidon/flags.h"
 #include "poseidon/runtime.h"
 #include "poseidon/poseidon.h"
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "poseidon/collector/scavenger.h"
 #include "poseidon/allocator/allocator.h"
 
 #define PRINT_SIZEOF(Level, Type) \
-  DLOG(Level) << "sizeof(" << #Type << ") := " << (sizeof(Type));
+  DLOG(Level) << "sizeof(" << #Type << ") := " << Bytes((sizeof(Type)));
 #define PRINT_ALLOC_SIZE(Level, Type) \
   DLOG(Level) << "sizeof(" << #Type << ") := " << Bytes((Type::GetClassAllocationSize()));
 
@@ -38,10 +38,14 @@ int main(int argc, char** argv){
   PRINT_SIZEOF(INFO, PointerTag);
   PRINT_SIZEOF(INFO, FreePointer);
   PRINT_SIZEOF(INFO, Instance);
+  PRINT_SIZEOF(INFO, TypeId);
 
   PRINT_ALLOC_SIZE(INFO, Bool);
   PRINT_ALLOC_SIZE(INFO, UInt8);
   PRINT_ALLOC_SIZE(INFO, Int8);
+  PRINT_ALLOC_SIZE(INFO, Tuple);
+
+  PrintAllTypeIds<>();
 
   flags::FlagsPrinter::PrintFlags();
 #endif //PSDN_DEBUG

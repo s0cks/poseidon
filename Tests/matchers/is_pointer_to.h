@@ -10,46 +10,46 @@ namespace poseidon {
  class IsPointerToMatcher {
   protected:
    const uword start_;
-   const ObjectSize size_;
+   const PointerTag tag_;
   public:
    using is_gtest_matcher = void;
 
    IsPointerToMatcher(const uword start,
-                      const ObjectSize size):
-       start_(start),
-       size_(size) {
+                      const PointerTag& tag):
+     start_(start),
+     tag_(tag) {
    }
 
    uword starting_address() const {
      return start_;
    }
 
-   ObjectSize size() const {
-     return size_;
+   PointerTag tag() const {
+     return tag_;
    }
 
    bool MatchAndExplain(Pointer* ptr, std::ostream*) const {
      return ptr->GetStartingAddress() == starting_address() &&
-            ptr->GetSize() == size();
+            ptr->tag() == tag();
    }
 
    void DescribeTo(std::ostream* stream) const {
-     (*stream) << "pointer points to " << ((void*) starting_address()) << " (" << Bytes(size()) << ")";
+     (*stream) << "pointer points to " << ((void*) starting_address()) << " (" << tag() << ")";
    }
 
    void DescribeNegationTo(std::ostream* stream) const {
-     (*stream) << "pointer does not point to " << ((void*) starting_address()) << " (" << Bytes(size()) << ")";
+     (*stream) << "pointer does not point to " << ((void*) starting_address()) << " (" << tag() << ")";
    }
  };
 
  static inline ::testing::Matcher<Pointer*>
- IsPointerTo(const uword start, const int64_t size) {
-   return IsPointerToMatcher(start, size);
+ IsPointerTo(const uword start, const PointerTag tag) {
+   return IsPointerToMatcher(start, tag);
  }
 
  static inline ::testing::Matcher<Pointer*>
  IsPointerTo(Pointer* ptr) {
-   return IsPointerTo(ptr->GetStartingAddress(), ptr->GetSize());
+   return IsPointerTo(ptr->GetStartingAddress(), ptr->tag());
  }
 
  template<class T>

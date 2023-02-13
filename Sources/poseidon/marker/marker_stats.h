@@ -11,6 +11,12 @@ namespace poseidon {
    PointerCounter visited_;
    PointerCounter marked_;
 
+   MarkerStats(const PointerCounter& visited,
+               const PointerCounter& marked):
+               visited_(visited),
+               marked_(marked) {
+   }
+
    PointerCounter& visited() {
      return visited_;
    }
@@ -23,10 +29,21 @@ namespace poseidon {
    MarkerStats(const MarkerStats& rhs) = default;
    ~MarkerStats() = default;
 
+   PointerCounter visited() const {
+     return visited_;
+   }
+
+   PointerCounter marked() const {
+     return marked_;
+   }
+
    MarkerStats& operator=(const MarkerStats& rhs) = default;
 
    friend std::ostream& operator<<(std::ostream& stream, const MarkerStats& value) {
-     NOT_IMPLEMENTED(FATAL);
+     stream << "MarkerStats(";
+     stream << "visited=" << value.visited() << ", ";
+     stream << "marked=" << value.marked();
+     stream << ")";
      return stream;
    }
  };

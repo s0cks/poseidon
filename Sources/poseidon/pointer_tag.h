@@ -1,6 +1,7 @@
 #ifndef POSEIDON_OBJECT_TAG_H
 #define POSEIDON_OBJECT_TAG_H
 
+#include "poseidon/type.h"
 #include "poseidon/utils.h"
 #include "poseidon/platform/platform.h"
 
@@ -8,6 +9,13 @@ namespace poseidon {
  typedef uword RawPointerTag;
 
  static const constexpr RawPointerTag kInvalidPointerTag = 0x0;
+
+#define FOR_EACH_POINTER_TAG_BIT(V) \
+ V(New)                              \
+ V(Old)                              \
+ V(Marked)                           \
+ V(Remembered)                       \
+ V(Free)
 
  class PointerTag{
   public:
@@ -32,12 +40,17 @@ namespace poseidon {
      kFreeBitOffset = kRememberedBitOffset + kBitsForRememberedBit,
      kBitsForFreeBit = 1,
 
+     // TypeId
+     kTypeIdOffset = kFreeBitOffset + kBitsForFreeBit,
+     kBitsForTypeId = 8,
+
      // Size
-     kSizeTagOffset = kFreeBitOffset + kBitsForFreeBit,
+     kSizeTagOffset = kTypeIdOffset + kBitsForTypeId,
      kBitsForSizeTag = 32,
 
-     kTotalBits = kBitsForNewBit + kBitsForOldBit + kBitsForMarkedBit + kBitsForRememberedBit + kBitsForFreeBit + kBitsForSizeTag,
+     kTotalBits = kBitsForNewBit + kBitsForOldBit + kBitsForMarkedBit + kBitsForRememberedBit + kBitsForFreeBit + kBitsForTypeId + kBitsForSizeTag,
    };
+
    // The object's size.
    class SizeTag : public BitField<RawPointerTag, int64_t, kSizeTagOffset, kBitsForSizeTag>{};
    // allocated in the new heap.
@@ -50,12 +63,17 @@ namespace poseidon {
    class RememberedBit : public BitField<RawPointerTag, bool, kRememberedBitOffset, kBitsForRememberedBit>{};
    // is free space
    class FreeBit : public BitField<RawPointerTag, bool, kFreeBitOffset, kBitsForFreeBit>{};
+   // typeid
+   class TypeIdBits : public BitField<RawPointerTag, TypeId, kTypeIdOffset, kBitsForTypeId>{};
   private:
    RawPointerTag raw_;
-  public:
-   constexpr PointerTag(const RawPointerTag raw = kInvalidPointerTag):
-     raw_(raw) {
+
+   inline void set_raw(const RawPointerTag& raw) {
+     raw_ = raw;
    }
+  public:
+   constexpr PointerTag(const RawPointerTag raw = kInvalidPointerTag): // NOLINT(google-explicit-constructor)
+     raw_(raw) { }
    PointerTag(const PointerTag& rhs) = default;
    ~PointerTag() = default;
 
@@ -63,65 +81,18 @@ namespace poseidon {
      return raw_;
    }
 
-   void SetNew(){
-     raw_ = NewBit::Update(true, raw());
-   }
-
-   void ClearNew(){
-     raw_ = NewBit::Update(false, raw());
-   }
-
-   bool IsNew() const{
-     return NewBit::Decode(raw());
-   }
-
-   void SetOld(){
-     raw_ = OldBit::Update(true, raw());
-   }
-
-   void ClearOld(){
-     raw_ = OldBit::Update(false, raw());
-   }
-
-   bool IsOld() const{
-     return OldBit::Decode(raw());
-   }
-
-   void SetMarked(){
-     raw_ = MarkedBit::Update(true, raw());
-   }
-
-   void ClearMarked(){
-     raw_ = MarkedBit::Update(false, raw());
-   }
-
-   bool IsMarked() const{
-     return MarkedBit::Decode(raw());
-   }
-
-   void SetRemembered(){
-     raw_ = RememberedBit::Update(true, raw());
-   }
-
-   void ClearRemembered(){
-     raw_ = RememberedBit::Update(false, raw());
-   }
-
-   bool IsRemembered() const{
-     return RememberedBit::Decode(raw());
-   }
-
-   void SetFreeBit(const bool value = true) {
-     raw_ = FreeBit::Update(value, raw());
-   }
-
-   inline void ClearFreeBit() {
-     return SetFreeBit(false);
-   }
-
-   bool IsFree() const {
-     return FreeBit::Decode(raw());
-   }
+#define DEFINE_SET_BIT(Name) \
+   inline void Set##Name(const bool val = true) { return set_raw(Name##Bit::Update(raw(), val)); }
+#define DEFINE_CLEAR_BIT(Name) \
+   inline void Clear##Name() { return Set##Name(false); }
+#define DEFINE_IS(Name) \
+   inline bool Is##Name() const { return Name##Bit::Decode(raw()); }
+   FOR_EACH_POINTER_TAG_BIT(DEFINE_SET_BIT);
+   FOR_EACH_POINTER_TAG_BIT(DEFINE_CLEAR_BIT);
+   FOR_EACH_POINTER_TAG_BIT(DEFINE_IS);
+#undef DEFINE_SET_BIT
+#undef DEFINE_CLEAR_BIT
+#undef DEFINE_IS
 
    void SetSize(int64_t size){
      raw_ = SizeTag::Update(size, raw());
@@ -133,6 +104,18 @@ namespace poseidon {
 
    int64_t GetSize() const{
      return SizeTag::Decode(raw());
+   }
+
+   TypeId GetTypeId() const {
+     return TypeIdBits::Decode(raw());
+   }
+
+   inline void SetTypeId(const TypeId val) {
+     return set_raw(TypeIdBits::Update(val, raw()));
+   }
+
+   inline void ClearTypeId() {
+     return SetTypeId(TypeId::kUnknownTypeId);
    }
 
    explicit operator RawPointerTag() const{

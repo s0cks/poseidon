@@ -77,7 +77,7 @@ namespace poseidon {
    DLOG(INFO) << "new-ptr: " << new_ptr;
    CopyObject(ptr, new_ptr);
    VLOG_IF(10, google::DEBUG_MODE) << "promoted " << (*ptr) << " to " << (*new_ptr);
-   new_ptr->SetRememberedBit();
+   //TODO: new_ptr->SetRememberedBit();
    return Forward(ptr, new_ptr);
  }
 
@@ -95,7 +95,7 @@ namespace poseidon {
 
    CopyObject(ptr, new_ptr);
    VLOG_IF(10, google::DEBUG_MODE) << "scavenged " << (*ptr) << " to " << (*new_ptr);
-   new_ptr->SetRememberedBit();
+   //TODO: new_ptr->SetRememberedBit();
    return Forward(ptr, new_ptr);
  }
 

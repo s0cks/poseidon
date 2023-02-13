@@ -3,7 +3,7 @@
 #include "helpers.h"
 #include "poseidon/pointer.h"
 
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "assertions/type_assertions.h"
 
 namespace poseidon{

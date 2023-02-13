@@ -1,4 +1,4 @@
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{

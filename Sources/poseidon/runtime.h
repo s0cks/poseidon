@@ -5,6 +5,8 @@
 
 namespace poseidon{
  class Runtime{
+  private:
+   static void SetMarking(bool value);
   public:
    Runtime() = delete;
    Runtime(const Runtime& rhs) = delete;
@@ -12,6 +14,8 @@ namespace poseidon{
 
    static void Initialize();
    static TaskPool* GetTaskPool();
+
+   static bool IsMarking();
 
    Runtime& operator=(const Runtime& rhs) = delete;
  };

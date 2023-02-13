@@ -10,19 +10,14 @@ namespace poseidon {
  class Marker;
  class SerialMarker : public MarkerVisitor<false> {
   protected:
-   WorkStealingQueue<uword> work_;
-
    bool Visit(Pointer* ptr) override;
   public:
    explicit SerialMarker(Marker* marker):
-    MarkerVisitor<false>(marker),
-    work_(kDefaultSerialMarkerWorkQueueSize) {
+    MarkerVisitor<false>(marker) {
    }
    ~SerialMarker() override = default;
 
-   bool MarkAllRoots();
-   bool MarkAllNewRoots();
-   bool MarkAllOldRoots();
+   void MarkAllRoots();
  };
 }
 

@@ -6,7 +6,7 @@
 #include "poseidon/heap/zone/old_zone.h"
 #include "heap/mock_old_page_visitor.h"
 
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "matchers/is_pointer_to.h"
 #include "assertions/type_assertions.h"
 

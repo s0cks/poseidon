@@ -1,43 +1,27 @@
 #include "poseidon/flags.h"
 #include "poseidon/marker/marker.h"
-#include "poseidon/relaxed_atomic.h"
-#include "poseidon/marker/marker_serial.h"
 
 namespace poseidon {
- static RelaxedAtomic<bool> marking_(false);
+ static PointerCounter marked_;
+ static PointerCounter visited_;
 
- bool Marker::IsMarking() {
-   return (bool)marking_;
+ void Marker::Mark(Pointer* ptr) {
+   visited_ += ptr;
+   if(ptr->IsMarked())
+     return;
+
+   DLOG(INFO) << "marking " << (*ptr);
+   ptr->SetMarked();
+   marked_ += ptr;
+   LOG_IF(WARNING, !ptr->VisitPointers(this)) << "failed to visit pointers in " << (*ptr);
  }
 
- void Marker::SetMarking(const bool value) {
-   marking_ = value;
+ void Marker::ClearStats() {
+   visited_.clear();
+   marked_.clear();
  }
 
- bool Marker::Mark(Pointer* ptr) {
-   DLOG(INFO) << "marking: " << (*ptr);
-   ptr->SetMarkedBit();
-   stats().marked() += ptr;
-   return true;
- }
-
- bool Marker::SerialMark(Marker* marker){
-   if(IsMarking()) {
-     DLOG(WARNING) << "already marking, skipping.";
-     return false;
-   }
-
-   SetMarking();
-   SerialMarker serial_marker(marker);
-   TIMED_SECTION("SerialMark", {
-     serial_marker.MarkAllRoots();
-   });
-   ClearMarking();
-   return true;
- }
-
- bool Marker::ParallelMark(Marker* marker){
-   NOT_IMPLEMENTED(FATAL); //TODO: implement
-   return false;
+ MarkerStats Marker::GetStats() {
+   return { visited_, marked_ };
  }
 }

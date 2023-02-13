@@ -2,7 +2,7 @@
 #define POSEIDON_TYPE_ALLOC_HELPERS_H
 
 #include <gtest/gtest.h>
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 
 #include "matchers/is_pointer_to.h"
 #include "mock_raw_object_visitor.h"
@@ -71,7 +71,8 @@ DEFINE_GENERATE_MARKED_NUM_TYPES_IN_ZONE_WITH_MOCK_VISITOR(Int32);
     ASSERT_NE(new_ptr, nullptr);                    \
     ASSERT_TRUE(Is##T(new_ptr->raw_ptr()));         \
     ASSERT_TRUE(T##Eq(idx, new_ptr));               \
-    new_ptr->raw_ptr()->SetMarkedBit();             \
+    Marker marker;                                  \
+    ASSERT_TRUE(marker.Visit(new_ptr->raw_ptr()));  \
     ASSERT_TRUE(IsMarked(new_ptr->raw_ptr()));      \
   }                                                 \
  }

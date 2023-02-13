@@ -1,7 +1,7 @@
 #include <glog/logging.h>
 
 #include "poseidon/heap/heap.h"
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{
@@ -28,7 +28,7 @@ namespace poseidon{
    return 0;
 
 finish_allocation:
-   val->SetNewBit();
+   //TODO: val->SetNewBit();
    return val->GetStartingAddress();
  }
 
@@ -56,7 +56,7 @@ finish_allocation:
    return 0;
 
 finish_allocation:
-   val->SetOldBit();
+   //TODO: val->SetOldBit();
    return val->GetStartingAddress();
  }
 

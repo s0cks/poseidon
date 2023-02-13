@@ -1,4 +1,4 @@
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 
 namespace poseidon {
 #define REQUIRE_UNINITIALIZED_CLASS(Level) \

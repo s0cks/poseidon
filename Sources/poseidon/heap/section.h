@@ -32,7 +32,6 @@ namespace poseidon{
      DLOG(INFO) << "visiting pointers in " << (*((Z*)this));
      while(iter.HasNext()) {
        auto next = iter.Next();
-       DLOG(INFO) << "next: " << (*next);
        if(!vis->Visit(next))
          return false;
      }

@@ -11,7 +11,7 @@ namespace poseidon{
    DLOG(INFO) << "finalizing " << (*ptr) << ".";
    memset(ptr->GetPointer(), 0, ptr->GetPointerSize());
 
-   ptr->ClearMarkedBit();
+   ptr->ClearMarked();
    ptr->SetPointerSize(0);
 
    finalized_ += ptr;

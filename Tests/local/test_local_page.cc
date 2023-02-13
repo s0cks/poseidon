@@ -2,7 +2,7 @@
 #include "poseidon/local/local_page.h"
 
 #include "poseidon/heap/heap.h"
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 
 namespace poseidon {
  using namespace ::testing;

@@ -90,7 +90,7 @@ namespace poseidon {
    ASSERT_TRUE(Int32Eq(kAValue, a));
    ASSERT_FALSE(IsMarked<>(a));
    ASSERT_FALSE(IsRemembered(a));
-   ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
+   //TODO: ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(IsMarked(a));
    ASSERT_TRUE(fromspace.Contains((const Region&)*a->raw_ptr()));
    ASSERT_FALSE(tospace.Contains((const Region&)*a->raw_ptr()));
@@ -132,7 +132,7 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(raw_a->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, raw_a));
    Local<Int32> a(raw_a->raw_ptr());
-   ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
+   //TODO: ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(a.raw_ptr()->IsMarked());
    ASSERT_FALSE(a.raw_ptr()->IsRemembered());
    ASSERT_FALSE(tospace.Intersects((Region) *a.raw_ptr()));
@@ -144,7 +144,7 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(raw_b->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kBValue, raw_b));
    Local<Int32> b(raw_b->raw_ptr());
-   ASSERT_NO_FATAL_FAILURE(b.raw_ptr()->SetMarkedBit());
+   //TODO: ASSERT_NO_FATAL_FAILURE(b.raw_ptr()->SetMarkedBit());
    ASSERT_TRUE(b.raw_ptr()->IsMarked());
    ASSERT_FALSE(b.raw_ptr()->IsRemembered());
    ASSERT_FALSE(tospace.Intersects((Region) *b.raw_ptr()));

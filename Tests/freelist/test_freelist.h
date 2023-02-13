@@ -3,6 +3,8 @@
 
 #include <gtest/gtest.h>
 
+#include "poseidon/marker/marker.h"
+
 #include "poseidon/freelist/freelist.h"
 
 #ifdef PSDN_DEBUG
@@ -30,19 +32,19 @@ namespace poseidon {
      return free_list_;
    }
 
-   inline bool Insert(const Region& region) {
+   inline void Insert(const Region& region) {
      return free_list().Insert(region);
    }
 
-   inline bool Insert(const uword start, const RegionSize size) {
+   inline void Insert(const uword start, const RegionSize size) {
      return Insert({ start, size });
    }
 
-   inline bool FindBestFit(const RegionSize size, FreePointer** result) {
-     return free_list().FindBestFit(size, result);
+   inline FreePointer* FindBestFit(const RegionSize size) {
+     return free_list().FindBestFit(size);
    }
 
-   inline bool
+   inline void
    Remove(const Region& region) {
      return free_list().Remove(region);
    }
@@ -67,9 +69,10 @@ namespace poseidon {
      auto address = TryAllocateBytes(free_list, kWordSize);
      if (address == UNALLOCATED)
        return nullptr;
+     Marker marker;
      auto ptr = (Pointer*)address;
-     ptr->SetMarkedBit();
      (*((word*)ptr->GetObjectPointerAddress())) = value;
+     marker.Visit(ptr);
      return ptr;
    }
   public:

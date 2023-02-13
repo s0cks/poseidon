@@ -7,19 +7,23 @@
 namespace poseidon {
  class PointerCounter {
   private:
-   RelaxedAtomic<int64_t> count_;
-   RelaxedAtomic<int64_t> bytes_;
+   RelaxedAtomic<word> count_;
+   RelaxedAtomic<word> bytes_;
   public:
    PointerCounter() = default;
    PointerCounter(const PointerCounter& rhs) = default;
    ~PointerCounter() = default;
 
-   int64_t count() const {
-     return (int64_t)count_;
+   word count() const {
+     return (word)count_;
    }
 
-   int64_t bytes() const {
-     return (int64_t)bytes_;
+   word bytes() const {
+     return (word)bytes_;
+   }
+
+   void clear() {
+     count_ = bytes_ = 0;
    }
 
    PointerCounter& operator+=(const Pointer* ptr) {
@@ -47,6 +51,10 @@ namespace poseidon {
    }
 
    PointerCounter& operator=(const PointerCounter& rhs) = default;
+
+   friend std::ostream& operator<<(std::ostream& stream, const PointerCounter& value) {
+     return stream << value.count() << " (" << Bytes(value.bytes()) << ")";
+   }
  };
 }
 

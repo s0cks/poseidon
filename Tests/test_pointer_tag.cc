@@ -88,9 +88,9 @@ namespace poseidon {
  TEST_F(PointerTagTest, TestFreeBit) {
    PointerTag kTag = PointerTag::Empty();
    ASSERT_FALSE(kTag.IsFree());
-   ASSERT_NO_FATAL_FAILURE(kTag.SetFreeBit(true));
+   ASSERT_NO_FATAL_FAILURE(kTag.SetFree(true));
    ASSERT_TRUE(kTag.IsFree());
-   ASSERT_NO_FATAL_FAILURE(kTag.SetFreeBit(false));
+   ASSERT_NO_FATAL_FAILURE(kTag.SetFree(false));
    ASSERT_FALSE(kTag.IsFree());
  }
 

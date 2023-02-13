@@ -2,7 +2,7 @@
 #define PSDN_PTR_ASSERTIONS_H
 
 #include <gtest/gtest.h>
-#include "poseidon/type.h"
+#include "poseidon/object.h"
 #include "poseidon/local/local.h"
 
 namespace poseidon {
@@ -70,6 +70,12 @@ namespace poseidon {
    if(!val->IsMarked())
      return ::testing::AssertionFailure() << "Expected " << (*val) << " to marked.";
    return ::testing::AssertionSuccess();
+ }
+
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsMarked(T* val) {
+   return IsMarked(val->raw_ptr());
  }
 
  template<typename T>

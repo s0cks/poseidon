@@ -43,12 +43,6 @@ namespace poseidon{
     tospace_(Space::kToSpace, GetStartingAddress() + semi_size, semi_size),
     semisize_(semi_size) {
    }
-
-   void Clear() override {
-     Zone::Clear();
-     fromspace_.Clear();
-     tospace_.Clear();
-   }
   public:
    NewZone() = delete;
    explicit NewZone(const MemoryRegion& region, const word semi_size = flags::GetNewZoneSemispaceSize()):
@@ -81,6 +75,12 @@ namespace poseidon{
    }
 
    virtual void SwapSpaces();
+
+   void Clear() override {
+     Zone::Clear();
+     fromspace_.Clear();
+     tospace_.Clear();
+   }
 
    virtual Pointer* TryAllocatePointer(word size);
    uword TryAllocateBytes(word size) override;

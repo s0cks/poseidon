@@ -72,29 +72,11 @@ namespace poseidon{ //TODO: atomic support?
    };
   protected:
    FreePointer* head_;
+   FreePointer* tail_;
    int64_t num_nodes_;
 
    static inline int GetBucketIndexFor(const ObjectSize& size){
      return static_cast<int>((size << kWordSize) % flags::GetNumberOfFreeListBuckets());
-   }
-
-   static inline void
-   InsertHead(FreePointer** list, const Region& region) {
-     auto free_ptr = FreePointer::From(region);
-     if(free_ptr == nullptr)
-       return;
-     free_ptr->SetNext((*list));
-     (*list) = free_ptr;
-   }
-
-   static inline void
-   InsertTail(FreePointer** list, const Region& region) {
-     if((*list) == nullptr)
-       return InsertHead(list, region);
-     auto last = (*list);
-     while(last->HasNext())
-       last = last->GetNext();
-     return InsertAfter(last, region);
    }
 
    static inline void
@@ -106,7 +88,7 @@ namespace poseidon{ //TODO: atomic support?
      before->SetNextAddress(new_node->GetStartingAddress());
    }
 
-   inline bool MergeAndInsertAfter(FreePointer* lhs, const Region& region) {
+   inline void MergeAndInsertAfter(FreePointer* lhs, const Region& region) {
      PSDN_ASSERT(CanMerge(lhs, region));
      auto new_start = lhs->GetStartingAddress();
      auto new_size = lhs->GetSize() + region.GetSize();
@@ -123,7 +105,7 @@ namespace poseidon{ //TODO: atomic support?
      return lhs->GetEndingAddress() == region.GetStartingAddress(); // ???
    }
 
-   inline bool SplitAfterAndInsert(FreePointer* parent, const ObjectSize& size){
+   inline void SplitAfterAndInsert(FreePointer* parent, const ObjectSize& size){
      DLOG(INFO) << "splitting " << Bytes(size) << " from " << (*parent);
      // we need to split from the end
      const auto next_address = parent->GetStartingAddress() + size;
@@ -133,17 +115,28 @@ namespace poseidon{ //TODO: atomic support?
    }
 
    virtual void ClearFreeList();
-   virtual bool Remove(Region region);
-   virtual bool Insert(Region region);
-   virtual bool InsertHead(const Region& region);
-   virtual bool FindBestFit(ObjectSize size, FreePointer** result);
+   virtual void Remove(const Region& region);
+   virtual void Insert(const Region& region);
+   virtual FreePointer* FindBestFit(ObjectSize size);
+
+   inline FreePointer* GetHead() const {
+     return head_;
+   }
+
+   inline bool IsEmpty() const {
+     return GetHead() == nullptr;
+   }
+  public: //TODO: visible for testing
+   void InsertAtHead(const Region& region);
+   void InsertAtTail(const Region& region);
   public:
    FreeList() = default;
    FreeList(const uword start, const RegionSize size, const bool insert_region = true):
     Section(start, size),
       head_(nullptr),
       num_nodes_(0) {
-     LOG_IF(FATAL, insert_region && !InsertHead({ start, size })) << "failed to insert region into freelist";
+     if(insert_region)
+       InsertAtHead({ start, size });
    }
    explicit FreeList(const MemoryRegion& region, const bool insert_region = true):
     FreeList(region.GetStartingAddress(), region.GetSize(), insert_region) {
@@ -153,16 +146,6 @@ namespace poseidon{ //TODO: atomic support?
 
    int64_t GetNumberOfNodes() const {
      return num_nodes_;
-   }
-
-   template<class P>
-   inline bool Insert(P* ptr) {
-     return Insert((Region) *ptr);
-   }
-
-   template<class P>
-   inline bool Remove(P* ptr) {
-     return Remove((Region) *ptr);
    }
 
    virtual Pointer* TryAllocatePointer(ObjectSize size);

@@ -3,27 +3,23 @@
 #include "poseidon/marker/marker_serial.h"
 
 namespace poseidon {
- bool SerialMarker::Visit(Pointer* ptr){
-   return Mark(ptr);
- }
+ void SerialMarker::MarkAllRoots() {
+   ClearStats();
 
- bool SerialMarker::MarkAllRoots() { //TODO: iterate pages for roots
-   if(!LocalPageExistsForCurrentThread()) {
-     DLOG(ERROR) << "no local page exists for current thread `" << GetCurrentThreadName() << "`";
-     return false;
-   }
-
+   LOG_IF(FATAL, !LocalPageExistsForCurrentThread()) << "no local page exists for current thread.";
    auto page = GetLocalPageForCurrentThread();
-   return page->VisitPointers(this);
+   LOG_IF(FATAL, !page->VisitPointers(this)) << "failed to visit pointers in " << (*page);
+
+#ifdef PSDN_DEBUG
+   DLOG(INFO) << GetStats();
+#endif //PSDN_DEBUG
  }
 
- bool SerialMarker::MarkAllNewRoots(){
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-   return false;
- }
+ bool SerialMarker::Visit(Pointer* ptr) {
+   if(ptr->IsMarked())
+     return true; // skip
 
- bool SerialMarker::MarkAllOldRoots(){
-   NOT_IMPLEMENTED(ERROR); //TODO: implement
-   return false;
+   Mark(ptr);
+   return true;
  }
 }
