@@ -64,8 +64,8 @@ namespace poseidon {
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_DoesNothing) {
    LocalScope local_scope;
 
-   Semispace fromspace = zone().fromspace();
-   Semispace tospace = zone().tospace();
+   auto fromspace = zone().fromspace();
+   auto tospace = zone().tospace();
 
    static constexpr const RawInt32 kAValue = 33;
    auto a = Int32::TryAllocateIn(&zone(), kAValue);
@@ -77,15 +77,15 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
 
    // scavenging should always flip the semi-spaces
-   ASSERT_EQ((const Region&)fromspace, (const Region&)zone().tospace());
-   ASSERT_EQ((const Region&)tospace, (const Region&)zone().fromspace());
+   ASSERT_EQ(fromspace, zone().tospace());
+   ASSERT_EQ(tospace, zone().fromspace());
  }
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneInt32) {
    LocalScope local_scope;
 
-   Semispace fromspace = zone().fromspace();
-   Semispace tospace = zone().tospace();
+   auto fromspace = zone().GetFromspace();
+   auto tospace = zone().GetTospace();
 
    static constexpr const RawInt32 kAValue = 33;
    Local<Int32> a(Int32::TryAllocateIn(&zone(), kAValue));
@@ -114,8 +114,8 @@ namespace poseidon {
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesMultipleInt32s) {
    LocalScope local_scope;
-   Semispace fromspace = zone().fromspace();
-   Semispace tospace = zone().tospace();
+   auto fromspace = zone().GetFromspace();
+   auto tospace = zone().GetTospace();
 
    static constexpr const RawInt32 kAValue = 33;
    Local<Int32> a(Int32::TryAllocateIn(&zone(), kAValue));
@@ -165,9 +165,8 @@ namespace poseidon {
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneTuple) {
    LocalScope local_scope;
-
-   Semispace fromspace = zone().fromspace();
-   Semispace tospace = zone().tospace();
+   auto fromspace = zone().GetFromspace();
+   auto tospace = zone().GetTospace();
 
    static constexpr const RawInt32 kAValue = 33;
    auto a = Int32::TryAllocateIn(&zone(), kAValue);

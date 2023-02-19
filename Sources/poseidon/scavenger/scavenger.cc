@@ -82,12 +82,12 @@ namespace poseidon {
  }
 
  uword Scavenger::Scavenge(Pointer* ptr) {
-   LOG(INFO) << "scavenging " << (*ptr);
+   LOG(INFO) << "scavenging " << (*ptr) << " to " << new_zone()->fromspace();
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
    PSDN_ASSERT(!ptr->IsRemembered());
 
-   auto new_ptr = tospace_.TryAllocatePointer(ptr->GetSize());
+   auto new_ptr =(Pointer*)UNALLOCATED; //TODO: tospace.TryAllocatePointer(ptr->GetSize());
    if(new_ptr == UNALLOCATED) {
      LOG(FATAL) << "new_address == UNALLOCATED";
      return UNALLOCATED;

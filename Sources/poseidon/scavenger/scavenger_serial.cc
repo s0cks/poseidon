@@ -38,8 +38,9 @@ namespace poseidon {
  }
 
  bool SerialScavenger::ProcessToSpace() {
-   NOT_IMPLEMENTED(FATAL); //TODO: implement
-   return false;
+   DLOG(INFO) << "tospace:";
+   SemispacePrinter::Print(&tospace());
+   return true;
  }
 
  class SerialRootNotifier : public RawObjectPointerVisitor {
@@ -78,6 +79,7 @@ namespace poseidon {
    LOG_IF(FATAL, !LocalPageExistsForCurrentThread()) << "no local page exists for current thread.";
    SwapSpaces();
    LOG_IF(FATAL, !ProcessRoots()) << "failed to process roots.";
+   LOG_IF(FATAL, !ProcessToSpace()) << "failed to process to-space.";
    LOG_IF(FATAL, !UpdateRoots()) << "failed to update roots.";
  }
 }

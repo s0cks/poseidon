@@ -4,9 +4,9 @@
 #include "poseidon/flags.h"
 #include "poseidon/utils.h"
 
-#include "poseidon/heap/zone/zone.h"
-#include "poseidon/heap/zone/new_zone.h"
-#include "poseidon/heap/zone/old_zone.h"
+#include "poseidon/zone/zone.h"
+#include "poseidon/zone/new_zone.h"
+#include "poseidon/zone/old_zone.h"
 
 #include "poseidon/platform/os_thread.h"
 #include "poseidon/platform/memory_region.h"

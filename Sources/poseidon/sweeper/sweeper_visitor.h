@@ -1,7 +1,7 @@
 #ifndef POSEIDON_SWEEPER_BASE_H
 #define POSEIDON_SWEEPER_BASE_H
 
-#include "poseidon/heap/zone/old_zone.h"
+#include "poseidon/zone/old_zone.h"
 
 namespace poseidon {
  template<bool Parallel>

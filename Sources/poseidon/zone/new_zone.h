@@ -3,7 +3,7 @@
 
 #include "poseidon/flags.h"
 #include "poseidon/bitset.h"
-#include "poseidon/heap/zone/zone.h"
+#include "zone.h"
 #include "poseidon/heap/page/new_page.h"
 #include "poseidon/heap/semispace.h"
 
@@ -34,13 +34,13 @@ namespace poseidon{
    };
   protected:
    word semisize_; //TODO: remove
-   Semispace fromspace_;
-   Semispace tospace_;
+   uword fromspace_;
+   uword tospace_;
 
    NewZone(const uword start_address, const word size, const word semi_size):
     Zone(start_address, size, flags::GetNewPageSize()),
-    fromspace_(Space::kFromSpace, GetStartingAddress(), semi_size),
-    tospace_(Space::kToSpace, GetStartingAddress() + semi_size, semi_size),
+    fromspace_(GetStartingAddress()),
+    tospace_(GetStartingAddress() + semi_size),
     semisize_(semi_size) {
    }
   public:
@@ -54,23 +54,23 @@ namespace poseidon{
    NewZone(const NewZone& rhs) = delete;
    ~NewZone() override = default;
 
-   Semispace fromspace() const {
+   uword fromspace() const {
      return fromspace_;
    }
 
-   Semispace& fromspace() {
-     return fromspace_;
+   Semispace GetFromspace() const {
+     return Semispace(Space::kFromSpace, GetStartingAddress(), fromspace(), GetSemispaceSize());
    }
 
-   Semispace tospace() const {
+   uword tospace() const {
      return tospace_;
    }
 
-   Semispace& tospace() {
-     return tospace_;
+   Semispace GetTospace() const {
+     return Semispace(Space::kToSpace, tospace(), GetSemispaceSize());
    }
 
-   word semisize() const{
+   word GetSemispaceSize() const {
      return semisize_;
    }
 
@@ -78,8 +78,8 @@ namespace poseidon{
 
    void Clear() override {
      Zone::Clear();
-     fromspace_.Clear();
-     tospace_.Clear();
+     fromspace_ = GetStartingAddress();
+     tospace_ = GetStartingAddress() + GetSemispaceSize();
    }
 
    virtual Pointer* TryAllocatePointer(word size);
@@ -122,9 +122,9 @@ namespace poseidon{
      stream << "start=" << val.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
      stream << "end=" << val.GetEndingAddressPointer() << ", ";
-     stream << "fromspace=" << val.fromspace() << ", ";
-     stream << "tospace=" << val.tospace()  << ", ";
-     stream << "semi-size=" << Bytes(val.semisize());
+     stream << "fromspace=" << val.GetFromspace() << ", ";
+     stream << "tospace=" << val.GetTospace()  << ", ";
+     stream << "semi-size=" << Bytes(val.GetSemispaceSize());
      stream << ")";
      return stream;
    }

@@ -7,22 +7,25 @@ namespace poseidon {
 #define REQUIRE_INITIALIZED_CLASS(Level) \
  LOG_IF(Level, kClass == nullptr) << "class `" << GetClassName() << "` is not initialized.";
 
- Class* Object::kClass = nullptr;
-
- void Object::InitializeClass() {
-   REQUIRE_UNINITIALIZED_CLASS(FATAL);
-   kClass = new Class(kClassName, kTypeId, nullptr);
+#define DEFINE_INITIALIZE_CLASS(Name) \
+ Class* Name::kClass = nullptr;       \
+ void Name::InitializeClass() {       \
+  REQUIRE_UNINITIALIZED_CLASS(FATAL); \
+  kClass = Name::CreateClass();       \
  }
 
- Class* Class::kClass = nullptr;
+ DEFINE_INITIALIZE_CLASS(Object);
+ Class* Object::CreateClass() {
+   return new Class(kClassName, kTypeId, nullptr);
+ }
 
+ DEFINE_INITIALIZE_CLASS(Class);
  Class* Class::CreateClass() {
    REQUIRE_UNINITIALIZED_CLASS(FATAL);
    return new Class(kClassName, kTypeId, Object::GetClass());
  }
 
- Class* Field::kClass = nullptr;
-
+ DEFINE_INITIALIZE_CLASS(Field);
  Class* Field::CreateClass() {
    REQUIRE_UNINITIALIZED_CLASS(FATAL);
    return new Class(kClassName, kTypeId, Object::GetClass());
@@ -30,16 +33,10 @@ namespace poseidon {
 
  void Class::Initialize(){
    REQUIRE_UNINITIALIZED_CLASS(FATAL);
-   Object::InitializeClass();
-   Bool::InitializeClass();
-   Tuple::InitializeClass();
-   Number::InitializeClass();
-   UInt8::InitializeClass();
-   Int8::InitializeClass();
-   UInt16::InitializeClass();
-   Int16::InitializeClass();
-   UInt32::InitializeClass();
-   Int32::InitializeClass();
+
+#define INITIALIZE_CLASS(Name) Name::InitializeClass();
+   FOR_EACH_TYPE(INITIALIZE_CLASS);
+#undef INITIALIZE_CLASS
  }
 
  Field* Class::CreateField(std::string name, Class* type) {
@@ -69,8 +66,7 @@ namespace poseidon {
    return (T*)address;
  }
 
- Class* Null::kClass = nullptr;
-
+ DEFINE_INITIALIZE_CLASS(Null);
  Class* Null::CreateClass() {
    LOG_IF(FATAL, kClass != nullptr) << kClassName << " class is already initialized";
    auto cls = kClass = new Class(kClassName, kTypeId);
@@ -85,7 +81,7 @@ namespace poseidon {
    return kNull;
  }
 
- Class* Bool::kClass = nullptr;
+ DEFINE_INITIALIZE_CLASS(Bool);
  Field* Bool::kValueField = nullptr;
 
  Class* Bool::CreateClass() {
@@ -93,11 +89,6 @@ namespace poseidon {
    auto cls = new Class(kClassName, kTypeId);
    kValueField = cls->CreateField("value", cls);
    return cls;
- }
-
- void Bool::InitializeClass() {
-   REQUIRE_UNINITIALIZED_CLASS(FATAL);
-   kClass = Bool::CreateClass();
  }
 
  static Bool* kTrue = nullptr;
@@ -116,7 +107,7 @@ namespace poseidon {
    return kFalse;
  }
 
- Class* Number::kClass = nullptr;
+ DEFINE_INITIALIZE_CLASS(Number);
  Field* Number::kValueField = nullptr;
 
  Class* Number::CreateClass() {
@@ -125,22 +116,12 @@ namespace poseidon {
    return cls;
  }
 
- void Number::InitializeClass() {
-   REQUIRE_UNINITIALIZED_CLASS(FATAL);
-   kClass = Number::CreateClass();
- }
-
 #define DEFINE_NUMBER_TYPE_CLASS(Name) \
- Class* Name::kClass = nullptr;        \
+ DEFINE_INITIALIZE_CLASS(Name);        \
  Class* Name::CreateClass() { REQUIRE_UNINITIALIZED_CLASS(FATAL); return new Class(kClassName, kTypeId, Number::GetClass()); } \
- void Name::InitializeClass() { REQUIRE_UNINITIALIZED_CLASS(FATAL); kClass = Name::CreateClass(); }
 
- DEFINE_NUMBER_TYPE_CLASS(UInt8);
- DEFINE_NUMBER_TYPE_CLASS(Int8);
- DEFINE_NUMBER_TYPE_CLASS(UInt16);
- DEFINE_NUMBER_TYPE_CLASS(Int16);
- DEFINE_NUMBER_TYPE_CLASS(UInt32);
- DEFINE_NUMBER_TYPE_CLASS(Int32);
+ FOR_EACH_INT_TYPE(DEFINE_NUMBER_TYPE_CLASS)
+#undef DEFINE_NUMBER_TYPE_CLASS
 
  Class* Tuple::kClass = nullptr;
  Field* Tuple::kCarField = nullptr;

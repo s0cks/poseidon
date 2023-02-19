@@ -3,7 +3,7 @@
 
 #include "poseidon/object.h"
 #include "poseidon/local/local.h"
-#include "poseidon/heap/zone/new_zone.h"
+#include "poseidon/zone/new_zone.h"
 #include "poseidon/marker/marker_parallel.h"
 
 #include "marker/mock_marker.h"

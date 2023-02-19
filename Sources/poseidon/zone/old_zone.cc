@@ -1,6 +1,6 @@
 #include "poseidon/object.h"
 #include "poseidon/heap/page_marker.h"
-#include "poseidon/heap/zone/old_zone.h"
+#include "old_zone.h"
 #include "poseidon/collector/collector.h"
 
 namespace poseidon{

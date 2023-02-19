@@ -11,11 +11,11 @@ ADD_EXECUTABLE(poseidon-tests
                helpers.h
                test_raw_object.cc
                heap/test_semispace.cc
-               heap/test_new_zone.cc
+               zone/test_new_zone.cc
                heap/test_old_page.cc
                helpers/assertions.h
                heap/test_new_page.cc
-               heap/test_old_zone.cc
+               zone/test_old_zone.cc
                heap/test_free_object.cc
                marker/test_marker_serial.cc
                sweeper/test_sweeper_serial.cc

@@ -13,7 +13,6 @@ namespace poseidon{
    explicit Section(const uword start = 0, const RegionSize size = 0):
     Region(start, size),
     region_(start, size) {
-     SetWritable();
    }
    explicit Section(const Region& region):
     Region(region) {
@@ -182,6 +181,10 @@ namespace poseidon{
  class AllocationSection : public Section {
   protected:
    uword current_;
+
+   AllocationSection(const uword start, const uword current, const word size):
+    Section(start, size),
+    current_(current) { }
 
    AllocationSection(const uword start, const word size):
     Section(start, size),

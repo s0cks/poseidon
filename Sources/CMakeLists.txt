@@ -15,11 +15,11 @@ SET(PSDN_HEAP_PAGE_SOURCES
     poseidon/heap/page/old_page.h
     poseidon/heap/page/old_page.cc)
 SET(PSDN_HEAP_ZONE_SOURCES
-    poseidon/heap/zone/zone.h
-    poseidon/heap/zone/new_zone.h
-    poseidon/heap/zone/new_zone.cc
-    poseidon/heap/zone/old_zone.h
-    poseidon/heap/zone/old_zone.cc poseidon/flags.cc poseidon/utils/size.h)
+    poseidon/zone/zone.h
+    poseidon/zone/new_zone.h
+    poseidon/zone/new_zone.cc
+    poseidon/zone/old_zone.h
+    poseidon/zone/old_zone.cc poseidon/flags.cc poseidon/utils/size.h)
 
 ADD_LIBRARY(poseidon
             ${PROJECT_BINARY_DIR}/poseidon/poseidon.h poseidon/poseidon.cc

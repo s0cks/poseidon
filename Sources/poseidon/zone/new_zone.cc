@@ -1,5 +1,5 @@
 #include "poseidon/object.h"
-#include "poseidon/heap/zone/new_zone.h"
+#include "new_zone.h"
 #include "poseidon/heap/page/new_page.h"
 #include "poseidon/collector/collector.h"
 
@@ -15,20 +15,22 @@ namespace poseidon{
    return new NewZone(region.GetStartingAddress(), total_size, semi_size);
  }
 
- Pointer* NewZone::TryAllocatePointer(const word size) {
-   if(size < GetMinimumObjectSize() || size > GetMaximumObjectSize()) //TODO: cleanup
-     return UNALLOCATED;
-
-   Pointer* new_ptr = nullptr;
-   if((new_ptr = fromspace_.TryAllocatePointer(size)) == UNALLOCATED) {
+ Pointer* NewZone::TryAllocatePointer(const ObjectSize size) {
+   if(size < NewZone::GetMinimumObjectSize() || size > NewZone::GetMaximumObjectSize()) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
-     Collector::MinorCollection();
-
-     if((new_ptr = fromspace_.TryAllocatePointer(size)) == UNALLOCATED) {
-       PSDN_CANT_ALLOCATE(FATAL, size, (*this));
-     }
+     return UNALLOCATED;
    }
-   //TODO: mark all pages intersected by
+
+   auto total_size = size + static_cast<ObjectSize>(sizeof(Pointer));
+   if((fromspace_ + total_size) >= tospace_) {
+     PSDN_CANT_ALLOCATE(ERROR, size, (*this));
+     return UNALLOCATED;
+   }
+
+   DLOG(INFO) << "allocating " << Bytes(total_size) << " in " << (*this);
+   auto new_ptr = new ((void*)fromspace_)Pointer(PointerTag::New(size));
+   memset((void*)new_ptr->GetObjectPointerAddress(), 0, new_ptr->GetSize());
+   fromspace_ += new_ptr->GetTotalSize();
    return new_ptr;
  }
 

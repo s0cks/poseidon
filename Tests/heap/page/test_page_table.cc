@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "poseidon/object.h"
-#include "poseidon/heap/zone/new_zone.h"
+#include "poseidon/zone/new_zone.h"
 #include "poseidon/heap/page/page_table.h"
 
 #include "assertions/assertions.h"

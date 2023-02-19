@@ -67,7 +67,13 @@ namespace poseidon{
      return size + static_cast<word>(sizeof(Pointer));
    }
   public:
-   Semispace() = default;
+   Semispace():
+    AllocationSection(),
+    space_(Space::kUnknownSpace) {
+   }
+   explicit Semispace(const Space space, const uword start, const uword current, const word size):
+    AllocationSection(start, current, size),
+    space_(space) { }
    explicit Semispace(const Space space, const uword start, const word size):
     AllocationSection(start, size),
     space_(space) {
@@ -84,7 +90,10 @@ namespace poseidon{
    explicit Semispace(const word size):
     Semispace(Space::kUnknownSpace, size) {
    }
-   Semispace(const Semispace& rhs) = default;
+   Semispace(const Semispace& rhs):
+    AllocationSection(rhs),
+    space_(rhs.space()) {
+   }
    ~Semispace() override = default;
 
    Space space() const {

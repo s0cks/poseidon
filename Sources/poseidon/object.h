@@ -21,6 +21,8 @@ namespace poseidon {
    virtual bool VisitPointers(RawObjectVisitor* vis) {
      return true;
    }
+
+   static Class* CreateClass();
   public:
    virtual ~Object() = default;
    virtual TypeId GetTypeId() const = 0;
@@ -225,6 +227,7 @@ namespace poseidon {
  };
 
  class Null : public Instance {
+   friend class Class;
   protected:
    Null():
      Instance(kClass, kTypeId) {
