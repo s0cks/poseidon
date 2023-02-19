@@ -76,6 +76,7 @@ namespace poseidon{
  TEST_F(NewZoneTest, TestConstructor_WillPass) {
    ASSERT_EQ((const Region&)region(), (const Region&)zone());
    ASSERT_EQ(zone().GetSize() / 2, zone().GetSemispaceSize());
+   ASSERT_TRUE(zone().IsEmpty());
 
    Semispace fromspace = zone().GetFromspace();
    ASSERT_EQ(zone().GetStartingAddress(), fromspace.GetStartingAddress());
@@ -93,8 +94,6 @@ namespace poseidon{
 
    //TODO: check pages
  }
-
- //TODO: add equals & not equals tests?
 
  TEST_F(NewZoneTest, TestSwapSpaces_WillPass) {
 //   MemoryRegion region(flags::GetNewZoneSize());
@@ -201,4 +200,57 @@ namespace poseidon{
  }
 
  FOR_EACH_INT_TYPE(DEFINE_TRY_ALLOCATE_NUMBER_TYPE_PASSES_NEW_ZONE_TEST);
+
+ TEST_F(NewZoneTest, TestClear_WillPass){
+   {
+     ASSERT_EQ((const Region&) region(), (const Region&) zone());
+     ASSERT_EQ(zone().GetSize() / 2, zone().GetSemispaceSize());
+     ASSERT_TRUE(zone().IsEmpty());
+
+     Semispace fromspace = zone().GetFromspace();
+     ASSERT_EQ(zone().GetStartingAddress(), fromspace.GetStartingAddress());
+     ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), fromspace.GetEndingAddress());
+
+     Semispace tospace = zone().GetTospace();
+     ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), tospace.GetStartingAddress());
+     ASSERT_EQ(zone().GetEndingAddress(), tospace.GetEndingAddress());
+
+     ASSERT_FALSE(fromspace.Contains(tospace));
+     ASSERT_TRUE(fromspace.Intersects(tospace));
+
+     ASSERT_FALSE(tospace.Contains(fromspace));
+     ASSERT_TRUE(tospace.Intersects(fromspace));
+   }
+
+   auto ptr = Null::TryAllocateIn(&zone());
+   ASSERT_TRUE(IsAllocated(ptr));
+   ASSERT_TRUE(IsNull(ptr));
+   ASSERT_TRUE(IsNew(ptr));
+   ASSERT_FALSE(IsOld(ptr));
+   ASSERT_FALSE(IsFree(ptr));
+   ASSERT_FALSE(IsMarked(ptr));
+   ASSERT_FALSE(IsRemembered(ptr));
+   ASSERT_FALSE(IsForwarding(ptr));
+   ASSERT_FALSE(zone().IsEmpty());
+   ASSERT_NO_FATAL_FAILURE(zone().Clear());
+
+   {
+     ASSERT_EQ((const Region&) region(), (const Region&) zone());
+     ASSERT_EQ(zone().GetSize() / 2, zone().GetSemispaceSize());
+
+     Semispace fromspace = zone().GetFromspace();
+     ASSERT_EQ(zone().GetStartingAddress(), fromspace.GetStartingAddress());
+     ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), fromspace.GetEndingAddress());
+
+     Semispace tospace = zone().GetTospace();
+     ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), tospace.GetStartingAddress());
+     ASSERT_EQ(zone().GetEndingAddress(), tospace.GetEndingAddress());
+
+     ASSERT_FALSE(fromspace.Contains(tospace));
+     ASSERT_TRUE(fromspace.Intersects(tospace));
+
+     ASSERT_FALSE(tospace.Contains(fromspace));
+     ASSERT_TRUE(tospace.Intersects(fromspace));
+   }
+ }
 }

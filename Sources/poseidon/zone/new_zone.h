@@ -82,6 +82,10 @@ namespace poseidon{
      tospace_ = GetStartingAddress() + GetSemispaceSize();
    }
 
+   bool IsEmpty() const {
+     return GetStartingAddress() == fromspace();
+   }
+
    virtual Pointer* TryAllocatePointer(word size);
    uword TryAllocateBytes(word size) override;
    uword TryAllocateClassBytes(Class* cls) override;
