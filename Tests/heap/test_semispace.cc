@@ -10,6 +10,7 @@
 #include "assertions/ptr_assertions.h"
 #include "assertions/type_assertions.h"
 
+#include "matchers/is_pointer_to.h"
 #include "mock_raw_object_visitor.h"
 
 namespace poseidon{
@@ -17,15 +18,58 @@ namespace poseidon{
 
  class SemispaceTest : public Test{
   protected:
-   SemispaceTest() = default;
+   MemoryRegion region_;
+   Semispace semispace_;
+   Marker marker_;
+
+   SemispaceTest():
+    Test(),
+    region_(flags::GetNewZoneSemispaceSize(), MemoryRegion::kReadOnly),
+    semispace_(Space::kFromSpace, region_),
+    marker_() {
+   }
+
+   inline MemoryRegion& region() {
+     return region_;
+   }
+
+   inline Semispace& semispace() {
+     return semispace_;
+   }
 
    static inline void
    SetCurrentAddress(Semispace& semispace, const uword address) {
      ASSERT_TRUE(semispace.Contains(address));
      semispace.current_ = address;
    }
+
+   inline Marker& marker() {
+     return marker_;
+   }
+
+   inline void Mark(Pointer* ptr) {
+     LOG_IF(FATAL, !marker().Visit(ptr)) << "failed to mark " << (*ptr);
+   }
+
+   template<class T>
+   inline void Mark(T* value) {
+     return Mark(value->raw_ptr());
+   }
   public:
    ~SemispaceTest() override = default;
+
+   void SetUp() override {
+     ASSERT_NO_FATAL_FAILURE(semispace().SetWritable());
+     ASSERT_NO_FATAL_FAILURE(semispace().Clear());
+     ASSERT_NO_FATAL_FAILURE(semispace().SetReadOnly());
+     SemispacePrinter::Print(&semispace());
+     ASSERT_NO_FATAL_FAILURE(semispace().SetWritable());
+   }
+
+   void TearDown() override {
+     ASSERT_NO_FATAL_FAILURE(semispace().SetReadOnly());
+     SemispacePrinter::Print(&semispace());
+   }
  };
 
  TEST_F(SemispaceTest, TestConstructor_WillPass){
@@ -81,109 +125,104 @@ namespace poseidon{
    ASSERT_TRUE(b.Intersects((Region) *ptr->raw_ptr()));
  }
 
-#define DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(TestName, NumberOfBytes) \
+#define DEFINE_TRY_ALLOCATE_BYTES_FAILS_SEMISPACE_TEST(TestName, NumberOfBytes) \
   DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(SemispaceTest, TestName, Semispace, flags::GetNewZoneSemispaceSize(), NumberOfBytes)
 
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeLessThanZero, -1);
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeEqualsZero, 0);
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeLessThanMin, Semispace::GetMinimumObjectSize() - 1);
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeGreaterThanMax, Semispace::GetMaximumObjectSize() + 1);
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeEqualToSemispaceSize, flags::GetNewZoneSemispaceSize());
- DEFINE_TRY_AlLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeGreaterThanSemispaceSize, flags::GetNewZoneSemispaceSize() + 1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeLessThanZero, -1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeEqualsZero, 0);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeLessThanMin, Semispace::GetMinimumObjectSize() - 1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeGreaterThanMax, Semispace::GetMaximumObjectSize() + 1);
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeEqualToSemispaceSize, flags::GetNewZoneSemispaceSize());
+ DEFINE_TRY_ALLOCATE_BYTES_FAILS_SEMISPACE_TEST(SizeGreaterThanSemispaceSize, flags::GetNewZoneSemispaceSize() + 1);
 
  TEST_F(SemispaceTest, TestTryAllocateBytes_WillFail_NotEnoughSpace){
-   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
-   ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
-   SetCurrentAddress(semispace, semispace.GetEndingAddress());
-   auto new_ptr = semispace.TryAllocateBytes(kWordSize);
-   ASSERT_EQ(new_ptr, UNALLOCATED);
+   SetCurrentAddress(semispace(), semispace().GetEndingAddress());
+   auto new_ptr = semispace().TryAllocateBytes(kWordSize);
+   ASSERT_TRUE(IsUnallocated(new_ptr));
  }
 
- TEST_F(SemispaceTest, TestTryAllocate){
-   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
-   ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
+#define DEFINE_TRY_ALLOCATE_TYPE_PASSES_SEMISPACE_TEST(TestName, Type) \
+ TEST_F(SemispaceTest, TestTryAllocate_WillPass_##Type){               \
+   static const constexpr RawInt32 kDefaultValue = 42;                 \
+   auto ptr = Type::TryAllocateIn<>(&semispace(), kDefaultValue);      \
+   ASSERT_TRUE(IsAllocated(ptr));                                      \
+   ASSERT_TRUE(IsNew(ptr));                                            \
+   ASSERT_FALSE(IsOld(ptr));                                           \
+   ASSERT_FALSE(IsMarked(ptr));                                        \
+   ASSERT_FALSE(IsRemembered(ptr));                                    \
+   ASSERT_FALSE(IsForwarding(ptr));                                    \
+   ASSERT_TRUE(Is##Type(ptr));                                         \
+   ASSERT_TRUE(Type##Eq(kDefaultValue, ptr));                          \
+ }
+ DEFINE_TRY_ALLOCATE_TYPE_PASSES_SEMISPACE_TEST(Int32, Int32);
 
-   static const constexpr RawInt32 kDefaultValue = 42;
-   auto ptr = Int32::TryAllocateIn<>(&semispace, kDefaultValue);
-   ASSERT_NE(ptr, nullptr);
-   ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
-   ASSERT_TRUE(IsNew(ptr->raw_ptr()));
-   ASSERT_FALSE(IsOld(ptr->raw_ptr()));
-   ASSERT_FALSE(IsMarked(ptr->raw_ptr()));
-   ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
-   ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-   ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
-   ASSERT_TRUE(Int32Eq(kDefaultValue, ptr));
-
-   ASSERT_TRUE(SemispacePrinter::Print(&semispace));
+ TEST_F(SemispaceTest, TestVisitPointers_WillPass_VisitsNothing) {
+   MockRawObjectVisitor visitor;
+   ON_CALL(visitor, Visit(_))
+    .WillByDefault(Return(false));
+   ASSERT_TRUE(semispace().VisitPointers(&visitor));
  }
 
- TEST_F(SemispaceTest, TestVisitPointers){
-   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
-   ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
+ TEST_F(SemispaceTest, TestVisitPointers_WillPass_VisitsOne) {
+   static constexpr const RawInt32 kAValue = 333;
+   auto a = Int32::TryAllocateIn(&semispace(), kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+
+   MockRawObjectVisitor visitor;
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+   ASSERT_TRUE(semispace().VisitPointers(&visitor));
+ }
+
+ TEST_F(SemispaceTest, TestVisitPointers_WillPass_VisitsMultiple) {
+   MockRawObjectVisitor visitor;
 
    static const constexpr int64_t kNumberOfPointers = 3;
    for(RawInt32 idx = 0; idx < kNumberOfPointers; idx++){
-     auto ptr = Int32::TryAllocateIn(&semispace, idx);
-     ASSERT_NE(ptr, nullptr);
-     ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
-     ASSERT_TRUE(IsNew(ptr->raw_ptr()));
-     ASSERT_FALSE(IsOld(ptr->raw_ptr()));
-     ASSERT_FALSE(IsMarked(ptr->raw_ptr()));
-     ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
-     ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-     ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
+     auto ptr = Int32::TryAllocateIn(&semispace(), idx);
+     ASSERT_TRUE(IsAllocated(ptr));
+     ASSERT_TRUE(IsInt32(ptr));
      ASSERT_TRUE(Int32Eq(idx, ptr));
+     EXPECT_CALL(visitor, Visit(IsPointerTo(ptr)));
    }
 
-   MockRawObjectVisitor visitor;
-   EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfPointers);
-   ASSERT_NO_FATAL_FAILURE(semispace.VisitPointers(&visitor));
-
-   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print(&semispace));
+   ASSERT_TRUE(semispace().VisitPointers(&visitor));
  }
 
- TEST_F(SemispaceTest, TestVisitMarkedPointers){
-   auto semispace = Semispace(flags::GetNewZoneSemispaceSize());
-   ASSERT_NO_FATAL_FAILURE(semispace.SetWritable());
+ TEST_F(SemispaceTest, TestVisitMarkedPointers_WillPass_VisitsNothing) {
+   MockRawObjectVisitor visitor;
+   ON_CALL(visitor, Visit(_))
+     .WillByDefault(Return(false));
+   ASSERT_TRUE(semispace().VisitMarkedPointers(&visitor));
+ }
 
-   static const constexpr int64_t kNumberOfUnmarkedPointers = 1;
-   static const constexpr int64_t kNumberOfMarkedPointers = 3;
-
-   for(RawInt32 idx = 0; idx < kNumberOfUnmarkedPointers; idx++){
-     auto ptr = Int32::TryAllocateIn(&semispace, idx);
-     ASSERT_NE(ptr, nullptr);
-     ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
-     ASSERT_TRUE(IsNew(ptr->raw_ptr()));
-     ASSERT_FALSE(IsOld(ptr->raw_ptr()));
-     ASSERT_FALSE(IsMarked(ptr->raw_ptr()));
-     ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
-     ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-     ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
-     ASSERT_TRUE(Int32Eq(idx, ptr));
-   }
-
-   Marker marker;
-   for(RawInt32 idx = 0; idx < kNumberOfMarkedPointers; idx++){
-     auto ptr = Int32::TryAllocateIn(&semispace, idx);
-
-     ASSERT_NE(ptr, nullptr);
-     ASSERT_TRUE(IsAllocated(ptr->raw_ptr()));
-     ASSERT_TRUE(IsNew(ptr->raw_ptr()));
-     ASSERT_FALSE(IsOld(ptr->raw_ptr()));
-     ASSERT_TRUE(IsMarked(ptr->raw_ptr()));
-     ASSERT_FALSE(IsRemembered(ptr->raw_ptr()));
-     ASSERT_FALSE(IsForwarding(ptr->raw_ptr()));
-     ASSERT_TRUE(IsInt32(ptr->raw_ptr()));
-     ASSERT_TRUE(Int32Eq(idx, ptr));
-   }
+ TEST_F(SemispaceTest, TestVisitMarkedPointers_WillPass_VisitsOne) {
+   static constexpr const RawInt32 kAValue = 333;
+   auto a = Int32::TryAllocateIn(&semispace(), kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_NO_FATAL_FAILURE(Mark(a));
 
    MockRawObjectVisitor visitor;
-   EXPECT_CALL(visitor, Visit)
-     .Times(kNumberOfMarkedPointers);
-   ASSERT_NO_FATAL_FAILURE(semispace.VisitMarkedPointers(&visitor));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+   ASSERT_TRUE(semispace().VisitMarkedPointers(&visitor));
+ }
 
-   ASSERT_NO_FATAL_FAILURE(SemispacePrinter::Print(&semispace));
+ TEST_F(SemispaceTest, TestVisitMarkedPointers_WillPass_VisitsMultiple) {
+   MockRawObjectVisitor visitor;
+
+   static const constexpr int64_t kNumberOfPointers = 3;
+   for(RawInt32 idx = 0; idx < kNumberOfPointers; idx++){
+     auto ptr = Int32::TryAllocateIn(&semispace(), idx);
+     ASSERT_TRUE(IsAllocated(ptr));
+     ASSERT_TRUE(IsInt32(ptr));
+     ASSERT_TRUE(Int32Eq(idx, ptr));
+     ASSERT_NO_FATAL_FAILURE(Mark(ptr));
+     EXPECT_CALL(visitor, Visit(IsPointerTo(ptr)));
+   }
+
+   ASSERT_TRUE(semispace().VisitMarkedPointers(&visitor));
  }
 }

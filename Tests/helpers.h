@@ -8,6 +8,7 @@
 #include "poseidon/heap/heap.h"
 
 #include "helpers/assertions.h"
+#include "assertions/ptr_assertions.h"
 
 namespace poseidon{
  using namespace ::testing;
@@ -18,7 +19,7 @@ namespace poseidon{
     ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));                                       \
     Zone zone(region);                                                                           \
     auto new_ptr = zone.TryAllocateBytes(NumberOfBytes);                                         \
-    ASSERT_EQ(new_ptr, UNALLOCATED);                                                             \
+    ASSERT_TRUE(IsUnallocated(new_ptr));                                                         \
   }
 
 #define DEFINE_TRY_ALLOCATE_BYTES_PASS_TEST(TestSuite, TestName, Zone, ZoneSize, NumberOfBytes) \

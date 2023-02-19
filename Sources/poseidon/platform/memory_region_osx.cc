@@ -10,13 +10,15 @@
 #define MAP_FAILED reinterpret_cast<void*>(-1)
 
 namespace poseidon{
+#define MEMORY_REGION_VERBOSITY 3
+
   MemoryRegion::MemoryRegion(const word size, const ProtectionMode mode):
     MemoryRegion(){
     void* addr = mmap(nullptr, size, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
     LOG_IF(FATAL, addr == MAP_FAILED) << "failed to mmap MemoryRegion of " << Bytes(size) << ": " << strerror(errno);
     start_ = (uword)addr;
     size_ = size;
-    DLOG(INFO) << "allocated " << (*this);
+    DVLOG(MEMORY_REGION_VERBOSITY) << "allocated " << (*this);
     Protect(mode);
   }
 
@@ -24,7 +26,7 @@ namespace poseidon{
     if(size_ > 0){
       int err = munmap(GetStartingAddressPointer(), GetSize());
       LOG_IF(FATAL, err != 0)  << "failed to munmap MemoryRegion of " << Bytes(GetSize()) << ": " << strerror(err);
-      DLOG(INFO) << "freed MemoryRegion (" << Bytes(GetSize()) << ")";
+      DVLOG(MEMORY_REGION_VERBOSITY) << "freed MemoryRegion (" << Bytes(GetSize()) << ")";
     }
   }
 
@@ -49,7 +51,7 @@ namespace poseidon{
     }
     int err = mprotect(GetStartingAddressPointer(), GetSize(), protection);
     LOG_IF(FATAL, err != 0) << "failed to set ProtectionMode `" << mode << "` to " << (*this) << ": " << strerror(err);
-    DLOG(INFO) << "set `" << mode << "` ProtectionMode to " << (*this);
+    DVLOG(MEMORY_REGION_VERBOSITY) << "set `" << mode << "` ProtectionMode to " << (*this);
     return true;
   }
 }

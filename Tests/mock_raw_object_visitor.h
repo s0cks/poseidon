@@ -7,18 +7,12 @@
 #include "poseidon/pointer.h"
 
 namespace poseidon {
- class MockRawObjectVisitor : public RawObjectVisitor{
-  private:
-   static inline bool
-   VisitPointer(Pointer* raw_ptr) {
-     DLOG(INFO) << "visiting " << (*raw_ptr);
-     return true;
-   }
+ class MockRawObjectVisitor : public RawObjectVisitor {
   public:
    MockRawObjectVisitor():
      RawObjectVisitor() {
      ON_CALL(*this, Visit(::testing::_))
-       .WillByDefault(VisitPointer);
+       .WillByDefault(::testing::Return(true));
    }
    ~MockRawObjectVisitor() override = default;
 

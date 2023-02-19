@@ -5,24 +5,25 @@
 #include "poseidon/object.h"
 #include "poseidon/local/local.h"
 
-namespace poseidon {
-#define FOR_EACH_POINTER_FLAG(V) \
- V(Marked)                       \
- V(Remembered)                   \
- V(Free)                         \
- V(New)                          \
- V(Old)
-
+namespace poseidon{
  static inline ::testing::AssertionResult
- IsAllocated(Pointer* ptr) {
-   return (ptr == UNALLOCATED) ?
-      ::testing::AssertionFailure() << "expected ptr to not be UNALLOCATED" :
-      ::testing::AssertionSuccess() << "ptr is not UNALLOCATED";
+ IsAllocated(Pointer * ptr){
+   if(ptr == UNALLOCATED)
+     return ::testing::AssertionFailure() << "expected ptr to not be UNALLOCATED";
+   return ::testing::AssertionSuccess();
  }
 
  template<class T>
  static inline ::testing::AssertionResult
- IsAllocated(T* value) {
+ IsAllocated(Local<T>& local) {
+   if(local.IsEmpty())
+     return ::testing::AssertionFailure() << "expected " << local << " to not be UNALLOCATED";
+   return IsAllocated(local.raw_ptr());
+ }
+
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsAllocated(T* value){
    if(value == UNALLOCATED)
      return ::testing::AssertionFailure() << "expected value to not be UNALLOCATED";
    if(value->raw_ptr() == UNALLOCATED)
@@ -31,7 +32,14 @@ namespace poseidon {
  }
 
  static inline ::testing::AssertionResult
- IsUnallocated(Pointer* val){
+ IsUnallocated(uword address){
+   if(address != UNALLOCATED)
+     return ::testing::AssertionFailure() << address << " " << ((void*) address) << " is allocated";
+   return ::testing::AssertionSuccess();
+ }
+
+ static inline ::testing::AssertionResult
+ IsUnallocated(Pointer * val){
    if(val == UNALLOCATED)
      return ::testing::AssertionSuccess();
    if(val->GetPointerSize() != 0)
@@ -39,69 +47,49 @@ namespace poseidon {
    return ::testing::AssertionSuccess();
  }
 
- static inline ::testing::AssertionResult
- IsNew(Pointer* val){
-   if(!val->IsNew())
-     return ::testing::AssertionFailure() << "Expected " << (*val) << " to be new.";
-   return ::testing::AssertionSuccess();
+#define DEFINE_POINTER_TAG_BIT_CHECK(Name) \
+ static inline ::testing::AssertionResult  \
+ Is##Name(Pointer* ptr) {                  \
+   if(ptr->Is##Name())                     \
+    return ::testing::AssertionSuccess();  \
+   return ::testing::AssertionFailure() << "expected " << (*ptr) << " to be " << #Name; \
  }
 
- template<typename T>
- static inline ::testing::AssertionResult
- IsNew(const Local<T>& local){
-   return IsNew(local.raw());
+#define DEFINE_LOCAL_POINTER_TAG_BIT_CHECK(Name) \
+ template<class T>                               \
+ static inline ::testing::AssertionResult        \
+ Is##Name(Local<T>& local) {                     \
+  return Is##Name(local.raw_ptr());              \
  }
 
- static inline ::testing::AssertionResult
- IsOld(Pointer* val){
-   if(!val->IsOld())
-     return ::testing::AssertionFailure() << "Expected " << (*val) << " to be old.";
-   return ::testing::AssertionSuccess();
+#define DEFINE_TYP_POINTER_TAG_BIT_CHECK(Name) \
+ template<class T>                             \
+ static inline ::testing::AssertionResult      \
+ Is##Name(T* value) {                          \
+  return Is##Name(value->raw_ptr());           \
  }
 
- template<typename T>
- static inline ::testing::AssertionResult
- IsOld(const Local<T>& val){
-   return IsOld(val.raw());
- }
-
- static inline ::testing::AssertionResult
- IsMarked(Pointer* val){
-   if(!val->IsMarked())
-     return ::testing::AssertionFailure() << "Expected " << (*val) << " to marked.";
-   return ::testing::AssertionSuccess();
- }
-
- template<class T>
- static inline ::testing::AssertionResult
- IsMarked(T* val) {
-   return IsMarked(val->raw_ptr());
- }
-
- template<typename T>
- static inline ::testing::AssertionResult
- IsMarked(const Local<T>& val){
-   return IsMarked(val.raw_ptr());
- }
-
- static inline ::testing::AssertionResult
- IsRemembered(Pointer* val){
-   if(!val->IsRemembered())
-     return ::testing::AssertionFailure() << "Expected " << (*val) << " to be remembered.";
-   return ::testing::AssertionSuccess();
- }
-
- template<typename T>
- static inline ::testing::AssertionResult
- IsRemembered(const Local<T>& val){
-   return IsRemembered(val.raw_ptr());
- }
+ FOR_EACH_POINTER_TAG_BIT(DEFINE_POINTER_TAG_BIT_CHECK);
+ FOR_EACH_POINTER_TAG_BIT(DEFINE_LOCAL_POINTER_TAG_BIT_CHECK);
+ FOR_EACH_POINTER_TAG_BIT(DEFINE_TYP_POINTER_TAG_BIT_CHECK);
 
  static inline ::testing::AssertionResult
  IsForwarding(Pointer* val){
    if(!val->IsForwarding())
      return ::testing::AssertionFailure() << "Expected " << (*val) << " to be forwarding.";
    return ::testing::AssertionSuccess();
+ }
+
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsForwarding(Local<T>& local) {
+   return IsForwarding(local.raw_ptr());
+ }
+
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsForwarding(T* value) {
+   return IsForwarding(value->raw_ptr());
  }
 
  static inline ::testing::AssertionResult
@@ -153,13 +141,6 @@ namespace poseidon {
  static inline ::testing::AssertionResult
  IsNewWord(const Local<T>& ptr, word value){
    return IsNewWord(ptr.raw_ptr(), value);
- }
-
- static inline ::testing::AssertionResult
- IsFree(Pointer* ptr) {
-   if(!ptr->IsFree())
-     return ::testing::AssertionFailure() << (*ptr) << " is not free";
-   return ::testing::AssertionSuccess();
  }
 
  static inline ::testing::AssertionResult
