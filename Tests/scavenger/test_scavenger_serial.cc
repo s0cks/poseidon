@@ -163,6 +163,88 @@ namespace poseidon {
    DLOG(INFO) << "b (after): " << (*b.raw_ptr());
  }
 
+ TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneTuple) {
+   LocalScope local_scope;
+
+   Semispace fromspace = zone().fromspace();
+   Semispace tospace = zone().tospace();
+
+   static constexpr const RawInt32 kAValue = 33;
+   auto a = Int32::TryAllocateIn(&zone(), kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_FALSE(IsMarked(a));
+   ASSERT_FALSE(IsRemembered(a));
+   ASSERT_TRUE(fromspace.Contains((const Region&)*a->raw_ptr()));
+   ASSERT_FALSE(tospace.Contains((const Region&)*a->raw_ptr()));
+
+   static constexpr const RawInt32 kBValue = 66;
+   auto b = Int32::TryAllocateIn(&zone(), kBValue);
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsInt32(b));
+   ASSERT_TRUE(Int32Eq(kBValue, b));
+   ASSERT_FALSE(IsMarked(b));
+   ASSERT_FALSE(IsRemembered(b));
+   ASSERT_TRUE(fromspace.Contains((const Region&)*b->raw_ptr()));
+   ASSERT_FALSE(tospace.Contains((const Region&)*b->raw_ptr()));
+
+   Local<Tuple> c(Tuple::TryAllocateIn(&zone()));
+   ASSERT_TRUE(IsAllocated(c));
+   ASSERT_TRUE(IsTuple(c));
+   ASSERT_TRUE(IsUnallocated(c->GetCarPointer()));
+   ASSERT_TRUE(IsUnallocated(c->GetCdrPointer()));
+   ASSERT_NO_FATAL_FAILURE(c->SetCar(a));
+   ASSERT_TRUE(IsAllocated(c->GetCarPointer()));
+   ASSERT_TRUE(IsInt32(c->GetCarPointer()));
+   ASSERT_TRUE(Int32Eq(a, c->GetCar<Int32>()));
+   ASSERT_NO_FATAL_FAILURE(c->SetCdr(b));
+   ASSERT_TRUE(IsAllocated(c->GetCdrPointer()));
+   ASSERT_TRUE(IsInt32(c->GetCdrPointer()));
+   ASSERT_TRUE(Int32Eq(b, c->GetCdr<Int32>()));
+   ASSERT_FALSE(IsMarked(c));
+   ASSERT_NO_FATAL_FAILURE(Mark(c));
+   ASSERT_TRUE(IsMarked(c));
+   ASSERT_FALSE(IsRemembered(c));
+   ASSERT_TRUE(fromspace.Contains((const Region&)*c->raw_ptr()));
+   ASSERT_FALSE(tospace.Contains((const Region&)*c->raw_ptr()));
+
+   MockScavenger scavenger(&zone(), nullptr);
+   EXPECT_CALL(scavenger, Scavenge(IsPointerTo(c)));
+   ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
+
+   ASSERT_TRUE(IsAllocated(c));
+   ASSERT_TRUE(IsTuple(c));
+   ASSERT_FALSE(IsMarked(c));
+   ASSERT_TRUE(IsRemembered(c));
+   ASSERT_FALSE(fromspace.Contains((const Region&)*c->raw_ptr()));
+   ASSERT_TRUE(tospace.Contains((const Region&)*c->raw_ptr()));
+
+   ASSERT_TRUE(IsAllocated(c->GetCarPointer()));
+   ASSERT_TRUE(IsInt32(c->GetCarPointer()));
+   ASSERT_TRUE(Int32Eq(a, c->GetCar<Int32>()));
+
+   ASSERT_TRUE(IsAllocated(c->GetCdrPointer()));
+   ASSERT_TRUE(IsInt32(c->GetCdrPointer()));
+   ASSERT_TRUE(Int32Eq(b, c->GetCdr<Int32>()));
+
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_FALSE(IsMarked(a));
+   ASSERT_TRUE(IsRemembered(a));
+   ASSERT_FALSE(fromspace.Contains((const Region&)*a->raw_ptr()));
+   ASSERT_TRUE(tospace.Contains((const Region&)*a->raw_ptr()));
+
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsInt32(b));
+   ASSERT_TRUE(Int32Eq(kBValue, b));
+   ASSERT_FALSE(IsMarked(b));
+   ASSERT_TRUE(IsRemembered(b));
+   ASSERT_FALSE(fromspace.Contains((const Region&)*b->raw_ptr()));
+   ASSERT_TRUE(tospace.Contains((const Region&)*b->raw_ptr()));
+ }
+
 // TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_PromotesOneObject) {
 //   MemoryRegion page_region(LocalPage::CalculateLocalPageSize(32));
 //   ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
