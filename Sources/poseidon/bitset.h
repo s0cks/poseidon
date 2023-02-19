@@ -35,7 +35,6 @@ namespace poseidon{
      if(BitSet::size() == size)
        return;
      auto nwords = GetLengthInWords(size);
-     DLOG(INFO) << "creating bitset w/ " << nwords << " words";
      words_ = (uword*)realloc(words_, sizeof(uword) * nwords);
      num_words_ = nwords;
    }

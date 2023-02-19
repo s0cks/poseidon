@@ -136,7 +136,11 @@ namespace poseidon {
 
    friend std::ostream& operator<<(std::ostream& stream, const Local<T>& value) {
      stream << "Local(";
-     stream << "address=" << (value.IsEmpty() ? "UNALLOCATED" : *value.Get()->raw_ptr());
+     if(value.IsEmpty()) {
+       stream << "UNALLOCATED";
+     } else {
+       stream << "ptr=" << *(*value.GetLocalPointer());
+     }
      stream << ")";
      return stream;
    }

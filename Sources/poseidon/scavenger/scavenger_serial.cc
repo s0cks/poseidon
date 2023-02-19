@@ -11,14 +11,12 @@ namespace poseidon {
  }
 
  bool SerialScavenger::ProcessRoots() {
-   if(!LocalPageExistsForCurrentThread()) {
-     LOG(WARNING) << "no LocalPage exists for thread `" << GetCurrentThreadName() << "`";
-     return false;
-   }
-
    TIMED_SECTION("ProcessRoots", {
      auto page = GetLocalPageForCurrentThread();
-     LOG_IF(FATAL, !page->VisitNewPointers(this)) << "failed to visit new pointers in " << (*page);
+     if(!page->VisitNewPointers(this)){
+       LOG(FATAL) << "failed to visit new pointers in " << (*page);
+       return false;
+     }
    });
    return true;
  }
@@ -26,6 +24,15 @@ namespace poseidon {
  bool SerialScavenger::Visit(Pointer* ptr) {
    if(ptr->IsNew() && ptr->IsMarked()) {
      DLOG(INFO) << "visiting " << (*ptr);
+     if(ptr->IsForwarding())
+       return true;//skip
+
+     DLOG(INFO) << "processing " << (*ptr);
+     if(ptr->IsRemembered()) {
+       return Promote(ptr);
+     } else{
+       return Scavenge(ptr);
+     }
    }
    return true;
  }
@@ -35,8 +42,42 @@ namespace poseidon {
    return false;
  }
 
- void SerialScavenger::Scavenge() {
+ class SerialRootNotifier : public RawObjectPointerVisitor {
+  protected:
+   static inline bool Update(Pointer** ptr, uword new_address) {
+     DLOG(INFO) << "updating " << (**ptr) << " to " << *((Pointer*)new_address);
+     (*ptr) = (Pointer*)new_address;
+     return true;
+   }
+  public:
+   SerialRootNotifier() = default;
+   ~SerialRootNotifier() override = default;
+
+   bool Visit(Pointer** raw_ptr) override {
+     auto ptr = (*raw_ptr);
+     if(ptr == UNALLOCATED)
+       return false;
+
+     if(!ptr->IsNew() || !ptr->IsForwarding()) {
+       return false;
+     }
+     return Update(raw_ptr, ptr->GetForwardingAddress());
+   }
+ };
+
+ bool SerialScavenger::UpdateRoots() {
+   SerialRootNotifier notifier;
+   TIMED_SECTION("SerialScavenger::UpdateRoots", {
+     auto page = GetLocalPageForCurrentThread();
+     LOG_IF(FATAL, !page->Visit(&notifier)) << "failed to notify roots";
+   });
+   return true;
+ }
+
+ void SerialScavenger::ScavengeMemory() {
+   LOG_IF(FATAL, !LocalPageExistsForCurrentThread()) << "no local page exists for current thread.";
    SwapSpaces();
    LOG_IF(FATAL, !ProcessRoots()) << "failed to process roots.";
+   LOG_IF(FATAL, !UpdateRoots()) << "failed to update roots.";
  }
 }

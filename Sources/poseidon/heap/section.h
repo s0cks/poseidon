@@ -29,7 +29,6 @@ namespace poseidon{
    inline bool
    IteratePointers(RawObjectVisitor* vis) {
      Iterator iter((Z*) this);
-     DLOG(INFO) << "visiting pointers in " << (*((Z*)this));
      while(iter.HasNext()) {
        auto next = iter.Next();
        if(!vis->Visit(next))

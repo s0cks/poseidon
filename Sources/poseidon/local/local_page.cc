@@ -19,6 +19,16 @@ namespace poseidon {
    return IterateOldPointers<LocalPage, LocalPageIterator>(vis);
  }
 
+ bool LocalPage::Visit(RawObjectPointerVisitor* vis) {
+   LocalPagePointerIterator iter(this);
+   while(iter.HasNext()) {
+     auto next = iter.Next();
+     if(!vis->Visit(next))
+       return false;
+   }
+   return true;
+ }
+
  uword LocalPage::TryAllocate() {
    if((GetCurrentAddress() + kWordSize) > GetEndingAddress())
      return UNALLOCATED; //TODO: maybe clean this page or do something else?

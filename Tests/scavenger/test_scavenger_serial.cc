@@ -5,6 +5,7 @@
 #include "scavenger/mock_scavenger.h"
 #include "assertions/ptr_assertions.h"
 #include "assertions/type_assertions.h"
+#include "poseidon/marker/marker.h"
 #include "poseidon/scavenger/scavenger_serial.h"
 
 namespace poseidon {
@@ -14,6 +15,7 @@ namespace poseidon {
   protected:
    MemoryRegion region_;
    NewZone zone_;
+   Marker marker_;
 
    SerialScavengerTest():
     region_(NewZone::GetNewZoneSize(), MemoryRegion::kReadWrite),
@@ -28,9 +30,18 @@ namespace poseidon {
      return zone_;
    }
 
-   inline void SerialScavenge(MockScavenger& scavenger) {
-     SerialScavenger serial_scavenger(&scavenger);
-     return serial_scavenger.Scavenge();
+   inline void SerialScavenge(MockScavenger* scavenger) {
+     SerialScavenger serial_scavenger(scavenger, &zone(), nullptr);
+     return serial_scavenger.ScavengeMemory();
+   }
+
+   inline void Mark(Pointer* ptr) {
+     ptr->SetMarked();
+   }
+
+   template<class T>
+   inline void Mark(Local<T>& local) {
+     return Mark(local.raw_ptr());
    }
   public:
    ~SerialScavengerTest() override = default;
@@ -47,9 +58,7 @@ namespace poseidon {
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillFail_NoRootSet) {
    MockScavenger scavenger(&zone(), nullptr);
-   ASSERT_DEATH(SerialScavenge(scavenger), "failed to process roots.");
-   EXPECT_CALL(scavenger, Scavenge(_))
-    .Times(0);
+   ASSERT_DEATH(SerialScavenge(&scavenger), "no local page exists for current thread.");
  }
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_DoesNothing) {
@@ -60,22 +69,16 @@ namespace poseidon {
 
    static constexpr const RawInt32 kAValue = 33;
    auto a = Int32::TryAllocateIn(&zone(), kAValue);
-   ASSERT_NE(a, nullptr);
+   ASSERT_TRUE(IsAllocated(a));
    ASSERT_TRUE(IsInt32(a->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, a));
 
    MockScavenger scavenger(&zone(), nullptr);
-   ASSERT_NO_FATAL_FAILURE(SerialScavenge(scavenger));
-
-   EXPECT_CALL(scavenger, Scavenge(_))
-    .Times(0);
+   ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
 
    // scavenging should always flip the semi-spaces
-   ASSERT_EQ(fromspace.GetStartingAddress(), zone().tospace().GetStartingAddress());
-   ASSERT_EQ(fromspace.GetSize(), zone().tospace().GetSize());
-
-   ASSERT_EQ(tospace.GetStartingAddress(), zone().fromspace().GetStartingAddress());
-   ASSERT_EQ(tospace.GetSize(), zone().fromspace().GetSize());
+   ASSERT_EQ((const Region&)fromspace, (const Region&)zone().tospace());
+   ASSERT_EQ((const Region&)tospace, (const Region&)zone().fromspace());
  }
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneObject) {
@@ -88,18 +91,18 @@ namespace poseidon {
    ASSERT_TRUE(IsAllocated(a));
    ASSERT_TRUE(IsInt32(a));
    ASSERT_TRUE(Int32Eq(kAValue, a));
-   ASSERT_FALSE(IsMarked<>(a));
+   ASSERT_FALSE(IsMarked(a));
    ASSERT_FALSE(IsRemembered(a));
-   //TODO: ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
+   ASSERT_NO_FATAL_FAILURE(Mark(a));
    ASSERT_TRUE(IsMarked(a));
    ASSERT_TRUE(fromspace.Contains((const Region&)*a->raw_ptr()));
    ASSERT_FALSE(tospace.Contains((const Region&)*a->raw_ptr()));
-   DLOG(INFO) << "a: " << (*a.raw_ptr());
 
+   DLOG(INFO) << "a (before): " << (*a.raw_ptr());
    MockScavenger scavenger(&zone(), nullptr);
-   ASSERT_NO_FATAL_FAILURE(SerialScavenge(scavenger));
-   EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
-    .WillOnce(Return(true));
+   EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)));
+   ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
+   DLOG(INFO) << "a (after): " << a;
 
    ASSERT_NE(a.raw_ptr(), nullptr);
    ASSERT_TRUE(IsInt32(a));
@@ -108,7 +111,6 @@ namespace poseidon {
    ASSERT_TRUE(tospace.Intersects(((Region) *a.raw_ptr())));
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
 
-   DLOG(INFO) << "a: " << (*a.raw_ptr());
    ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
  }
 
@@ -123,8 +125,8 @@ namespace poseidon {
    ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
    auto heap = Heap::From(region);
    auto zone = heap->new_zone();
-   auto& fromspace = zone->fromspace();
-   auto& tospace = zone->tospace();
+   Semispace fromspace = zone->fromspace();
+   Semispace tospace = zone->tospace();
 
    static constexpr const RawInt32 kAValue = 33;
    auto raw_a = Int32::TryAllocateIn(zone, kAValue);
@@ -132,7 +134,7 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(raw_a->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, raw_a));
    Local<Int32> a(raw_a->raw_ptr());
-   //TODO: ASSERT_NO_FATAL_FAILURE(a.raw_ptr()->SetMarkedBit());
+   ASSERT_NO_FATAL_FAILURE(Mark(a));
    ASSERT_TRUE(a.raw_ptr()->IsMarked());
    ASSERT_FALSE(a.raw_ptr()->IsRemembered());
    ASSERT_FALSE(tospace.Intersects((Region) *a.raw_ptr()));
@@ -144,41 +146,39 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(raw_b->raw_ptr()));
    ASSERT_TRUE(Int32Eq(kBValue, raw_b));
    Local<Int32> b(raw_b->raw_ptr());
-   //TODO: ASSERT_NO_FATAL_FAILURE(b.raw_ptr()->SetMarkedBit());
+   ASSERT_NO_FATAL_FAILURE(Mark(b));
    ASSERT_TRUE(b.raw_ptr()->IsMarked());
    ASSERT_FALSE(b.raw_ptr()->IsRemembered());
    ASSERT_FALSE(tospace.Intersects((Region) *b.raw_ptr()));
    DLOG(INFO) << "b (before): " << (*b.raw_ptr());
    
    MockScavenger scavenger(heap->new_zone(), heap->old_zone());
-   EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)))
-    .Times(1);
-   EXPECT_CALL(scavenger, Scavenge(IsPointerTo(b)))
-    .Times(1);
 
    DLOG(INFO) << "New Zone (before):";
-   SemispacePrinter::Print(&fromspace);
-   SemispacePrinter::Print(&tospace);
+   SemispacePrinter::Print(&zone->fromspace());
+   SemispacePrinter::Print(&zone->tospace());
 
-   //TODO: ASSERT_TRUE(SerialScavenge(&scavenger));
-   
+   EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)));
+   EXPECT_CALL(scavenger, Scavenge(IsPointerTo(b)));
+   ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
+
+   DLOG(INFO) << "New Zone (after):";
+   SemispacePrinter::Print(&zone->fromspace());
+   SemispacePrinter::Print(&zone->tospace());
+
    ASSERT_FALSE(a.raw_ptr()->IsMarked());
    ASSERT_TRUE(a.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsInt32(a.raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, a.Get()));
-   ASSERT_TRUE(fromspace.Intersects((Region) *a.raw_ptr()));
+   ASSERT_TRUE(tospace.Intersects((Region) *a.raw_ptr()));
    DLOG(INFO) << "a (after): " << (*a.raw_ptr());
 
    ASSERT_FALSE(b.raw_ptr()->IsMarked());
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsInt32(b.raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, b.Get()));
-   ASSERT_TRUE(fromspace.Intersects((Region) *b.raw_ptr()));
+   ASSERT_TRUE(tospace.Intersects((Region) *b.raw_ptr()));
    DLOG(INFO) << "b (after): " << (*b.raw_ptr());
-
-   DLOG(INFO) << "New Zone (after):";
-   SemispacePrinter::Print(&fromspace);
-   SemispacePrinter::Print(&tospace);
 
    ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
  }

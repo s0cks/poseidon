@@ -4,27 +4,46 @@
 #include "poseidon/heap/heap.h"
 
 namespace poseidon {
-#ifndef UNALLOCATED
-#define UNALLOCATED 0
-#endif // UNALLOCATED
+#define FOR_EACH_SCAVENGER_STATE(V) \
+ V(Idle)                            \
+ V(Scavenging)
 
- class Scavenger {
+ class Scavenger : public RawObjectVisitor {
    template<bool Parallel>
    friend class ScavengerVisitor;
 
-   friend class ScavengerTest;
    friend class SerialScavenger;
    friend class SerialScavengerTest;
    friend class ParallelScavenger;
    friend class ParallelScavengerTest;
-  private:
-   static void SetScavenging(bool value = true);
+  public:
+   enum class State : word {
+#define DEFINE_SCAVENGER_STATE(Name) k##Name,
+     FOR_EACH_SCAVENGER_STATE(DEFINE_SCAVENGER_STATE)
+#undef DEFINE_SCAVENGER_STATE
+   };
 
-   static inline void
-   ClearScavenging() {
-     return SetScavenging(false);
+   friend std::ostream& operator<<(std::ostream& stream, const State& state) {
+     switch(state) {
+#define DEFINE_TOSTRING(Name) case State::k##Name: return stream << #Name;
+       FOR_EACH_SCAVENGER_STATE(DEFINE_TOSTRING)
+#undef DEFINE_TOSTRING
+       default:
+         return stream << "[unknown: " << static_cast<word>(state) << "]";
+     }
    }
 
+   static void SetState(const State& state);
+
+   static inline void ClearState() {
+     return SetState(State::kIdle);
+   }
+
+#define DEFINE_SET_STATE(Name) \
+   static inline void Set##Name() { return SetState(State::k##Name); }
+   FOR_EACH_SCAVENGER_STATE(DEFINE_SET_STATE)
+#undef DEFINE_SET_STATE
+  private:
    static bool SerialScavenge(Scavenger* scavenger);
    static bool ParallelScavenge(Scavenger* scavenger);
   protected:
@@ -58,16 +77,22 @@ namespace poseidon {
 
    virtual uword Scavenge(Pointer* ptr);
    virtual uword Promote(Pointer* ptr);
-   virtual uword Process(Pointer* ptr);
-  public:
-   Scavenger() = delete;
-   Scavenger(const Scavenger& rhs) = delete;
-   virtual ~Scavenger() = default;
 
-   Scavenger& operator=(const Scavenger& rhs) = delete;
+   bool Visit(Pointer* ptr) override {
+     NOT_IMPLEMENTED(FATAL); //TODO: implement?
+     return false;
+   }
   public:
-   static bool IsScavenging();
-   static bool Scavenge(Heap* heap);
+   Scavenger() = default;
+   ~Scavenger() override = default;
+  public:
+   static State GetState();
+
+#define DEFINE_STATE_CHECK(Name) static inline bool Is##Name() { return GetState() == State::k##Name; }
+   FOR_EACH_SCAVENGER_STATE(DEFINE_STATE_CHECK)
+#undef DEFINE_STATE_CHECK
+
+   static bool ScavengeMemory(Heap* heap);
  };
 }
 

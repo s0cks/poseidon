@@ -73,9 +73,12 @@ namespace poseidon{
    friend class OldPage;
    friend class NewZone;
    friend class OldZone;
+   friend class Scavenger;
    friend class Compactor;
    friend class FreeList;
    friend class Finalizer;
+   friend class ParallelMarkerTask;
+   friend class SerialScavengerTest;
   protected:
    RelaxedAtomic<RawPointerTag> tag_;
    RelaxedAtomic<uword> forwarding_;

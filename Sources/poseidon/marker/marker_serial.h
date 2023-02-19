@@ -13,8 +13,7 @@ namespace poseidon {
    bool Visit(Pointer* ptr) override;
   public:
    explicit SerialMarker(Marker* marker):
-    MarkerVisitor<false>(marker) {
-   }
+    MarkerVisitor<false>(marker) { }
    ~SerialMarker() override = default;
 
    void MarkAllRoots();

@@ -22,8 +22,8 @@ namespace poseidon{
  bool SetCurrentThreadLocal(const ThreadLocalKey& key, const void* value);
  void* GetCurrentThreadLocal(const ThreadLocalKey& key);
 
- bool Start(ThreadId* thread, const std::string& name, const ThreadHandler& func, uword parameter);
- bool Join(const ThreadId& thread);
+ bool StartThread(ThreadId* thread, const std::string& name, const ThreadHandler& func, uword parameter);
+ bool JoinThread(const ThreadId& thread);
  bool Compare(const ThreadId& lhs, const ThreadId& rhs);
 
  static inline std::string
@@ -35,6 +35,42 @@ namespace poseidon{
  SetCurrentThreadName(const std::string& name){
    return SetThreadName(GetCurrentThreadId(), name);
  }
+
+ class OSThread {
+  protected:
+   std::string name_;
+   ThreadId thread_id_;
+  public:
+   OSThread() = delete;
+   explicit OSThread(std::string name):
+    name_(std::move(name)),
+    thread_id_() {
+   }
+   OSThread(const OSThread& rhs) = delete;
+   ~OSThread() = default;
+
+   virtual void Run() = 0;
+
+   std::string name() const {
+     return name_;
+   }
+
+   ThreadId thread_id() const {
+     return thread_id_;
+   }
+
+   void Join();
+   void Start();
+
+   OSThread& operator=(const OSThread& rhs) = delete;
+
+   friend std::ostream& operator<<(std::ostream& stream, const OSThread& os_thread) {
+     stream << "OSThread(";
+     stream << "name=" << os_thread.name();
+     stream << ")";
+     return stream;
+   }
+ };
 
  template<typename T>
  class ThreadLocal {

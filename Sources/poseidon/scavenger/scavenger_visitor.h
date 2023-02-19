@@ -6,11 +6,14 @@
 
 namespace poseidon {
  template<bool Parallel>
- class ScavengerVisitor : public RawObjectVisitor {
+ class ScavengerVisitor : public Scavenger {
   protected:
    Scavenger* scavenger_;
 
-   explicit ScavengerVisitor(Scavenger* scavenger):
+   explicit ScavengerVisitor(Scavenger* scavenger,
+                             NewZone* new_zone,
+                             OldZone* old_zone):
+    Scavenger(new_zone, old_zone),
     scavenger_(scavenger) {
    }
 
@@ -18,13 +21,22 @@ namespace poseidon {
      return scavenger_;
    }
   public:
+   ScavengerVisitor() = default;
    ~ScavengerVisitor() override = default;
 
    virtual inline bool IsParallel() const {
      return Parallel;
    }
 
-   virtual void Scavenge() = 0;
+   uword Scavenge(Pointer* ptr) override {
+     return scavenger()->Scavenge(ptr);
+   }
+
+   uword Promote(Pointer* ptr) override {
+     return scavenger()->Promote(ptr);
+   }
+
+   virtual void ScavengeMemory() = 0;
  };
 }
 

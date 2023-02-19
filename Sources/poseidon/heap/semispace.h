@@ -155,7 +155,8 @@ namespace poseidon{
      stream << "Semispace(";
      stream << "start=" << value.GetStartingAddressPointer()<< ", ";
      stream << "current=" << value.GetCurrentAddressPointer() << ", ";
-     stream << "size=" << Bytes(value.GetSize());
+     stream << "size=" << Bytes(value.GetSize()) << ", ";
+     stream << "allocated=" << Bytes(value.GetNumberOfBytesAllocated()) << " " << PrettyPrintPercentage(value.GetPercentageBytesAllocated());
      stream << ")";
      return stream;
    }

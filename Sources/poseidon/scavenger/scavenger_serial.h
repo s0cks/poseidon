@@ -8,19 +8,20 @@ namespace poseidon {
    friend class Scavenger;
    friend class SerialScavengerTest;
   protected:
-   explicit SerialScavenger(Scavenger* scavenger):
-     ScavengerVisitor<false>(scavenger) {
-   }
+   explicit SerialScavenger(Scavenger* scavenger, NewZone* new_zone, OldZone* old_zone):
+     ScavengerVisitor<false>(scavenger, new_zone, old_zone) { }
 
    void SwapSpaces();
    bool ProcessAll();
    bool ProcessRoots();
    bool ProcessToSpace();
+   bool UpdateRoots();
+
    bool Visit(Pointer* vis) override;
   public:
    ~SerialScavenger() override = default;
 
-   void Scavenge() override;
+   void ScavengeMemory() override;
  };
 }
 

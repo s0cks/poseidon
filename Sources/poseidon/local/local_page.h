@@ -50,6 +50,41 @@ namespace poseidon {
      }
    };
 
+   class LocalPagePointerIterator {
+    protected:
+     const LocalPage* page_;
+     uword current_;
+
+     inline const LocalPage* page() const {
+       return page_;
+     }
+
+     inline uword current_address() const {
+       return current_;
+     }
+
+     inline Pointer** current_ptr() const {
+       return (Pointer**)current_address();
+     }
+    public:
+     explicit LocalPagePointerIterator(const LocalPage* page):
+       page_(page),
+       current_(page->GetStartingAddress()) {
+     }
+     virtual ~LocalPagePointerIterator() = default;
+
+     virtual bool HasNext() const {
+       return current_address() >= page()->GetStartingAddress() &&
+           current_address() < page()->GetCurrentAddress();
+     }
+
+     virtual Pointer** Next() {
+       auto next = current_ptr();
+       current_ += kWordSize;
+       return next;
+     }
+   };
+
    static inline Region
    CalculateLocalPageRegion(const uword start, const word num_locals) {
      static constexpr const auto kLocalPageSize = static_cast<RegionSize>(sizeof(LocalPage));
@@ -112,6 +147,7 @@ namespace poseidon {
      return IterateUnmarkedPointers<LocalPage, LocalPageIterator>(vis);
    }
 
+   bool Visit(RawObjectPointerVisitor* vis);
    bool VisitNewPointers(RawObjectVisitor* vis) override;
    bool VisitOldPointers(RawObjectVisitor* vis) override;
    bool VisitMarkedPointers(RawObjectVisitor* vis) override;

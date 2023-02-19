@@ -53,7 +53,7 @@ ADD_LIBRARY(poseidon
             poseidon/pointer.h poseidon/pointer.cc
             poseidon/relaxed_atomic.h
             poseidon/runtime.h poseidon/runtime.cc
-            poseidon/task_pool.h poseidon/task_pool.cc
+            poseidon/task/task_pool.h poseidon/task/task_pool.cc
             poseidon/utils.h poseidon/utils.cc
             poseidon/wsq.h poseidon/heap/section.cc
             poseidon/region.h
@@ -83,7 +83,7 @@ ADD_LIBRARY(poseidon
             poseidon/local/local_page.h
             poseidon/local/local_page.cc
             poseidon/local/local.h
-            poseidon/freelist/freelist_printer.h poseidon/array.h poseidon/utils/visitor.h poseidon/object.h poseidon/object.cc poseidon/type.h poseidon/marker/marker_parallel.h)
+            poseidon/freelist/freelist_printer.h poseidon/array.h poseidon/utils/visitor.h poseidon/object.h poseidon/object.cc poseidon/type.h poseidon/marker/marker_parallel.h poseidon/marker/marker_parallel.cc poseidon/task/task.h poseidon/task/task.cc poseidon/task/task_worker.h poseidon/task/task_worker.cc poseidon/platform/os_thread.cc)
 TARGET_LINK_LIBRARIES(poseidon
                       ${CMAKE_THREAD_LIBS_INIT}
                       glog::glog

@@ -4,6 +4,7 @@
 namespace poseidon {
  static PointerCounter marked_;
  static PointerCounter visited_;
+ static RelaxedAtomic<Marker::State> state_;
 
  void Marker::Mark(Pointer* ptr) {
    visited_ += ptr;
@@ -23,5 +24,13 @@ namespace poseidon {
 
  MarkerStats Marker::GetStats() {
    return { visited_, marked_ };
+ }
+
+ void Marker::SetState(const State& state) {
+   state_ = state;
+ }
+
+ Marker::State Marker::GetState() {
+   return (Marker::State)state_;
  }
 }

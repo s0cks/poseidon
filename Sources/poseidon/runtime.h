@@ -1,7 +1,7 @@
 #ifndef POSEIDON_RUNTIME_H
 #define POSEIDON_RUNTIME_H
 
-#include "poseidon/task_pool.h"
+#include "poseidon/task/task_pool.h"
 
 namespace poseidon{
  class Runtime{

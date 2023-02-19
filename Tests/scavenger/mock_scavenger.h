@@ -13,11 +13,11 @@ namespace poseidon {
    explicit MockScavenger(NewZone* new_zone, OldZone* old_zone):
     Scavenger(new_zone, old_zone) {
      ON_CALL(*this, Scavenge(_))
-      .WillByDefault([this](Pointer* raw_ptr) {
+      .WillByDefault([&](Pointer* raw_ptr) {
         return Scavenger::Scavenge(raw_ptr);
       });
      ON_CALL(*this, Promote(_))
-      .WillByDefault([this](Pointer* raw_ptr) {
+      .WillByDefault([&](Pointer* raw_ptr) {
         return Scavenger::Promote(raw_ptr);
       });
    }

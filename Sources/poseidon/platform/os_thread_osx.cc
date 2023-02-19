@@ -68,7 +68,7 @@ namespace poseidon{
    return pthread_self();
  }
 
- bool Start(ThreadId* thread, const std::string& name, const ThreadHandler& func, uword parameter){
+ bool StartThread(ThreadId* thread, const std::string& name, const ThreadHandler& func, uword parameter){
    int result;
    pthread_attr_t attrs;
    if((result = pthread_attr_init(&attrs)) != 0){
@@ -90,7 +90,7 @@ namespace poseidon{
    return true;
  }
 
- bool Join(const ThreadId& thread){
+ bool JoinThread(const ThreadId& thread){
    std::string thread_name = GetThreadName(thread);
 
    char return_data[kThreadMaxResultLength];
