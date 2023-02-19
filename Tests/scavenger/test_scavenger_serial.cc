@@ -81,40 +81,38 @@ namespace poseidon {
    ASSERT_EQ((const Region&)tospace, (const Region&)zone().fromspace());
  }
 
- TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneObject) {
-   auto fromspace = zone().fromspace();
-   auto tospace = zone().tospace();
+ TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneInt32) {
+   LocalScope local_scope;
+
+   Semispace fromspace = zone().fromspace();
+   Semispace tospace = zone().tospace();
 
    static constexpr const RawInt32 kAValue = 33;
-   LocalScope local_scope(32);
    Local<Int32> a(Int32::TryAllocateIn(&zone(), kAValue));
    ASSERT_TRUE(IsAllocated(a));
    ASSERT_TRUE(IsInt32(a));
    ASSERT_TRUE(Int32Eq(kAValue, a));
    ASSERT_FALSE(IsMarked(a));
-   ASSERT_FALSE(IsRemembered(a));
    ASSERT_NO_FATAL_FAILURE(Mark(a));
    ASSERT_TRUE(IsMarked(a));
+   ASSERT_FALSE(IsRemembered(a));
    ASSERT_TRUE(fromspace.Contains((const Region&)*a->raw_ptr()));
    ASSERT_FALSE(tospace.Contains((const Region&)*a->raw_ptr()));
 
-   DLOG(INFO) << "a (before): " << (*a.raw_ptr());
    MockScavenger scavenger(&zone(), nullptr);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)));
    ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
-   DLOG(INFO) << "a (after): " << a;
 
-   ASSERT_NE(a.raw_ptr(), nullptr);
+   ASSERT_TRUE(IsAllocated(a));
    ASSERT_TRUE(IsInt32(a));
    ASSERT_TRUE(Int32Eq(kAValue, a));
-
-   ASSERT_TRUE(tospace.Intersects(((Region) *a.raw_ptr())));
-   ASSERT_TRUE(a.raw_ptr()->IsRemembered());
-
-   ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
+   ASSERT_FALSE(IsMarked(a));
+   ASSERT_TRUE(IsRemembered(a));
+   ASSERT_FALSE(fromspace.Contains((const Region&)*a.raw_ptr()));
+   ASSERT_TRUE(tospace.Contains((const Region&)*a.raw_ptr()));
  }
 
- TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesMultipleObjects) {
+ TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesMultipleInt32s) {
    LocalScope local_scope;
    Semispace fromspace = zone().fromspace();
    Semispace tospace = zone().tospace();
