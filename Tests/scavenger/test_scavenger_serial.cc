@@ -114,73 +114,55 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
  }
 
-
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesMultipleObjects) {
-   MemoryRegion page_region(LocalPage::CalculateLocalPageSize(32));
-   ASSERT_TRUE(page_region.Protect(MemoryRegion::kReadWrite));
-   LocalPage* page = LocalPage::New();
-   ASSERT_NO_FATAL_FAILURE(SetLocalPageForCurrentThread(page));
-
-   MemoryRegion region(flags::GetTotalInitialHeapSize());
-   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
-   auto heap = Heap::From(region);
-   auto zone = heap->new_zone();
-   Semispace fromspace = zone->fromspace();
-   Semispace tospace = zone->tospace();
+   LocalScope local_scope;
+   Semispace fromspace = zone().fromspace();
+   Semispace tospace = zone().tospace();
 
    static constexpr const RawInt32 kAValue = 33;
-   auto raw_a = Int32::TryAllocateIn(zone, kAValue);
-   ASSERT_NE(raw_a, nullptr);
-   ASSERT_TRUE(IsInt32(raw_a->raw_ptr()));
-   ASSERT_TRUE(Int32Eq(kAValue, raw_a));
-   Local<Int32> a(raw_a->raw_ptr());
+   Local<Int32> a(Int32::TryAllocateIn(&zone(), kAValue));
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
    ASSERT_NO_FATAL_FAILURE(Mark(a));
-   ASSERT_TRUE(a.raw_ptr()->IsMarked());
-   ASSERT_FALSE(a.raw_ptr()->IsRemembered());
-   ASSERT_FALSE(tospace.Intersects((Region) *a.raw_ptr()));
+   ASSERT_TRUE(IsMarked(a));
+   ASSERT_FALSE(IsRemembered(a));
+   ASSERT_TRUE(fromspace.Contains((const Region&)*a.raw_ptr()));
+   ASSERT_FALSE(tospace.Contains((const Region&)*a.raw_ptr()));
    DLOG(INFO) << "a (before): " << (*a.raw_ptr());
 
    static constexpr const RawInt32 kBValue = 33;
-   auto raw_b = Int32::TryAllocateIn(zone, kBValue);
-   ASSERT_NE(raw_b, nullptr);
-   ASSERT_TRUE(IsInt32(raw_b->raw_ptr()));
-   ASSERT_TRUE(Int32Eq(kBValue, raw_b));
-   Local<Int32> b(raw_b->raw_ptr());
+   Local<Int32> b(Int32::TryAllocateIn(&zone(), kBValue));
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsInt32(b));
+   ASSERT_TRUE(Int32Eq(kBValue, b));
    ASSERT_NO_FATAL_FAILURE(Mark(b));
-   ASSERT_TRUE(b.raw_ptr()->IsMarked());
-   ASSERT_FALSE(b.raw_ptr()->IsRemembered());
-   ASSERT_FALSE(tospace.Intersects((Region) *b.raw_ptr()));
+   ASSERT_TRUE(IsMarked(b));
+   ASSERT_FALSE(IsRemembered(b));
+   ASSERT_TRUE(fromspace.Contains((const Region&)*b.raw_ptr()));
+   ASSERT_FALSE(tospace.Contains((const Region&)*b.raw_ptr()));
    DLOG(INFO) << "b (before): " << (*b.raw_ptr());
-   
-   MockScavenger scavenger(heap->new_zone(), heap->old_zone());
 
-   DLOG(INFO) << "New Zone (before):";
-   SemispacePrinter::Print(&zone->fromspace());
-   SemispacePrinter::Print(&zone->tospace());
-
+   MockScavenger scavenger(&zone(), nullptr);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)));
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(b)));
    ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
 
-   DLOG(INFO) << "New Zone (after):";
-   SemispacePrinter::Print(&zone->fromspace());
-   SemispacePrinter::Print(&zone->tospace());
-
-   ASSERT_FALSE(a.raw_ptr()->IsMarked());
-   ASSERT_TRUE(a.raw_ptr()->IsRemembered());
-   ASSERT_TRUE(IsInt32(a.raw_ptr()));
-   ASSERT_TRUE(Int32Eq(kAValue, a.Get()));
-   ASSERT_TRUE(tospace.Intersects((Region) *a.raw_ptr()));
+   ASSERT_FALSE(IsMarked(a));
+   ASSERT_TRUE(IsRemembered(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_FALSE(fromspace.Contains((const Region&)*a.raw_ptr()));
+   ASSERT_TRUE(tospace.Contains((const Region&)*a.raw_ptr()));
    DLOG(INFO) << "a (after): " << (*a.raw_ptr());
 
    ASSERT_FALSE(b.raw_ptr()->IsMarked());
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
    ASSERT_TRUE(IsInt32(b.raw_ptr()));
    ASSERT_TRUE(Int32Eq(kAValue, b.Get()));
-   ASSERT_TRUE(tospace.Intersects((Region) *b.raw_ptr()));
+   ASSERT_FALSE(fromspace.Contains((const Region&)*b.raw_ptr()));
+   ASSERT_TRUE(tospace.Contains((const Region&)*b.raw_ptr()));
    DLOG(INFO) << "b (after): " << (*b.raw_ptr());
-
-   ASSERT_NO_FATAL_FAILURE(RemoveLocalPageForCurrentThread());
  }
 
 // TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_PromotesOneObject) {
