@@ -24,7 +24,7 @@ namespace poseidon {
    friend class SerialMarkerTest;
   public:
    static constexpr const int32_t kMaxNumberOfNewPages = 32;
-   static constexpr const Size kMaxSize = Megabytes(16);
+   static constexpr const Size kMaxSize = Bytes(10);
 
    class NewPageIterator : public RawObjectPointerIterator {
     private:
@@ -69,7 +69,7 @@ namespace poseidon {
      Page(index, start_address, size) {
    }
 
-   NewPage(const PageIndex index, const MemoryRegion& region):
+   NewPage(const PageIndex index, const Region& region):
     Page(index, region) {
    }
   public:

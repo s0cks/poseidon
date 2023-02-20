@@ -65,6 +65,10 @@ namespace poseidon{
       Region(start, size) {
     }
 
+    explicit MemoryRegion(const Region& region):
+      Region(region) {
+    }
+
     /**
      * Create a {@link MemoryRegion} that is a sub-section of the parent region at a specific offset.
      *

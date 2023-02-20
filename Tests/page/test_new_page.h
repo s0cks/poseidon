@@ -3,41 +3,19 @@
 
 #include <gtest/gtest.h>
 #include "poseidon/page/new_page.h"
+#include "base_memory_region_test.h"
 
 namespace poseidon {
- class BaseMemoryRegionTest : public ::testing::Test {
-  protected:
-   MemoryRegion region_;
-
-   explicit BaseMemoryRegionTest(const word size, const MemoryRegion::ProtectionMode mode = MemoryRegion::kNoAccess):
-    ::testing::Test(),
-    region_(size, mode) {
-   }
-
-   inline MemoryRegion& region() {
-     return region_;
-   }
-  public:
-   ~BaseMemoryRegionTest() override = default;
-
-   void SetUp() override {
-
-   }
-
-   void TearDown() override {
-
-   }
- };
-
  class NewPageTest : public BaseMemoryRegionTest {
   public:
-   static constexpr const PageIndex kPageIndex = 0;
+   static constexpr const PageIndex kTestPageIndex = 0;
+   static constexpr const Size kTestPageSize = Megabytes(2);
   protected:
    NewPage page_;
 
    NewPageTest():
-    BaseMemoryRegionTest(flags::GetNewPageSize(), MemoryRegion::kReadOnly),
-    page_(kPageIndex, region()) {
+    BaseMemoryRegionTest((RegionSize) kTestPageSize, MemoryRegion::kReadOnly),
+    page_(kTestPageIndex, region()) {
    }
 
    inline NewPage& page() {
@@ -47,6 +25,7 @@ namespace poseidon {
    ~NewPageTest() override = default;
 
    void SetUp() override {
+     BaseMemoryRegionTest::SetUp();
      ASSERT_NO_FATAL_FAILURE(page().SetWritable());
      ASSERT_NO_FATAL_FAILURE(page().Clear());
      ASSERT_NO_FATAL_FAILURE(page().SetReadOnly());
@@ -55,6 +34,7 @@ namespace poseidon {
    }
 
    void TearDown() override {
+     BaseMemoryRegionTest::TearDown();
      ASSERT_NO_FATAL_FAILURE(page().SetReadOnly());
      //TODO: print NewPage
    }

@@ -29,15 +29,15 @@ namespace poseidon {
    static constexpr const word kSuffixLength = (sizeof(kSuffix) / sizeof(kSuffix[0]));
    static constexpr const word kMaxRemaining = 1024;
 
-   RawSize bytes_;
+   word bytes_;
   public:
-   explicit constexpr Size(const RawSize bytes = 0):
+   explicit constexpr Size(const word bytes = 0):
     bytes_(bytes) {
    }
    Size(const Size& rhs) = default;
    ~Size() = default;
 
-   RawSize bytes() const {
+   word bytes() const {
      return bytes_;
    }
 
@@ -58,14 +58,14 @@ namespace poseidon {
      return result;
    }
 
-   explicit constexpr operator RawSize() const {
+   explicit constexpr operator word() const {
      return bytes();
    }
 
    Size& operator=(const Size& rhs) = default;
 
-   Size& operator=(const RawSize& rhs) {
-     if(bytes() == rhs)
+   Size& operator=(const word& rhs) {
+     if(bytes_ == rhs)
        return *this;
      bytes_ = rhs;
      return *this;

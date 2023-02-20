@@ -11,6 +11,7 @@ namespace poseidon{
      default:
        break;
    }
+
    DLOG(INFO) << "visiting pointers in " << (*this);
    auto current = GetObjectPointerAddress() + sizeof(Instance);
    while(current < GetEndingAddress()) {

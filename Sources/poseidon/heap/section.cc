@@ -3,6 +3,7 @@
 
 namespace poseidon{
  void Section::Protect(MemoryRegion::ProtectionMode mode) {
-   LOG_IF(FATAL, !region().Protect(mode)) << "cannot protect " << (*this);
+   MemoryRegion memory_region(*this);
+   LOG_IF(FATAL, !memory_region.Protect(mode)) << "cannot protect " << (*this);
  }
 }

@@ -8,18 +8,11 @@
 namespace poseidon{
  class Section : public Region {
   protected:
-   MemoryRegion region_;
-
    explicit Section(const uword start = 0, const RegionSize size = 0):
-    Region(start, size),
-    region_(start, size) {
+    Region(start, size) {
    }
    explicit Section(const Region& region):
     Region(region) {
-   }
-
-   inline MemoryRegion& region() {
-     return region_;
    }
 
    void Protect(MemoryRegion::ProtectionMode mode);
