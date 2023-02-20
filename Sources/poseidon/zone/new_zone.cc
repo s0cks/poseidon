@@ -28,7 +28,7 @@ namespace poseidon{
    }
 
    DLOG(INFO) << "allocating " << Bytes(total_size) << " in " << (*this);
-   auto new_ptr = new ((void*)fromspace_)Pointer(PointerTag::New(size));
+   auto new_ptr = Pointer::New(fromspace(), PointerTag::New(size));
    memset((void*)new_ptr->GetObjectPointerAddress(), 0, new_ptr->GetSize());
    fromspace_ += new_ptr->GetTotalSize();
    return new_ptr;

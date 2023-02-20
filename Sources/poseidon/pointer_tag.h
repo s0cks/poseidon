@@ -18,6 +18,7 @@ namespace poseidon {
  V(Free)
 
  class PointerTag{
+   friend class Pointer;
   public:
    enum Layout{
      // NewBit

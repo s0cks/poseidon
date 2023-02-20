@@ -33,7 +33,7 @@ namespace poseidon{
      }
    };
   protected:
-   word semisize_; //TODO: remove
+   word semisize_;
    uword fromspace_;
    uword tospace_;
 
@@ -137,8 +137,7 @@ namespace poseidon{
    }
 
    bool VisitNewPointers(RawObjectVisitor* vis) override {
-     NOT_IMPLEMENTED(ERROR); //TODO: implement
-     return false;
+     return VisitPointers(vis);
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){

@@ -180,18 +180,32 @@ namespace poseidon{
      return {GetStartingAddress(), GetTotalSize()};
    }
   public:
+   static inline Pointer*
+   New(const uword start, const PointerTag tag = PointerTag::Empty()) {
+     PSDN_ASSERT(start > 0);
+     return new ((void*)start)Pointer(tag); //TODO: cleanup
+   }
+
+   static inline Pointer*
+   From(const uword start) {
+     return (Pointer*)start;
+   }
+
    static inline Pointer* From(const Region& region, const PointerTag tag = PointerTag::Empty()){
      //TODO: make assertions
      return new(region.GetStartingAddressPointer())Pointer(tag);
    }
 
    template<class T>
-   static inline uword TryAllocateIn(T* area, int64_t size){
+   static inline uword TryAllocateIn(T* area, int64_t size, const PointerTag tag = PointerTag::Empty()){
+     PSDN_ASSERT(size == tag.GetSize());
+
      auto total_size = static_cast<int64_t>(sizeof(Pointer) + size);
      if((area->GetCurrentAddress() + total_size) > area->GetEndingAddress()){
        PSDN_CANT_ALLOCATE(ERROR, total_size, (*area));
      }
-     auto ptr = new(area->GetCurrentAddressPointer())Pointer();
+
+     auto ptr = new(area->GetCurrentAddressPointer())Pointer(tag);
      area->current_ += total_size;
      ptr->SetPointerSize(size);
      return ptr->GetStartingAddress();
