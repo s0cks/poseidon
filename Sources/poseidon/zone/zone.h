@@ -62,6 +62,14 @@ namespace poseidon{
   public:
    ~Zone() override = default;
 
+   bool VisitNewPointers(RawObjectVisitor* vis) override {
+     return false;
+   }
+
+   bool VisitOldPointers(RawObjectVisitor* vis) override {
+     return false;
+   }
+
    virtual uword TryAllocateBytes(word size) = 0;
    virtual uword TryAllocateClassBytes(Class* cls) = 0;
  };

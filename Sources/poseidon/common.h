@@ -7,7 +7,6 @@
 
 #include "poseidon/utils/size.h"
 
-
 //TODO: cleanup
 
 #define NOT_IMPLEMENTED(Level) \

@@ -46,7 +46,7 @@ ADD_EXECUTABLE(poseidon-tests
                freelist/test_freelist.cc
                freelist/mock_free_list.h
                freelist/mock_free_pointer.h
-               freelist/is_free_ptr_to.h type/test_uint8.cc assertions/ptr_assertions.h marker/test_marker_parallel.cc)
+               freelist/is_free_ptr_to.h type/test_uint8.cc assertions/ptr_assertions.h marker/test_marker_parallel.cc zone/test_new_zone.h zone/test_new_zone_try_allocate.cc)
 TARGET_LINK_LIBRARIES(poseidon-tests
                       poseidon
                       ${CMAKE_THREAD_LIBS_INIT}

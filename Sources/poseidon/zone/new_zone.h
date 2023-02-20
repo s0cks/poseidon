@@ -43,6 +43,14 @@ namespace poseidon{
     tospace_(GetStartingAddress() + semi_size),
     semisize_(semi_size) {
    }
+
+   static inline word GetFromspaceOffset() {
+     return 0;
+   }
+
+   inline word GetTospaceOffset() const {
+     return GetSemispaceSize();
+   }
   public:
    NewZone() = delete;
    explicit NewZone(const MemoryRegion& region, const word semi_size = flags::GetNewZoneSemispaceSize()):
@@ -54,20 +62,36 @@ namespace poseidon{
    NewZone(const NewZone& rhs) = delete;
    ~NewZone() override = default;
 
+   uword GetFromspaceStartingAddress() const {
+     return GetStartingAddress() + GetFromspaceOffset();
+   }
+
    uword fromspace() const {
      return fromspace_;
    }
 
+   uword GetFromspaceEndingAddress() const {
+     return GetFromspaceStartingAddress() + GetSemispaceSize();
+   }
+
    Semispace GetFromspace() const {
-     return Semispace(Space::kFromSpace, GetStartingAddress(), fromspace(), GetSemispaceSize());
+     return Semispace(Space::kFromSpace, GetFromspaceStartingAddress(), fromspace(), GetSemispaceSize());
+   }
+
+   uword GetTospaceStartingAddress() const {
+     return GetStartingAddress() + GetTospaceOffset();
    }
 
    uword tospace() const {
      return tospace_;
    }
 
+   uword GetTospaceEndingAddress() const {
+     return GetTospaceStartingAddress() + GetSemispaceSize();
+   }
+
    Semispace GetTospace() const {
-     return Semispace(Space::kToSpace, tospace(), GetSemispaceSize());
+     return Semispace(Space::kToSpace, GetTospaceStartingAddress(), tospace(), GetSemispaceSize());
    }
 
    word GetSemispaceSize() const {
@@ -117,10 +141,6 @@ namespace poseidon{
      return false;
    }
 
-   bool VisitOldPointers(RawObjectVisitor* vis) override {
-     return false; // does not compute
-   }
-
    friend std::ostream& operator<<(std::ostream& stream, const NewZone& val){
      stream << "NewZone(";
      stream << "start=" << val.GetStartingAddressPointer() << ", ";
@@ -158,7 +178,7 @@ namespace poseidon{
    }
 
    bool PrintSection(NewZone* zone) override {
-     LOG_AT_LEVEL(GetSeverity()) << "New Zone " << (*zone) << ":";
+     LOG_AT_LEVEL(GetSeverity()) << (*zone) << ":";
      return SectionPrinter<NewZone>::PrintSection(zone);
    }
   public:

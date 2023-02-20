@@ -1,12 +1,14 @@
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
+#include "zone/test_new_zone.h"
 
 #include "poseidon/object.h"
-#include "poseidon/zone/new_zone.h"
+#include "poseidon/marker/marker.h"
 
 #include "helpers.h"
 #include "assertions/ptr_assertions.h"
 #include "assertions/type_assertions.h"
+
+#include "matchers/is_pointer_to.h"
+#include "mock_raw_object_visitor.h"
 
 namespace poseidon{
  using namespace ::testing;
@@ -38,41 +40,6 @@ namespace poseidon{
    return IsNewPageMatcher(expected);
  }
 
- class NewZoneTest : public Test {
-  protected:
-   MemoryRegion region_;
-   NewZone zone_;
-
-   NewZoneTest():
-    Test(),
-    region_(flags::GetNewZoneSize(), MemoryRegion::kReadWrite),
-    zone_(region_) {
-   }
-
-   inline MemoryRegion& region() {
-     return region_;
-   }
-
-   inline NewZone& zone() {
-     return zone_;
-   }
-  public:
-   ~NewZoneTest() override = default;
-
-   void SetUp() override {
-     ASSERT_NO_FATAL_FAILURE(zone().SetWritable());
-     ASSERT_NO_FATAL_FAILURE(zone().Clear());
-     ASSERT_NO_FATAL_FAILURE(zone().SetReadOnly());
-     ASSERT_NO_FATAL_FAILURE(NewZonePrinter::Print(&zone()));
-     ASSERT_NO_FATAL_FAILURE(zone().SetWritable());
-   }
-
-   void TearDown() override {
-     ASSERT_NO_FATAL_FAILURE(zone().SetReadOnly());
-     ASSERT_NO_FATAL_FAILURE(NewZonePrinter::Print(&zone()));
-   }
- };
-
  TEST_F(NewZoneTest, TestConstructor_WillPass) {
    ASSERT_EQ((const Region&)region(), (const Region&)zone());
    ASSERT_EQ(zone().GetSize() / 2, zone().GetSemispaceSize());
@@ -95,6 +62,38 @@ namespace poseidon{
    //TODO: check pages
  }
 
+ TEST_F(NewZoneTest, TestGetSemispaceSize) {
+   auto expected = zone().GetSize() / 2;
+   ASSERT_EQ(expected, zone().GetSemispaceSize());
+ }
+
+ TEST_F(NewZoneTest, TestGetFromspaceStartingAddress) {
+   auto expected = zone().GetStartingAddress();
+   ASSERT_EQ(expected, zone().GetFromspaceStartingAddress());
+ }
+
+ TEST_F(NewZoneTest, TestGetFromspaceEndingAddress) {
+   auto expected = zone().GetStartingAddress() + zone().GetSemispaceSize();
+   ASSERT_EQ(expected, zone().GetFromspaceEndingAddress());
+ }
+
+ TEST_F(NewZoneTest, TestGetFromspace) {
+   Semispace semispace = zone().GetFromspace();
+   ASSERT_TRUE(semispace.IsFromspace());
+   ASSERT_TRUE(semispace.IsEmpty());
+   ASSERT_EQ(Region(zone().GetStartingAddress(), zone().GetSemispaceSize()), semispace);
+ }
+
+ TEST_F(NewZoneTest, TestGetTospaceStartingAddress) {
+   auto expected = zone().GetStartingAddress() + zone().GetSemispaceSize();
+   ASSERT_EQ(expected, zone().GetTospaceStartingAddress());
+ }
+
+ TEST_F(NewZoneTest, TestGetTospaceEndingAddress) {
+   auto expected = zone().GetEndingAddress();
+   ASSERT_EQ(expected, zone().GetTospaceEndingAddress());
+ }
+
  TEST_F(NewZoneTest, TestSwapSpaces_WillPass) {
 //   MemoryRegion region(flags::GetNewZoneSize());
 //   ASSERT_TRUE(region.Protect(MemoryRegion::kReadWrite));
@@ -112,94 +111,17 @@ namespace poseidon{
 //   ASSERT_EQ(tospace, zone->fromspace());
  }
 
-#define DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(NewZoneTest, TestName, NewZone, flags::GetNewZoneSize(), NumberOfBytes)
+ TEST_F(NewZoneTest, TestIsEmpty) {
+   ASSERT_TRUE(zone().IsEmpty());
 
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeLessThanZero, -1);
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZero, 0);
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeLessThanMin, NewZone::GetMinimumObjectSize() - 1);
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZoneSize, flags::GetNewZoneSize());
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanZoneSize, flags::GetNewZoneSize() + 1);
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanMax, NewZone::GetMaximumObjectSize() + 1);
+   static constexpr const RawInt32 kAValue = 0xA;
+   auto a = Int32::TryAllocateIn(&zone(), kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
 
-#define DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_PASS_TEST(NewZoneTest, TestName, NewZone, flags::GetNewZoneSize(), NumberOfBytes)
-
- DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMin, NewZone::GetMinimumObjectSize());
- DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMax, NewZone::GetMaximumObjectSize());
-
- TEST_F(NewZoneTest, TestTryAllocate_Null_WillPass) {
-   auto ptr = Null::TryAllocateIn(&zone());
-   ASSERT_TRUE(IsAllocated(ptr));
-   ASSERT_TRUE(IsNull(ptr));
-   ASSERT_TRUE(IsNew(ptr));
-   ASSERT_FALSE(IsOld(ptr));
-   ASSERT_FALSE(IsFree(ptr));
-   ASSERT_FALSE(IsMarked(ptr));
-   ASSERT_FALSE(IsRemembered(ptr));
-   ASSERT_FALSE(IsForwarding(ptr));
+   ASSERT_FALSE(zone().IsEmpty());
  }
-
- TEST_F(NewZoneTest, TestTryAllocate_True_WillPass) {
-   auto ptr = Bool::TryAllocateIn(&zone(), true);
-   ASSERT_TRUE(IsAllocated(ptr));
-   ASSERT_TRUE(IsBool(ptr));
-   ASSERT_TRUE(ptr->Get());
-   ASSERT_TRUE(IsNew(ptr));
-   ASSERT_FALSE(IsOld(ptr));
-   ASSERT_FALSE(IsFree(ptr));
-   ASSERT_FALSE(IsMarked(ptr));
-   ASSERT_FALSE(IsRemembered(ptr));
-   ASSERT_FALSE(IsForwarding(ptr));
- }
-
- TEST_F(NewZoneTest, TestTryAllocate_False_WillPass) {
-   auto ptr = Bool::TryAllocateIn(&zone(), false);
-   ASSERT_TRUE(IsAllocated(ptr));
-   ASSERT_TRUE(IsBool(ptr));
-   ASSERT_FALSE(ptr->Get());
-   ASSERT_TRUE(IsNew(ptr));
-   ASSERT_FALSE(IsOld(ptr));
-   ASSERT_FALSE(IsFree(ptr));
-   ASSERT_FALSE(IsMarked(ptr));
-   ASSERT_FALSE(IsRemembered(ptr));
-   ASSERT_FALSE(IsForwarding(ptr));
- }
-
- TEST_F(NewZoneTest, TestTryAllocate_Tuple_WillPass) {
-   auto ptr = Tuple::TryAllocateIn(&zone());
-   ASSERT_TRUE(IsAllocated(ptr));
-   ASSERT_TRUE(IsTuple(ptr));
-   ASSERT_TRUE(IsUnallocated(ptr->GetCarPointer()));
-   ASSERT_TRUE(IsUnallocated(ptr->GetCdrPointer()));
-   ASSERT_TRUE(IsNew(ptr));
-   ASSERT_FALSE(IsOld(ptr));
-   ASSERT_FALSE(IsFree(ptr));
-   ASSERT_FALSE(IsMarked(ptr));
-   ASSERT_FALSE(IsRemembered(ptr));
-   ASSERT_FALSE(IsForwarding(ptr));
- }
-
-#define DEFINE_TRY_ALLOCATE_NUMBER_TYPE_PASSES_NEW_ZONE_TEST(Type) \
- TEST_F(NewZoneTest, TestTryAllocate_##Type##_WillPass) {          \
-   static constexpr const Raw##Type kValue = 0xA;                  \
-   auto ptr = Type::TryAllocateIn(&zone(), kValue);                \
-   ASSERT_TRUE(IsAllocated(ptr));                                  \
-   ASSERT_TRUE(Is##Type(ptr));                                     \
-   ASSERT_TRUE(Type##Eq(kValue, ptr));                             \
-   ASSERT_TRUE(IsNew(ptr));                                        \
-   ASSERT_FALSE(IsOld(ptr));                                       \
-   ASSERT_FALSE(IsFree(ptr));                                      \
-   ASSERT_FALSE(IsMarked(ptr));                                    \
-   ASSERT_FALSE(IsRemembered(ptr));                                \
-   ASSERT_FALSE(IsForwarding(ptr));                                \
-   Semispace fromspace = zone().GetFromspace();                    \
-   Semispace tospace = zone().GetTospace();                        \
-   ASSERT_TRUE(fromspace.Contains((const Region&)*ptr->raw_ptr()));\
-   ASSERT_FALSE(tospace.Contains((const Region&)*ptr->raw_ptr())); \
- }
-
- FOR_EACH_INT_TYPE(DEFINE_TRY_ALLOCATE_NUMBER_TYPE_PASSES_NEW_ZONE_TEST);
 
  TEST_F(NewZoneTest, TestClear_WillPass){
    {
@@ -252,5 +174,176 @@ namespace poseidon{
      ASSERT_FALSE(tospace.Contains(fromspace));
      ASSERT_TRUE(tospace.Intersects(fromspace));
    }
+ }
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsNothing) {
+   MockRawObjectVisitor visitor;
+   ON_CALL(visitor, Visit(_))
+    .WillByDefault(Return(false));
+   ASSERT_TRUE(zone().VisitPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsOneNull) {
+   MockRawObjectVisitor visitor;
+
+   auto a = Null::TryAllocateIn(&zone());
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsNull(a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsOneTrue) {
+   MockRawObjectVisitor visitor;
+
+   auto a = Bool::TryAllocateIn(&zone(), true);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(true, a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsOneFalse) {
+   MockRawObjectVisitor visitor;
+
+   auto a = Bool::TryAllocateIn(&zone(), false);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(false, a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));
+ }
+
+#define DEFINE_VISIT_POINTERS_NUMBER_TYPE_PASSES_NEW_ZONE_TEST(Type) \
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsOne##Type) {   \
+   MockRawObjectVisitor visitor;                                     \
+   static constexpr const Raw##Type kAValue = 0xA;                   \
+   auto a = Type::TryAllocateIn(&zone(), kAValue);                   \
+   ASSERT_TRUE(IsAllocated(a));                                      \
+   ASSERT_TRUE(Is##Type(a));                                         \
+   ASSERT_TRUE(Type##Eq(kAValue, a));                                \
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));                      \
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));          \
+ }
+ FOR_EACH_INT_TYPE(DEFINE_VISIT_POINTERS_NUMBER_TYPE_PASSES_NEW_ZONE_TEST);
+#undef DEFINE_VISIT_POINTERS_NUMBER_TYPE_PASSES_NEW_ZONE_TEST
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsMultipleNulls) {
+   MockRawObjectVisitor visitor;
+
+   auto a = Null::TryAllocateIn(&zone());
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsNull(a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   auto b = Null::TryAllocateIn(&zone());
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsNull(b));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(b)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsMultipleTrues) {
+   MockRawObjectVisitor visitor;
+
+   auto a = Bool::TryAllocateIn(&zone(), true);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(true, a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   auto b = Bool::TryAllocateIn(&zone(), true);
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsBool(b));
+   ASSERT_TRUE(BoolEq(true, b));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(b)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsMultipleFalses) {
+   MockRawObjectVisitor visitor;
+
+   auto a = Bool::TryAllocateIn(&zone(), false);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(false, a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   auto b = Bool::TryAllocateIn(&zone(), false);
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsBool(b));
+   ASSERT_TRUE(BoolEq(false, b));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(b)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));
+ }
+
+#define DEFINE_VISIT_MULTIPLE_POINTERS_NUMBER_TYPE_PASSES_NEW_ZONE_TEST(Type) \
+ TEST_F(NewZoneTest, TestVisitPointers_WillPass_VisitsMultiple##Type##s) {    \
+   MockRawObjectVisitor visitor;                                              \
+   static constexpr const Raw##Type kAValue = 0xA;                            \
+   auto a = Type::TryAllocateIn(&zone(), kAValue);                            \
+   ASSERT_TRUE(IsAllocated(a));                                               \
+   ASSERT_TRUE(Is##Type(a));                                                  \
+   ASSERT_TRUE(Type##Eq(kAValue, a));                                         \
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));                               \
+   static constexpr const Raw##Type kBValue = 0xB;                            \
+   auto b = Type::TryAllocateIn(&zone(), kBValue);                            \
+   ASSERT_TRUE(IsAllocated(b));                                               \
+   ASSERT_TRUE(Is##Type(b));                                                  \
+   ASSERT_TRUE(Type##Eq(kBValue, b));                                         \
+   EXPECT_CALL(visitor, Visit(IsPointerTo(b)));                               \
+   ASSERT_NO_FATAL_FAILURE(zone().VisitPointers(&visitor));                   \
+ }
+ FOR_EACH_INT_TYPE(DEFINE_VISIT_MULTIPLE_POINTERS_NUMBER_TYPE_PASSES_NEW_ZONE_TEST)
+#undef DEFINE_VISIT_MULTIPLE_POINTERS_NUMBER_TYPE_PASSES_NEW_ZONE_TEST
+
+ TEST_F(NewZoneTest, TestVisitMarkedPointers_WillPass_VisitsNothing) {
+   MockRawObjectVisitor visitor;
+   ON_CALL(visitor, Visit(_))
+    .WillByDefault(Return(false));
+   ASSERT_TRUE(zone().VisitMarkedPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitMarkedPointers_WillPass_VisitsOneInt32s) {
+   MockRawObjectVisitor visitor;
+
+   static constexpr const RawInt32 kAValue = 0xA;
+   auto a = Int32::TryAllocateIn(&zone(), kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_TRUE(Mark(a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitMarkedPointers(&visitor));
+ }
+
+ TEST_F(NewZoneTest, TestVisitMarkedPointers_WillPass_VisitsMultipleInt32s) {
+   MockRawObjectVisitor visitor;
+
+   static constexpr const RawInt32 kAValue = 0xA;
+   auto a = Int32::TryAllocateIn(&zone(), kAValue);
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_TRUE(Mark(a));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(a)));
+
+   static constexpr const RawInt32 kBValue = 0xB;
+   auto b = Int32::TryAllocateIn(&zone(), kBValue);
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsInt32(b));
+   ASSERT_TRUE(Int32Eq(kBValue, b));
+   ASSERT_TRUE(Mark(b));
+   EXPECT_CALL(visitor, Visit(IsPointerTo(b)));
+
+   ASSERT_NO_FATAL_FAILURE(zone().VisitMarkedPointers(&visitor));
  }
 }

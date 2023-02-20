@@ -15,7 +15,6 @@ namespace poseidon {
        .WillByDefault(::testing::Return(true));
    }
    ~MockRawObjectVisitor() override = default;
-
    MOCK_METHOD(bool, Visit, (Pointer*), (override));
  };
 }
