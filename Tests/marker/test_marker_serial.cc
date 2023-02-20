@@ -7,7 +7,7 @@
 #include "helpers/alloc_helpers.h"
 #include "matchers/is_pointer_to.h"
 #include "assertions/assertions.h"
-#include "poseidon/heap/page/new_page.h"
+#include "poseidon/page/new_page.h"
 #include "poseidon/marker/marker_serial.h"
 
 namespace poseidon {

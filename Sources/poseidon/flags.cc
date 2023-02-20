@@ -1,20 +1,23 @@
 #include "poseidon/flags.h"
 
+#include "poseidon/page/new_page.h"
+
 namespace poseidon::flags {
  DEFINE_string(new_zone_size, kDefaultNewZoneSize, "The size of the new zone.");
 
  word GetNewZoneSize() {
    Size size;
    LOG_IF(FATAL, !SizeParser::ParseSize(FLAGS_new_zone_size, &size)) << "cannot parse NewZoneSize from: " << FLAGS_new_zone_size;
-   return size.value();
+   return size.bytes();
  }
 
- DEFINE_string(new_page_size, kDefaultNewPageSize, "The size of the new page in bytes.");
+ DEFINE_string(new_page_size, "2mb", "The size of the new page in bytes.");
+ DEFINE_int32(max_new_pages, NewPage::kMaxNumberOfNewPages, "The maximum number of NewPages.");
 
  word GetNewPageSize() {
    Size size;
    LOG_IF(FATAL, !SizeParser::ParseSize(FLAGS_new_page_size, &size)) << "cannot parse NewPageSize from: " << FLAGS_new_page_size;
-   return size.value();
+   return size.bytes();
  }
 
  DEFINE_string(old_zone_size, kDefaultOldZoneSize, "The size of the old zone in bytes.");
@@ -22,7 +25,7 @@ namespace poseidon::flags {
  word GetOldZoneSize() {
    Size size;
    LOG_IF(FATAL, !SizeParser::ParseSize(FLAGS_old_zone_size, &size)) << "cannot parse OldZoneSize from: " << FLAGS_old_zone_size;
-   return size.value();
+   return size.bytes();
  }
 
  DEFINE_string(old_page_size, kDefaultOldPageSize, "The size of the old zone pages in bytes.");
@@ -30,7 +33,7 @@ namespace poseidon::flags {
  word GetOldPageSize() {
    Size size;
    LOG_IF(FATAL, !SizeParser::ParseSize(FLAGS_old_page_size, &size)) << "cannot parse OldPageSize from: " << FLAGS_old_page_size;
-   return size.value();
+   return size.bytes();
  }
 
  DEFINE_int64(free_list_buckets, kDefaultNumberOfFreeListBuckets, "The number of buckets for the free list");
@@ -40,7 +43,7 @@ namespace poseidon::flags {
  word GetLargeObjectSize() {
    Size size;
    LOG_IF(FATAL, !SizeParser::ParseSize(FLAGS_large_object_size, &size)) << "cannot parse LargeObjectSize from: " << FLAGS_large_object_size;
-   return size.value();
+   return size.bytes();
  }
 
  DEFINE_int64(num_workers, kDefaultNumberOfWorkers, "The number of workers to use for collections.");

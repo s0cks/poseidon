@@ -4,7 +4,7 @@
 #include "poseidon/array.h"
 #include "poseidon/bitset.h"
 #include "poseidon/heap/section.h"
-#include "poseidon/heap/page/page.h"
+#include "page.h"
 
 namespace poseidon {
  class PageTable : public Section {
@@ -74,7 +74,7 @@ namespace poseidon {
    };
   protected:
    BitSet marked_;
-   RegionSize page_size_;
+   PageSize page_size_;
    Array<Page*> pages_;
 
    inline void

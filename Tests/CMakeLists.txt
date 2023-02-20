@@ -38,15 +38,15 @@ ADD_EXECUTABLE(poseidon-tests
                assertions/pointers_eq.h
                assertions/type_assertions.h
                mock_raw_object_visitor.h
-               heap/page/test_page_tag.cc
+               page/test_page_tag.cc
                helpers/type_alloc_helpers.h
                utils/test_size.cc
-               heap/page/test_page_table.cc
+               page/test_page_table.cc
                freelist/test_freelist.h
                freelist/test_freelist.cc
                freelist/mock_free_list.h
                freelist/mock_free_pointer.h
-               freelist/is_free_ptr_to.h type/test_uint8.cc assertions/ptr_assertions.h marker/test_marker_parallel.cc zone/test_new_zone.h zone/test_new_zone_try_allocate.cc)
+               freelist/is_free_ptr_to.h type/test_uint8.cc assertions/ptr_assertions.h marker/test_marker_parallel.cc zone/test_new_zone.h zone/test_new_zone_try_allocate.cc page/test_new_page.cc page/test_new_page.h)
 TARGET_LINK_LIBRARIES(poseidon-tests
                       poseidon
                       ${CMAKE_THREAD_LIBS_INIT}

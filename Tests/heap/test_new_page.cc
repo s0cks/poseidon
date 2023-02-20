@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include "poseidon/heap/page/new_page.h"
+#include "poseidon/page/new_page.h"
 
 #include "helpers.h"
 

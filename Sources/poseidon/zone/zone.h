@@ -3,8 +3,8 @@
 
 #include "poseidon/bitset.h"
 #include "poseidon/pointer.h"
-#include "poseidon/heap/page/page.h"
-#include "poseidon/heap/page/page_table.h"
+#include "poseidon/page/page.h"
+#include "poseidon/page/page_table.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon{

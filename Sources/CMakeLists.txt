@@ -6,14 +6,14 @@ CONFIGURE_FILE(poseidon/poseidon.h.in ${PROJECT_BINARY_DIR}/poseidon/poseidon.h)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR})
 
 SET(PSDN_HEAP_PAGE_SOURCES
-    poseidon/heap/page/page_tag.h
-    poseidon/heap/page/page.h
-    poseidon/heap/page/page_table.h
-    poseidon/heap/page/page_table.cc
-    poseidon/heap/page/new_page.h
-    poseidon/heap/page/new_page.cc
-    poseidon/heap/page/old_page.h
-    poseidon/heap/page/old_page.cc)
+    poseidon/page/page_tag.h
+    poseidon/page/page.h
+    poseidon/page/page_table.h
+    poseidon/page/page_table.cc
+    poseidon/page/new_page.h
+    poseidon/page/new_page.cc
+    poseidon/page/old_page.h
+    poseidon/page/old_page.cc)
 SET(PSDN_HEAP_ZONE_SOURCES
     poseidon/zone/zone.h
     poseidon/zone/new_zone.h

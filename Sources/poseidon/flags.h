@@ -29,6 +29,8 @@ namespace poseidon::flags{
    return GetNewZoneSize() / 2;
  }
 
+ DECLARE_int32(max_new_pages);
+
  DECLARE_size(OldZone, old_zone, "256mb");
  DECLARE_size(OldPage, old_page, "32mb");
 

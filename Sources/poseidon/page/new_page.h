@@ -2,7 +2,7 @@
 #define POSEIDON_NEW_PAGE_H
 
 #include "poseidon/flags.h"
-#include "poseidon/heap/page/page.h"
+#include "page.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
@@ -23,6 +23,9 @@ namespace poseidon {
    friend class NewPageTest;
    friend class SerialMarkerTest;
   public:
+   static constexpr const int32_t kMaxNumberOfNewPages = 32;
+   static constexpr const Size kMaxSize = Megabytes(16);
+
    class NewPageIterator : public RawObjectPointerIterator {
     private:
      const NewPage* page_;
@@ -64,6 +67,10 @@ namespace poseidon {
   public: //TODO: reduce access
    explicit NewPage(const PageIndex index = 0, const uword start_address = 0, const PageSize size = flags::GetNewPageSize()):
      Page(index, start_address, size) {
+   }
+
+   NewPage(const PageIndex index, const MemoryRegion& region):
+    Page(index, region) {
    }
   public:
    NewPage(const NewPage& rhs) = default;

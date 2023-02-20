@@ -9,63 +9,90 @@
 #include "poseidon/platform/platform.h"
 
 namespace poseidon {
- static constexpr const word kB = 1;
- static constexpr const word kKB = kB * 1024;
- static constexpr const word kMB = kKB * 1024;
- static constexpr const word kGB = kMB * 1024;
- static constexpr const word kTB = kGB * 1024;
+ typedef word RawSize;
+
+ static constexpr const RawSize kB = 1;
+ static constexpr const RawSize kKB = kB * 1024;
+ static constexpr const RawSize kMB = kKB * 1024;
+ static constexpr const RawSize kGB = kMB * 1024;
+ static constexpr const RawSize kTB = kGB * 1024;
 
  class Size {
   protected:
-   word size_; // num bytes
+   static constexpr const char* kSuffix[] = {
+       "b",
+       "kb",
+       "mb",
+       "gb",
+       "tb",
+   };
+   static constexpr const word kSuffixLength = (sizeof(kSuffix) / sizeof(kSuffix[0]));
+   static constexpr const word kMaxRemaining = 1024;
+
+   RawSize bytes_;
   public:
-   explicit constexpr Size(const word size = 0):
-    size_(size) {
+   explicit constexpr Size(const RawSize bytes = 0):
+    bytes_(bytes) {
    }
    Size(const Size& rhs) = default;
    ~Size() = default;
 
-   word value() const {
-     return size_;
+   RawSize bytes() const {
+     return bytes_;
    }
 
-   explicit constexpr operator word() const {
-     return value();
+   explicit operator const char*() const {
+     uint8_t suffix = 0;
+     auto remainder = static_cast<double>(bytes());
+     while(remainder >= kMaxRemaining && suffix < kSuffixLength){
+       suffix++;
+       remainder /= kMaxRemaining;
+     }
+
+     static char result[128];
+     if(remainder - floor(remainder) == 0.0){
+       sprintf(result, "%d%s", (int)remainder, kSuffix[suffix]);
+     } else{
+       sprintf(result, "%.2lf%s", remainder, kSuffix[suffix]);
+     }
+     return result;
+   }
+
+   explicit constexpr operator RawSize() const {
+     return bytes();
    }
 
    Size& operator=(const Size& rhs) = default;
 
+   Size& operator=(const RawSize& rhs) {
+     if(bytes() == rhs)
+       return *this;
+     bytes_ = rhs;
+     return *this;
+   }
+
    friend bool operator==(const Size& lhs, const Size& rhs) {
-     return lhs.value() == rhs.value();
+     return lhs.bytes() == rhs.bytes();
    }
 
    friend bool operator!=(const Size& lhs, const Size& rhs) {
-     return lhs.value() != rhs.value();
+     return lhs.bytes() != rhs.bytes();
    }
 
    friend bool operator<(const Size& lhs, const Size& rhs) {
-     return lhs.value() < rhs.value();
+     return lhs.bytes() < rhs.bytes();
    }
 
    friend bool operator>(const Size& lhs, const Size& rhs) {
-     return lhs.value() & rhs.value();
+     return lhs.bytes() & rhs.bytes();
    }
 
    friend std::ostream& operator<<(std::ostream& stream, const Size& size) {
-     static const char* kSuffix[] = {
-         "b",
-         "kb",
-         "mb",
-         "gb",
-         "tb",
-     };
-     static int kSuffixLength = sizeof(kSuffix) / sizeof(kSuffix[0]);
-
      uint8_t suffix = 0;
-     auto remainder = static_cast<double>(size.value());
-     while(remainder >= 1024 && suffix < kSuffixLength){
+     auto remainder = static_cast<double>(size.bytes());
+     while(remainder >= kMaxRemaining && suffix < kSuffixLength){
        suffix++;
-       remainder /= 1024;
+       remainder /= kMaxRemaining;
      }
 
      static char result[128];

@@ -5,7 +5,7 @@
 
 #include "poseidon/heap/section.h"
 #include "poseidon/relaxed_atomic.h"
-#include "poseidon/heap/page/page_tag.h"
+#include "page_tag.h"
 #include "poseidon/platform/memory_region.h"
 
 namespace poseidon {
@@ -68,6 +68,10 @@ namespace poseidon {
    Page() = default;
    Page(const word index, const uword start, const word size):
     Section(start, size),
+    index_(index) {
+   }
+   Page(const PageIndex index, const Region& region):
+    Section(region),
     index_(index) {
    }
    Page(const Page& rhs) = default;

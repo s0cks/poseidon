@@ -3,8 +3,8 @@
 
 #include "poseidon/flags.h"
 #include "poseidon/bitset.h"
-#include "zone.h"
-#include "poseidon/heap/page/new_page.h"
+#include "poseidon/zone/zone.h"
+#include "poseidon/page/new_page.h"
 #include "poseidon/heap/semispace.h"
 
 namespace poseidon{
@@ -36,6 +36,7 @@ namespace poseidon{
    word semisize_;
    uword fromspace_;
    uword tospace_;
+   Array<NewPage*> pages_;
 
    NewZone(const uword start_address, const word size, const word semi_size):
     Zone(start_address, size, flags::GetNewPageSize()),

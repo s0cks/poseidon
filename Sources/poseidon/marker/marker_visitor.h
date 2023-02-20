@@ -2,7 +2,7 @@
 #define POSEIDON_MARKER_VISITOR_H
 
 #include "poseidon/zone/zone.h"
-#include "poseidon/heap/page/page.h"
+#include "poseidon/page/page.h"
 #include "poseidon/marker/marker.h"
 
 namespace poseidon {
