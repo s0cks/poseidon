@@ -65,7 +65,7 @@ namespace poseidon {
      }
    };
   public: //TODO: reduce access
-   explicit NewPage(const PageIndex index = 0, const uword start_address = 0, const PageSize size = flags::GetNewPageSize()):
+   explicit NewPage(const PageIndex index = 0, const uword start_address = 0, const PageSize size = flags::GetNewPageSize()): //TODO: remove
      Page(index, start_address, size) {
    }
 
