@@ -93,35 +93,45 @@ namespace poseidon{
   public:
    ~Section() override = default;
 
-   virtual bool VisitPointers(RawObjectVisitor* vis) = 0;
+   virtual bool VisitPointers(RawObjectVisitor* vis) {
+     return false;
+   }
 
    virtual bool VisitPointers(const RawObjectVisitor::VisitorFunction& function) {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitPointers(&vis);
    }
 
-   virtual bool VisitMarkedPointers(RawObjectVisitor* vis) = 0;
+   virtual bool VisitMarkedPointers(RawObjectVisitor* vis) {
+     return false;
+   }
 
    virtual bool VisitMarkedPointers(const RawObjectVisitor::VisitorFunction& function) {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitMarkedPointers(&vis);
    }
 
-   virtual bool VisitUnmarkedPointers(RawObjectVisitor* vis) = 0;
+   virtual bool VisitUnmarkedPointers(RawObjectVisitor* vis) {
+     return false;
+   }
 
    virtual bool VisitUnmarkedPointers(const RawObjectVisitor::VisitorFunction& func) {
      auto vis = RawObjectVisitorWrapper(func);
      return VisitUnmarkedPointers(&vis);
    }
 
-   virtual bool VisitNewPointers(RawObjectVisitor* vis) = 0;
+   virtual bool VisitNewPointers(RawObjectVisitor* vis) {
+     return false;
+   }
 
    virtual bool VisitNewPointers(const RawObjectVisitor::VisitorFunction& function) {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitNewPointers(&vis);
    }
 
-   virtual bool VisitOldPointers(RawObjectVisitor* vis) = 0;
+   virtual bool VisitOldPointers(RawObjectVisitor* vis) {
+     return false;
+   }
 
    virtual bool VisitOldPointers(const RawObjectVisitor::VisitorFunction& function) {
      auto vis = RawObjectVisitorWrapper(function);

@@ -6,7 +6,8 @@
 namespace poseidon {
 #define FOR_EACH_SCAVENGER_STATE(V) \
  V(Idle)                            \
- V(Scavenging)
+ V(ProcessingRoots)                 \
+ V(ProcessingToSpace)
 
  class Scavenger : public RawObjectVisitor {
    template<bool Parallel>
@@ -49,22 +50,14 @@ namespace poseidon {
   protected:
    NewZone* new_zone_;
    OldZone* old_zone_;
-   Semispace fromspace_;
-   Semispace tospace_;
+   Semispace& fromspace_;
+   Semispace& tospace_;
 
    explicit Scavenger(NewZone* new_zone, OldZone* old_zone):
     new_zone_(new_zone),
     old_zone_(old_zone),
-    fromspace_(Space::kFromSpace, new_zone->fromspace(), new_zone->GetSemispaceSize()),
-    tospace_(Space::kToSpace, new_zone->tospace(), new_zone->GetSemispaceSize()) {
-   }
-
-   inline NewZone* new_zone() const {
-     return new_zone_;
-   }
-
-   inline OldZone* old_zone() const {
-     return old_zone_;
+    fromspace_(new_zone->fromspace()),
+    tospace_(new_zone->tospace()) {
    }
 
    inline Semispace& fromspace() {
@@ -73,6 +66,14 @@ namespace poseidon {
 
    inline Semispace& tospace() {
      return tospace_;
+   }
+
+   inline NewZone* new_zone() const {
+     return new_zone_;
+   }
+
+   inline OldZone* old_zone() const {
+     return old_zone_;
    }
 
    virtual uword Scavenge(Pointer* ptr);

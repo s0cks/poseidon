@@ -6,47 +6,32 @@ namespace poseidon {
    return scavenger()->new_zone()->SwapSpaces();
  }
 
- bool SerialScavenger::ProcessAll() {
-   return ProcessRoots() && ProcessToSpace();
- }
-
- bool SerialScavenger::ProcessRoots() {
+ void SerialScavenger::ProcessRoots() {
+   SetState(State::kProcessingRoots);
    TIMED_SECTION("ProcessRoots", {
      auto page = GetLocalPageForCurrentThread();
-     if(!page->VisitNewPointers(this)){
+     if(!page->VisitNewPointers(this))
        LOG(FATAL) << "failed to visit new pointers in " << (*page);
-       return false;
-     }
    });
-   return true;
+ }
+
+ void SerialScavenger::ProcessToSpace() {
+   DLOG(INFO) << "processing " << tospace() << "....";
+   DTIMED_SECTION("ProcessToSpace", {
+     if(!tospace().VisitPointers(this))
+       LOG(FATAL) << "failed to process " << tospace();
+   });
  }
 
  bool SerialScavenger::Visit(Pointer* ptr) {
-   if(ptr->IsNew() && ptr->IsMarked()) {
-     DLOG(INFO) << "visiting " << (*ptr);
-     if(ptr->IsForwarding())
-       return true;//skip
-
+   if(ptr->IsNew() && ptr->IsMarked() && !ptr->IsForwarding()) {
      DLOG(INFO) << "processing " << (*ptr);
      if(ptr->IsRemembered()) {
        auto new_address = Promote(ptr);
      } else{
        auto new_address = Scavenge(ptr);
      }
-
-     if((ptr->VisitPointers(this) != ptr->GetPointerSize())) {
-       LOG(ERROR) << "failed to visit pointers in " << (*ptr);
-       return false;
-     }
-
-     ptr->SetRemembered(true);
    }
-   return true;
- }
-
- bool SerialScavenger::ProcessToSpace() {
-   DLOG(INFO) << "tospace:";
-   SemispacePrinter::Print(&tospace());
    return true;
  }
 
@@ -84,9 +69,12 @@ namespace poseidon {
 
  void SerialScavenger::ScavengeMemory() {
    LOG_IF(FATAL, !LocalPageExistsForCurrentThread()) << "no local page exists for current thread.";
-   SwapSpaces();
-   LOG_IF(FATAL, !ProcessRoots()) << "failed to process roots.";
-   LOG_IF(FATAL, !ProcessToSpace()) << "failed to process to-space.";
+   Semispace::Swap(fromspace(), tospace());
+   do {
+     ProcessRoots();
+   } while(IsProcessingRoots() && HasWork());
+
+   ProcessToSpace();
    LOG_IF(FATAL, !UpdateRoots()) << "failed to update roots.";
  }
 }

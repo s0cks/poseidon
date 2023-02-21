@@ -70,7 +70,7 @@ namespace poseidon {
   void* operator new(size_t, Z* zone) noexcept {                                                                               \
     CHECK_CLASS_IS_INITIALIZED(FATAL);  \
     auto address = zone->TryAllocateClassBytes(GetClass());                                                                    \
-    LOG_IF(FATAL, address == UNALLOCATED) << "failed to allocate new " << kClassName;                                          \
+    LOG_IF(ERROR, address == UNALLOCATED) << "failed to allocate new " << kClassName;                                          \
     return (void*)address;  \
   }                         \
   void operator delete(void*) noexcept { /* do nothing */ }                                                                    \

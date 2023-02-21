@@ -25,16 +25,11 @@ namespace poseidon{
      return UNALLOCATED;
    }
 
-   auto total_size = size + static_cast<ObjectSize>(sizeof(Pointer));
-   if((fromspace_ + total_size) >= tospace_) {
+   Pointer* new_ptr = UNALLOCATED;
+   if((new_ptr = fromspace().TryAllocatePointer(size)) == UNALLOCATED) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
      return UNALLOCATED;
    }
-
-   DLOG(INFO) << "allocating " << Bytes(total_size) << " in " << (*this);
-   auto new_ptr = Pointer::New(fromspace(), PointerTag::New(size));
-   memset((void*)new_ptr->GetObjectPointerAddress(), 0, new_ptr->GetSize());
-   fromspace_ += new_ptr->GetTotalSize();
    return new_ptr;
  }
 

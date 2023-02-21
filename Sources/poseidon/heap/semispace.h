@@ -15,6 +15,18 @@ namespace poseidon{
    kToSpace,
  };
 
+ static inline std::ostream& operator<<(std::ostream& stream, const Space& value) {
+   switch(value) {
+     case Space::kFromSpace:
+       return stream << "Fromspace";
+     case Space::kToSpace:
+       return stream << "Tospace";
+     case Space::kUnknownSpace:
+     default:
+       return stream << "[unknown Space " << static_cast<word>(value) << "]";
+   }
+ }
+
  class Class;
  class Semispace : public AllocationSection {
    friend class SemispaceTest;
@@ -66,28 +78,30 @@ namespace poseidon{
    GetTotalSizeNeededFor(const word size) {
      return size + static_cast<word>(sizeof(Pointer));
    }
+
+   Pointer* TryAllocatePointer(ObjectSize size);
   public:
    Semispace():
     AllocationSection(),
     space_(Space::kUnknownSpace) {
-   }
-   explicit Semispace(const Space space, const uword start, const uword current, const word size):
+   } //TODO: remove?
+   explicit Semispace(const Space space, const uword start, const uword current, const RegionSize size):
     AllocationSection(start, current, size),
-    space_(space) { }
-   explicit Semispace(const Space space, const uword start, const word size):
+    space_(space) { } //TODO: remove
+   explicit Semispace(const Space space, const uword start, const RegionSize size):
     AllocationSection(start, size),
     space_(space) {
    }
-   explicit Semispace(const Space space, const MemoryRegion& region):
+   explicit Semispace(const Space space, const Region& region):
     Semispace(space, region.GetStartingAddress(), region.GetSize()) {
    }
-   explicit Semispace(const MemoryRegion& region):
+   explicit Semispace(const Region& region):
     Semispace(Space::kUnknownSpace, region) {
    }
-   explicit Semispace(const Space space, const word size):
+   explicit Semispace(const Space space, const RegionSize size):
     Semispace(space, MemoryRegion(size)) {
    }
-   explicit Semispace(const word size):
+   explicit Semispace(const RegionSize size):
     Semispace(Space::kUnknownSpace, size) {
    }
    Semispace(const Semispace& rhs):
@@ -96,7 +110,7 @@ namespace poseidon{
    }
    ~Semispace() override = default;
 
-   Space space() const {
+   Space space() const { //TODO: is this necessary?
      return space_;
    }
 
@@ -108,8 +122,7 @@ namespace poseidon{
      return space() == Space::kToSpace;
    }
 
-   Pointer* TryAllocatePointer(word size);
-   uword TryAllocateBytes(word size);
+   uword TryAllocateBytes(RegionSize size);
    uword TryAllocateClassBytes(Class* cls);
 
    template<typename T>
@@ -139,14 +152,11 @@ namespace poseidon{
      return false;
    }
 
-   bool VisitOldPointers(RawObjectVisitor* vis) override {
-     return false; // does not compute
-   }
-
    Semispace& operator=(const Semispace& rhs){
      if(this == &rhs)
        return *this;
      AllocationSection::operator=(rhs);
+     space_ = rhs.space();
      return *this;
    }
 
@@ -162,6 +172,7 @@ namespace poseidon{
 
    friend std::ostream& operator<<(std::ostream& stream, const Semispace& value){
      stream << "Semispace(";
+     stream << "space=" << value.space() << ", ";
      stream << "start=" << value.GetStartingAddressPointer()<< ", ";
      stream << "current=" << value.GetCurrentAddressPointer() << ", ";
      stream << "size=" << Bytes(value.GetSize()) << ", ";
@@ -178,6 +189,13 @@ namespace poseidon{
    static inline constexpr word
    GetMaximumObjectSize() { //TODO: refactor
      return 1 * kMB;
+   }
+
+   static inline void
+   Swap(Semispace& fromspace, Semispace& tospace) {
+     Semispace tmp = fromspace;
+     fromspace = Semispace(Space::kFromSpace, tospace);
+     tospace = Semispace(Space::kToSpace, tmp);
    }
  };
 

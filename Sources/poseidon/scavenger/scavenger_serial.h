@@ -8,16 +8,23 @@ namespace poseidon {
    friend class Scavenger;
    friend class SerialScavengerTest;
   protected:
+   Array<uword> work_;
+
    explicit SerialScavenger(Scavenger* scavenger, NewZone* new_zone, OldZone* old_zone):
-     ScavengerVisitor<false>(scavenger, new_zone, old_zone) { }
+     ScavengerVisitor<false>(scavenger, new_zone, old_zone),
+     work_(10) {
+   }
 
    void SwapSpaces();
-   bool ProcessAll();
-   bool ProcessRoots();
-   bool ProcessToSpace();
+   void ProcessRoots();
+   void ProcessToSpace();
    bool UpdateRoots();
 
    bool Visit(Pointer* vis) override;
+
+   inline bool HasWork() const {
+     return !work_.IsEmpty();
+   }
   public:
    ~SerialScavenger() override = default;
 

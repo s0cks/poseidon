@@ -47,6 +47,20 @@ namespace poseidon{
    return ::testing::AssertionSuccess();
  }
 
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsUnallocated(Local<T>& value) {
+   return IsUnallocated(value.raw_ptr());
+ }
+
+ template<class T>
+ static inline ::testing::AssertionResult
+ IsUnallocated(T* value) {
+   if(value == UNALLOCATED)
+     return ::testing::AssertionSuccess();
+   return IsUnallocated(value->raw_ptr());
+ }
+
 #define DEFINE_POINTER_TAG_BIT_CHECK(Name) \
  static inline ::testing::AssertionResult  \
  Is##Name(Pointer* ptr) {                  \

@@ -64,8 +64,8 @@ namespace poseidon {
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_DoesNothing) {
    LocalScope local_scope;
 
-   auto fromspace = zone().fromspace();
-   auto tospace = zone().tospace();
+   auto fromspace = zone().GetFromspace();
+   auto tospace = zone().GetTospace();
 
    static constexpr const RawInt32 kAValue = 33;
    auto a = Int32::TryAllocateIn(&zone(), kAValue);
@@ -77,7 +77,7 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
 
    // scavenging should always flip the semi-spaces
-   ASSERT_EQ(tospace, zone().fromspace());
+   ASSERT_EQ(tospace, zone().GetFromspace());
  }
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneInt32) {

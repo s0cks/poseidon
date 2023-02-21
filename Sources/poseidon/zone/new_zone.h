@@ -16,6 +16,8 @@ namespace poseidon{
 
    friend class Heap;
    friend class NewZoneTest;
+   friend class Scavenger;
+   friend class SerialScavenger;
    friend class SerialScavengerTest;
   public:
    class NewZoneIterator : public ZonePointerIterator {
@@ -34,68 +36,52 @@ namespace poseidon{
    };
   protected:
    word semisize_;
-   uword fromspace_;
-   uword tospace_;
+   Semispace fromspace_;
+   Semispace tospace_;
    Array<NewPage*> pages_;
 
-   NewZone(const uword start_address, const word size, const word semi_size):
-    Zone(start_address, size, flags::GetNewPageSize()),
-    fromspace_(GetStartingAddress()),
-    tospace_(GetStartingAddress() + semi_size),
-    semisize_(semi_size) {
+   NewZone(const uword start, const word size, const word semi_size):
+    Zone(start, size, flags::GetNewPageSize()),
+    semisize_(semi_size),
+    fromspace_(Space::kFromSpace, GetFromspaceRegion()),
+    tospace_(Space::kToSpace, GetTospaceRegion()) {
    }
 
-   static inline word GetFromspaceOffset() {
-     return 0;
+   inline Semispace& fromspace() {
+     return fromspace_;
    }
 
-   inline word GetTospaceOffset() const {
-     return GetSemispaceSize();
+   inline Semispace& tospace() {
+     return tospace_;
+   }
+
+   inline Region GetFromspaceRegion() const {
+     return Region::Subregion(*this, 0, GetSemispaceSize());
+   }
+
+   inline Region GetTospaceRegion() const {
+     return Region::Subregion(*this, GetSemispaceSize(), GetSemispaceSize());
    }
   public:
    NewZone() = delete;
-   explicit NewZone(const MemoryRegion& region, const word semi_size = flags::GetNewZoneSemispaceSize()):
+   explicit NewZone(const MemoryRegion& region, const RegionSize semi_size = flags::GetNewZoneSemispaceSize()):
     NewZone(region.GetStartingAddress(), region.GetSize(), semi_size) {
    }
-   explicit NewZone(const word size, const word semi_size = flags::GetNewZoneSemispaceSize()):
+   explicit NewZone(const RegionSize size, const RegionSize semi_size = flags::GetNewZoneSemispaceSize()):
     NewZone(MemoryRegion(size), semi_size) {
    }
    NewZone(const NewZone& rhs) = delete;
    ~NewZone() override = default;
 
-   uword GetFromspaceStartingAddress() const {
-     return GetStartingAddress() + GetFromspaceOffset();
-   }
-
-   uword fromspace() const {
+   Semispace GetFromspace() const {
      return fromspace_;
    }
 
-   uword GetFromspaceEndingAddress() const {
-     return GetFromspaceStartingAddress() + GetSemispaceSize();
-   }
-
-   Semispace GetFromspace() const {
-     return Semispace(Space::kFromSpace, GetFromspaceStartingAddress(), fromspace(), GetSemispaceSize());
-   }
-
-   uword GetTospaceStartingAddress() const {
-     return GetStartingAddress() + GetTospaceOffset();
-   }
-
-   uword tospace() const {
+   Semispace GetTospace() const {
      return tospace_;
    }
 
-   uword GetTospaceEndingAddress() const {
-     return GetTospaceStartingAddress() + GetSemispaceSize();
-   }
-
-   Semispace GetTospace() const {
-     return Semispace(Space::kToSpace, GetTospaceStartingAddress(), tospace(), GetSemispaceSize());
-   }
-
-   word GetSemispaceSize() const {
+   RegionSize GetSemispaceSize() const {
      return semisize_;
    }
 
@@ -103,12 +89,12 @@ namespace poseidon{
 
    void Clear() override {
      Zone::Clear();
-     fromspace_ = GetStartingAddress();
-     tospace_ = GetStartingAddress() + GetSemispaceSize();
+     fromspace_.Clear();
+     tospace_.Clear();
    }
 
    bool IsEmpty() const {
-     return GetStartingAddress() == fromspace();
+     return fromspace_.IsEmpty();
    }
 
    virtual Pointer* TryAllocatePointer(word size);
@@ -146,8 +132,8 @@ namespace poseidon{
      stream << "start=" << val.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
      stream << "end=" << val.GetEndingAddressPointer() << ", ";
-     stream << "fromspace=" << val.GetFromspace() << ", ";
-     stream << "tospace=" << val.GetTospace()  << ", ";
+     stream << "fromspace=" << val.fromspace_ << ", ";
+     stream << "tospace=" << val.tospace_  << ", ";
      stream << "semi-size=" << Bytes(val.GetSemispaceSize());
      stream << ")";
      return stream;

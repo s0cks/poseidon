@@ -45,11 +45,11 @@ namespace poseidon{
    ASSERT_EQ(zone().GetSize() / 2, zone().GetSemispaceSize());
    ASSERT_TRUE(zone().IsEmpty());
 
-   Semispace fromspace = zone().GetFromspace();
+   auto fromspace = zone().GetFromspace();
    ASSERT_EQ(zone().GetStartingAddress(), fromspace.GetStartingAddress());
    ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), fromspace.GetEndingAddress());
 
-   Semispace tospace = zone().GetTospace();
+   auto tospace = zone().GetTospace();
    ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), tospace.GetStartingAddress());
    ASSERT_EQ(zone().GetEndingAddress(), tospace.GetEndingAddress());
 
@@ -65,33 +65,6 @@ namespace poseidon{
  TEST_F(NewZoneTest, TestGetSemispaceSize) {
    auto expected = zone().GetSize() / 2;
    ASSERT_EQ(expected, zone().GetSemispaceSize());
- }
-
- TEST_F(NewZoneTest, TestGetFromspaceStartingAddress) {
-   auto expected = zone().GetStartingAddress();
-   ASSERT_EQ(expected, zone().GetFromspaceStartingAddress());
- }
-
- TEST_F(NewZoneTest, TestGetFromspaceEndingAddress) {
-   auto expected = zone().GetStartingAddress() + zone().GetSemispaceSize();
-   ASSERT_EQ(expected, zone().GetFromspaceEndingAddress());
- }
-
- TEST_F(NewZoneTest, TestGetFromspace) {
-   Semispace semispace = zone().GetFromspace();
-   ASSERT_TRUE(semispace.IsFromspace());
-   ASSERT_TRUE(semispace.IsEmpty());
-   ASSERT_EQ(Region(zone().GetStartingAddress(), zone().GetSemispaceSize()), semispace);
- }
-
- TEST_F(NewZoneTest, TestGetTospaceStartingAddress) {
-   auto expected = zone().GetStartingAddress() + zone().GetSemispaceSize();
-   ASSERT_EQ(expected, zone().GetTospaceStartingAddress());
- }
-
- TEST_F(NewZoneTest, TestGetTospaceEndingAddress) {
-   auto expected = zone().GetEndingAddress();
-   ASSERT_EQ(expected, zone().GetTospaceEndingAddress());
  }
 
  TEST_F(NewZoneTest, TestSwapSpaces_WillPass) {
@@ -129,11 +102,11 @@ namespace poseidon{
      ASSERT_EQ(zone().GetSize() / 2, zone().GetSemispaceSize());
      ASSERT_TRUE(zone().IsEmpty());
 
-     Semispace fromspace = zone().GetFromspace();
+     auto fromspace = zone().GetFromspace();
      ASSERT_EQ(zone().GetStartingAddress(), fromspace.GetStartingAddress());
      ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), fromspace.GetEndingAddress());
 
-     Semispace tospace = zone().GetTospace();
+     auto tospace = zone().GetTospace();
      ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), tospace.GetStartingAddress());
      ASSERT_EQ(zone().GetEndingAddress(), tospace.GetEndingAddress());
 
@@ -160,11 +133,11 @@ namespace poseidon{
      ASSERT_EQ((const Region&) region(), (const Region&) zone());
      ASSERT_EQ(zone().GetSize() / 2, zone().GetSemispaceSize());
 
-     Semispace fromspace = zone().GetFromspace();
+     auto fromspace = zone().GetFromspace();
      ASSERT_EQ(zone().GetStartingAddress(), fromspace.GetStartingAddress());
      ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), fromspace.GetEndingAddress());
 
-     Semispace tospace = zone().GetTospace();
+     auto tospace = zone().GetTospace();
      ASSERT_EQ(zone().GetStartingAddress() + zone().GetSemispaceSize(), tospace.GetStartingAddress());
      ASSERT_EQ(zone().GetEndingAddress(), tospace.GetEndingAddress());
 

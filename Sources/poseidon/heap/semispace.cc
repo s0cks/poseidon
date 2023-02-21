@@ -14,6 +14,7 @@ namespace poseidon{
      return UNALLOCATED;
    }
 
+
    auto new_ptr = new (GetCurrentAddressPointer())Pointer(PointerTag::New(size));
    memset((void*) new_ptr->GetObjectPointerAddress(), 0, new_ptr->GetSize());
    current_ += total_size;

@@ -19,11 +19,11 @@ namespace poseidon {
 }
 
  bool Scavenger::SerialScavenge(Scavenger* scavenger){
-   if(IsScavenging())
+   if(IsProcessingRoots() || IsProcessingToSpace())
      ALREADY_SCAVENGING;
+
    //TODO: check heap state of current thread
    auto heap = Heap::GetCurrentThreadHeap();
-   SetScavenging();
    SerialScavenger serial_scavenger(scavenger, heap->new_zone(), heap->old_zone());
    TIMED_SECTION("SerialScavenge", {
      serial_scavenger.ScavengeMemory();
@@ -38,8 +38,9 @@ namespace poseidon {
  }
 
  bool Scavenger::ScavengeMemory(Heap* heap){
-   if(IsScavenging())
+   if(IsProcessingRoots() || IsProcessingToSpace())
      ALREADY_SCAVENGING;
+
    Scavenger scavenger(heap->new_zone(), heap->old_zone());
    return flags::FLAGS_num_workers > 0 ?
           SerialScavenge(&scavenger) :
@@ -82,21 +83,21 @@ namespace poseidon {
  }
 
  uword Scavenger::Scavenge(Pointer* ptr) {
-   LOG(INFO) << "scavenging " << (*ptr) << " to " << new_zone()->fromspace();
+   LOG(INFO) << "scavenging " << (*ptr) << " to " << new_zone()->GetFromspace();
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
    PSDN_ASSERT(!ptr->IsRemembered());
 
    auto size = ptr->GetPointerSize();
-   auto new_ptr = tospace().TryAllocatePointer(size);
+   auto new_ptr = tospace_.TryAllocatePointer(size);
    if(new_ptr == UNALLOCATED) {
      LOG(FATAL) << "new_address == UNALLOCATED";
      return UNALLOCATED;
    }
 
    CopyObject(ptr, new_ptr);
-   VLOG_IF(10, google::DEBUG_MODE) << "scavenged " << (*ptr) << " to " << (*new_ptr);
    new_ptr->SetRemembered();
+   new_ptr->SetTypeId(ptr->GetTypeId());
    return Forward(ptr, new_ptr);
  }
 }
