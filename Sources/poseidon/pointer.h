@@ -77,6 +77,7 @@ namespace poseidon{
    friend class Compactor;
    friend class FreeList;
    friend class Finalizer;
+   friend class SerialScavenger;
    friend class ParallelMarkerTask;
    friend class SerialScavengerTest;
   protected:

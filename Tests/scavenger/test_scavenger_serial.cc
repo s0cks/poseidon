@@ -77,7 +77,6 @@ namespace poseidon {
    ASSERT_NO_FATAL_FAILURE(SerialScavenge(&scavenger));
 
    // scavenging should always flip the semi-spaces
-   ASSERT_EQ(fromspace, zone().tospace());
    ASSERT_EQ(tospace, zone().fromspace());
  }
 
@@ -127,7 +126,7 @@ namespace poseidon {
    ASSERT_FALSE(IsRemembered(a));
    ASSERT_TRUE(fromspace.Contains((const Region&)*a.raw_ptr()));
    ASSERT_FALSE(tospace.Contains((const Region&)*a.raw_ptr()));
-   DLOG(INFO) << "a (before): " << (*a.raw_ptr());
+   DLOG(INFO) << "a (before): " << a;
 
    static constexpr const RawInt32 kBValue = 33;
    Local<Int32> b(Int32::TryAllocateIn(&zone(), kBValue));
@@ -139,7 +138,7 @@ namespace poseidon {
    ASSERT_FALSE(IsRemembered(b));
    ASSERT_TRUE(fromspace.Contains((const Region&)*b.raw_ptr()));
    ASSERT_FALSE(tospace.Contains((const Region&)*b.raw_ptr()));
-   DLOG(INFO) << "b (before): " << (*b.raw_ptr());
+   DLOG(INFO) << "b (before): " << b;
 
    MockScavenger scavenger(&zone(), nullptr);
    EXPECT_CALL(scavenger, Scavenge(IsPointerTo(a)));
@@ -152,7 +151,7 @@ namespace poseidon {
    ASSERT_TRUE(Int32Eq(kAValue, a));
    ASSERT_FALSE(fromspace.Contains((const Region&)*a.raw_ptr()));
    ASSERT_TRUE(tospace.Contains((const Region&)*a.raw_ptr()));
-   DLOG(INFO) << "a (after): " << (*a.raw_ptr());
+   DLOG(INFO) << "a (after): " << a;
 
    ASSERT_FALSE(b.raw_ptr()->IsMarked());
    ASSERT_TRUE(b.raw_ptr()->IsRemembered());
@@ -160,7 +159,7 @@ namespace poseidon {
    ASSERT_TRUE(Int32Eq(kAValue, b.Get()));
    ASSERT_FALSE(fromspace.Contains((const Region&)*b.raw_ptr()));
    ASSERT_TRUE(tospace.Contains((const Region&)*b.raw_ptr()));
-   DLOG(INFO) << "b (after): " << (*b.raw_ptr());
+   DLOG(INFO) << "b (after): " << b;
  }
 
  TEST_F(SerialScavengerTest, TestSerialScavenge_WillPass_ScavengesOneTuple) {

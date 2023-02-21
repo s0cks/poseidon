@@ -29,10 +29,17 @@ namespace poseidon {
 
      DLOG(INFO) << "processing " << (*ptr);
      if(ptr->IsRemembered()) {
-       return Promote(ptr);
+       auto new_address = Promote(ptr);
      } else{
-       return Scavenge(ptr);
+       auto new_address = Scavenge(ptr);
      }
+
+     if((ptr->VisitPointers(this) != ptr->GetPointerSize())) {
+       LOG(ERROR) << "failed to visit pointers in " << (*ptr);
+       return false;
+     }
+
+     ptr->SetRemembered(true);
    }
    return true;
  }

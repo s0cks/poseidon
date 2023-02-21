@@ -6,7 +6,11 @@
 namespace poseidon{
  void NewZone::SwapSpaces() {
    DLOG(INFO) << "swapping spaces";
+   DLOG(INFO) << "fromspace (before): " << fromspace();
+   DLOG(INFO) << "tospace (before): " << tospace();
    std::swap(fromspace_, tospace_);
+   DLOG(INFO) << "fromspace (after): " << fromspace();
+   DLOG(INFO) << "tospace (after): " << tospace();
  }
 
  NewZone* NewZone::New(const poseidon::MemoryRegion& region){

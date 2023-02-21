@@ -1,61 +1,14 @@
-#include <gtest/gtest.h>
+#include "marker/test_marker_serial.h"
 
 #include "poseidon/object.h"
 #include "poseidon/flags.h"
 #include "marker/mock_marker.h"
 #include "poseidon/local/local.h"
-#include "helpers/alloc_helpers.h"
 #include "matchers/is_pointer_to.h"
 #include "assertions/assertions.h"
-#include "poseidon/page/new_page.h"
-#include "poseidon/marker/marker_serial.h"
 
 namespace poseidon {
  using namespace ::testing;
-
- class SerialMarkerTest : public Test {
-  protected:
-   MemoryRegion region_;
-   NewZone zone_;
-
-   SerialMarkerTest():
-    Test(),
-    region_(flags::GetNewZoneSize()),
-    zone_(region_) {
-   }
-
-   inline MemoryRegion& region() {
-     return region_;
-   }
-
-   inline NewZone& zone() {
-     return zone_;
-   }
-
-   static inline void
-   SerialMark(Marker* marker) {
-     SerialMarker serial_marker(marker);
-     return serial_marker.MarkAllRoots();
-   }
-  public:
-   ~SerialMarkerTest() override = default;
-
-   void SetUp() override {
-#ifdef PSDN_DEBUG
-     ASSERT_NO_FATAL_FAILURE(zone().SetReadOnly());
-     NewZonePrinter::Print(&zone());
-#endif //PSDN_DEBUG
-     ASSERT_NO_FATAL_FAILURE(zone().SetWritable());
-     ASSERT_NO_FATAL_FAILURE(zone().Clear());
-   }
-
-   void TearDown() override {
-     ASSERT_NO_FATAL_FAILURE(zone().SetReadOnly());
-#ifdef PSDN_DEBUG
-     NewZonePrinter::Print(&zone());
-#endif //PSDN_DEBUG
-   }
- };
 
  TEST_F(SerialMarkerTest, TestMarkAllRoots_WillFail_NoRootSet) {
    MockMarker marker;
@@ -64,116 +17,104 @@ namespace poseidon {
 
  TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_EmptyRootSet) {
    LocalScope scope;
-
    MockMarker marker;
    ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
  }
 
- class MemoryRegionScope {
-  protected:
-   MemoryRegion region_;
-  public:
-   explicit MemoryRegionScope(const RegionSize size,
-                              MemoryRegion::ProtectionMode mode = MemoryRegion::kNoAccess):
-    region_(size) {
-     LOG_IF(FATAL, !region_.Protect(mode)) << "failed to protect " << region_;
-   }
-   ~MemoryRegionScope() {
-     region_.FreeRegion();
-   }
-
-   const MemoryRegion& region() const {
-     return region_;
-   }
-
-   MemoryRegion* operator->() {
-     return &region_;
-   }
-
-   explicit operator MemoryRegion*() {
-     return &region_;
-   }
-
-   explicit operator const MemoryRegion&() const {
-     return region_;
-   }
- };
-
- TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksOneInt32) {
+ TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksOneNull) {
    LocalScope scope;
-   const constexpr RawInt32 kAValue = 111;
-   Local<Int32> a(Int32::TryAllocateIn(&zone(), kAValue));
+   Local<Null> a(Null::TryAllocateIn(&zone()));
    ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsInt32(a));
-   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_TRUE(IsNull(a));
    ASSERT_FALSE(IsMarked(a));
-
    MockMarker marker;
-   EXPECT_CALL(marker, Mark(IsPointerTo(a.raw_ptr())))
-    .Times(1);
+   EXPECT_CALL(marker, Mark(IsPointerTo(a)));
    ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
-
    ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsInt32(a));
-   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_TRUE(IsNull(a));
    ASSERT_TRUE(IsMarked(a));
  }
 
- TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksMultipleInt32s) {
+ TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksOneTrue) {
    LocalScope scope;
-   const constexpr RawInt32 kAValue = 111;
-   Local<Int32> a(Int32::TryAllocateIn(&zone(), kAValue));
+   Local<Bool> a(Bool::TryAllocateIn(&zone(), true));
    ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsInt32(a));
-   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(true, a));
    ASSERT_FALSE(IsMarked(a));
-
-   const constexpr RawInt32 kBValue = 333;
-   auto b = Int32::TryAllocateIn(&zone(), kBValue);
-   ASSERT_TRUE(IsAllocated(b));
-   ASSERT_TRUE(IsInt32(b));
-   ASSERT_TRUE(Int32Eq(kBValue, b));
-   ASSERT_FALSE(IsMarked(b));
-
-   const constexpr RawInt32 kCValue = 222;
-   Local<Int32> c(Int32::TryAllocateIn(&zone(), kCValue));
-   ASSERT_TRUE(IsAllocated(c));
-   ASSERT_TRUE(IsInt32(c));
-   ASSERT_TRUE(Int32Eq(kCValue, c));
-   ASSERT_FALSE(IsMarked(c));
-
    MockMarker marker;
-   EXPECT_CALL(marker, Mark(IsPointerTo(a.raw_ptr())))
-    .Times(1);
-   EXPECT_CALL(marker, Mark(IsPointerTo(c.raw_ptr())))
-    .Times(1);
+   EXPECT_CALL(marker, Mark(IsPointerTo(a)));
+   ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(true, a));
+   ASSERT_TRUE(IsMarked(a));
+ }
+
+ TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksOneFalse) {
+   LocalScope scope;
+   Local<Bool> a(Bool::TryAllocateIn(&zone(), false));
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(false, a));
+   ASSERT_FALSE(IsMarked(a));
+   MockMarker marker;
+   EXPECT_CALL(marker, Mark(IsPointerTo(a)));
+   ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsBool(a));
+   ASSERT_TRUE(BoolEq(false, a));
+   ASSERT_TRUE(IsMarked(a));
+ }
+
+#define DEFINE_SERIAL_MARK_NUMBER_TYPE_PASSES_SERIAL_MARKER_TEST(Type) \
+ TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksOne##Type) {  \
+   LocalScope scope;                                                   \
+   const constexpr Raw##Type kAValue = 111;                            \
+   Local<Type> a(Type::TryAllocateIn(&zone(), kAValue));               \
+   ASSERT_TRUE(IsAllocated(a));                                        \
+   ASSERT_TRUE(Is##Type(a));                                           \
+   ASSERT_TRUE(Type##Eq(kAValue, a));                                  \
+   ASSERT_FALSE(IsMarked(a));                                          \
+   MockMarker marker;                                                  \
+   EXPECT_CALL(marker, Mark(IsPointerTo(a)));                          \
+   ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));                       \
+   ASSERT_TRUE(IsAllocated(a));                                        \
+   ASSERT_TRUE(Is##Type(a));                                           \
+   ASSERT_TRUE(Type##Eq(kAValue, a));                                  \
+   ASSERT_TRUE(IsMarked(a));                                           \
+ }
+ FOR_EACH_INT_TYPE(DEFINE_SERIAL_MARK_NUMBER_TYPE_PASSES_SERIAL_MARKER_TEST);
+#undef DEFINE_SERIAL_MARK_NUMBER_TYPE_PASSES_SERIAL_MARKER_TEST
+
+ TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksOneTuple) {
+   LocalScope scope;
+   MockMarker marker;
+
+   Local<Tuple> a(Tuple::TryAllocateIn(&zone()));
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsTuple(a));
+   ASSERT_FALSE(IsMarked(a));
+   EXPECT_CALL(marker, Mark(IsPointerTo(a)));
+
    ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
 
    ASSERT_TRUE(IsAllocated(a));
-   ASSERT_TRUE(IsInt32(a));
-   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_TRUE(IsTuple(a));
    ASSERT_TRUE(IsMarked(a));
-
-   ASSERT_TRUE(IsAllocated(b));
-   ASSERT_TRUE(IsInt32(b));
-   ASSERT_TRUE(Int32Eq(kBValue, b));
-   ASSERT_FALSE(IsMarked(b));
-
-   ASSERT_TRUE(IsAllocated(c));
-   ASSERT_TRUE(IsInt32(c));
-   ASSERT_TRUE(Int32Eq(kCValue, c));
-   ASSERT_TRUE(IsMarked(c));
  }
 
  TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksTupleCarAndCdr) {
    LocalScope scope;
+   MockMarker marker;
+
    const constexpr RawInt32 kAValue = 333;
    auto a = Int32::TryAllocateIn(&zone(), kAValue);
    ASSERT_TRUE(IsAllocated(a));
    ASSERT_TRUE(IsInt32(a));
    ASSERT_TRUE(Int32Eq(kAValue, a));
    ASSERT_FALSE(IsMarked(a));
-   DLOG(INFO) << "a: " << (*a);
+   EXPECT_CALL(marker, Mark(IsPointerTo(a)));
 
    const constexpr RawInt32 kBValue = 444;
    auto b = Int32::TryAllocateIn(&zone(), kBValue);
@@ -181,7 +122,6 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(b));
    ASSERT_TRUE(Int32Eq(kBValue, b));
    ASSERT_FALSE(IsMarked(b));
-   DLOG(INFO) << "b: " << (*b);
 
    const constexpr RawInt32 kCValue = 444;
    auto c = Int32::TryAllocateIn(&zone(), kCValue);
@@ -189,7 +129,7 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(c));
    ASSERT_TRUE(Int32Eq(kCValue, c));
    ASSERT_FALSE(IsMarked(c));
-   DLOG(INFO) << "c: " << (*c);
+   EXPECT_CALL(marker, Mark(IsPointerTo(c)));
 
    const constexpr RawInt32 kDValue = 444;
    auto d = Int32::TryAllocateIn(&zone(), kDValue);
@@ -197,7 +137,6 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(d));
    ASSERT_TRUE(Int32Eq(kDValue, d));
    ASSERT_FALSE(IsMarked(d));
-   DLOG(INFO) << "d: " << (*d);
 
    Local<Tuple> e(Tuple::TryAllocateIn(&zone()));
    ASSERT_TRUE(IsAllocated(e));
@@ -212,15 +151,8 @@ namespace poseidon {
    ASSERT_TRUE(IsAllocated(e->GetCdrPointer()));
    ASSERT_TRUE(IsInt32(e->GetCdrPointer()));
    ASSERT_TRUE(Int32Eq(e->GetCdr<Int32>(), c));
-   DLOG(INFO) << "e: " << (*e.raw_ptr()); //TODO: print tuple
+   EXPECT_CALL(marker, Mark(IsPointerTo(e)));
 
-   MockMarker marker;
-   EXPECT_CALL(marker, Mark(IsPointerTo(e)))
-    .Times(1);
-   EXPECT_CALL(marker, Mark(IsPointerTo(a)))
-    .Times(1);
-   EXPECT_CALL(marker, Mark(IsPointerTo(c)))
-    .Times(1);
    ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
 
    ASSERT_TRUE(IsAllocated(a));
@@ -254,5 +186,49 @@ namespace poseidon {
    ASSERT_TRUE(IsInt32(e->GetCdrPointer()));
    ASSERT_TRUE(Int32Eq(e->GetCdr<Int32>(), c));
    ASSERT_TRUE(IsMarked(e->GetCdrPointer()));
+ }
+
+ TEST_F(SerialMarkerTest, TestMarkAllRoots_WillPass_MarksMultipleInt32s) {
+   LocalScope scope;
+   const constexpr RawInt32 kAValue = 111;
+   Local<Int32> a(Int32::TryAllocateIn(&zone(), kAValue));
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_FALSE(IsMarked(a));
+
+   const constexpr RawInt32 kBValue = 333;
+   auto b = Int32::TryAllocateIn(&zone(), kBValue);
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsInt32(b));
+   ASSERT_TRUE(Int32Eq(kBValue, b));
+   ASSERT_FALSE(IsMarked(b));
+
+   const constexpr RawInt32 kCValue = 222;
+   Local<Int32> c(Int32::TryAllocateIn(&zone(), kCValue));
+   ASSERT_TRUE(IsAllocated(c));
+   ASSERT_TRUE(IsInt32(c));
+   ASSERT_TRUE(Int32Eq(kCValue, c));
+   ASSERT_FALSE(IsMarked(c));
+
+   MockMarker marker;
+   EXPECT_CALL(marker, Mark(IsPointerTo(a.raw_ptr())));
+   EXPECT_CALL(marker, Mark(IsPointerTo(c.raw_ptr())));
+   ASSERT_NO_FATAL_FAILURE(SerialMark(&marker));
+
+   ASSERT_TRUE(IsAllocated(a));
+   ASSERT_TRUE(IsInt32(a));
+   ASSERT_TRUE(Int32Eq(kAValue, a));
+   ASSERT_TRUE(IsMarked(a));
+
+   ASSERT_TRUE(IsAllocated(b));
+   ASSERT_TRUE(IsInt32(b));
+   ASSERT_TRUE(Int32Eq(kBValue, b));
+   ASSERT_FALSE(IsMarked(b));
+
+   ASSERT_TRUE(IsAllocated(c));
+   ASSERT_TRUE(IsInt32(c));
+   ASSERT_TRUE(Int32Eq(kCValue, c));
+   ASSERT_TRUE(IsMarked(c));
  }
 }

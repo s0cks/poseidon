@@ -55,8 +55,8 @@ namespace poseidon {
    explicit Scavenger(NewZone* new_zone, OldZone* old_zone):
     new_zone_(new_zone),
     old_zone_(old_zone),
-    fromspace_(new_zone->fromspace()),
-    tospace_(new_zone->tospace()) {
+    fromspace_(Space::kFromSpace, new_zone->fromspace(), new_zone->GetSemispaceSize()),
+    tospace_(Space::kToSpace, new_zone->tospace(), new_zone->GetSemispaceSize()) {
    }
 
    inline NewZone* new_zone() const {

@@ -700,12 +700,12 @@ namespace poseidon {
    }
 
    bool VisitPointers(RawObjectVisitor* vis) override {
-     if(!vis->Visit(GetCarPointer())) {
+     if(HasCar() && !vis->Visit(GetCarPointer())) {
        DLOG(WARNING) << "couldn't visit car: " << (*GetCarPointer());
        return false;
      }
 
-     if(!vis->Visit(GetCdrPointer())) {
+     if(HasCdr() && !vis->Visit(GetCdrPointer())) {
        DLOG(WARNING) << "couldn't visit cdr: " << (*GetCdrPointer());
        return false;
      }
