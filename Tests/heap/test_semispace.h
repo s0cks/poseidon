@@ -44,6 +44,12 @@ namespace poseidon {
      return Mark(value->raw_ptr());
    }
 
+   template<class T>
+   inline void Mark(std::vector<T*>& values) {
+     for(auto& value : values)
+       Mark(value);
+   }
+
    inline Pointer*
    TryAllocatePointer(const ObjectSize size) {
      return semispace().TryAllocatePointer(size);
