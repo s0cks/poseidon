@@ -4,16 +4,8 @@
 #include "poseidon/object.h"
 #include "poseidon/collector/collector.h"
 
-namespace poseidon{
- Heap* Heap::From(const MemoryRegion& region){
-   if(region.GetStartingAddress() <= 0 || region.GetSize() <= 0)
-     return nullptr;
-   return new Heap(region);
- }
-
- pthread_key_t Heap::kThreadKey = PTHREAD_KEYS_MAX;
-
- uword Heap::AllocateNewObject(int64_t size){
+namespace poseidon {
+ uword Heap::AllocateNewObject(ObjectSize size){
    Pointer* val = nullptr;
    if((val = (Pointer*)new_zone()->TryAllocateBytes(size)) != nullptr)
      goto finish_allocation;
@@ -32,7 +24,7 @@ finish_allocation:
    return val->GetStartingAddress();
  }
 
- uword Heap::AllocateOldObject(int64_t size){
+ uword Heap::AllocateOldObject(ObjectSize size){
    Pointer* val = nullptr;
 
    // 1. Try Allocation
@@ -60,11 +52,11 @@ finish_allocation:
    return val->GetStartingAddress();
  }
 
- uword Heap::AllocateLargeObject(int64_t size){
+ uword Heap::AllocateLargeObject(ObjectSize size){
    return AllocateOldObject(size);//TODO: refactor
  }
 
- Pointer* Heap::TryAllocatePointer(const word size) {
+ Pointer* Heap::TryAllocatePointer(const ObjectSize size) {
    if(size < kWordSize || size > flags::GetOldPageSize())
      return UNALLOCATED;
 
@@ -89,7 +81,7 @@ finish_allocation:
    return UNALLOCATED;
  }
 
- uword Heap::TryAllocateBytes(word size) {
+ uword Heap::TryAllocateBytes(ObjectSize size) {
    auto new_ptr = TryAllocatePointer(size);
    if(new_ptr == UNALLOCATED)
      return UNALLOCATED;
@@ -98,5 +90,23 @@ finish_allocation:
 
  uword Heap::TryAllocateClassBytes(Class* cls) {
    return TryAllocateBytes(cls->GetAllocationSize());
+ }
+
+ static ThreadLocal<Heap> heap_("heap");
+
+ Heap* Heap::GetForCurrentThread() {
+   return heap_.Get();
+ }
+
+ void Heap::SetForCurrentThread(Heap* value) {
+   heap_ = value;
+   if(value)
+     DLOG_IF(INFO, PSDN_DEBUG) << "set Heap to: " << (*value) << " in `" << GetCurrentThreadName() << "` thread.";
+   else
+     DLOG_IF(INFO, PSDN_DEBUG) << "set Heap to null in `" << GetCurrentThreadName() << "` thread.";
+ }
+
+ bool Heap::ExistsForCurrentThread() {
+   return (bool)heap_;
  }
 }

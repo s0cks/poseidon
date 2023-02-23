@@ -11,7 +11,10 @@ namespace poseidon {
  using namespace ::testing;
 
 #define DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(NewZoneTest, TestName, NewZone, flags::GetNewZoneSize(), NumberOfBytes)
+ TEST_F(NewZoneTest, TestTryAllocateBytes_WillFail_##TestName) {               \
+    auto new_ptr = zone().TryAllocateBytes(NumberOfBytes);                     \
+    ASSERT_TRUE(IsUnallocated(new_ptr));                                       \
+  }
 
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeLessThanZero, -1);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeEqualsZero, 0);
@@ -21,7 +24,10 @@ namespace poseidon {
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_NEW_ZONE_TEST(SizeGreaterThanMax, NewZone::GetMaximumObjectSize() + 1);
 
 #define DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_PASS_TEST(NewZoneTest, TestName, NewZone, flags::GetNewZoneSize(), NumberOfBytes)
+ TEST_F(NewZoneTest, TestTryAllocateBytes_WillPass_##TestName) {              \
+    auto new_ptr = zone().TryAllocateBytes(NumberOfBytes);                    \
+    ASSERT_TRUE(IsAllocated(new_ptr));                                        \
+  }
 
  DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMin, NewZone::GetMinimumObjectSize());
  DEFINE_TRY_ALLOCATE_BYTES_PASS_NEW_ZONE_TEST(SizeEqualsMax, NewZone::GetMaximumObjectSize());

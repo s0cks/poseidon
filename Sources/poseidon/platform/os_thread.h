@@ -99,17 +99,15 @@ namespace poseidon{
    }
 
    T* Get() const {
-     DLOG(INFO) << "getting the `" << name() << "` ThreadLocal";
      return (T*) GetCurrentThreadLocal(key());
    }
 
    void Set(T* value) {
-     if(value) {
-       DLOG(INFO) << "setting the `" << name() << "` ThreadLocal to " << (*value);
-     } else {
-       DLOG(INFO) << "setting the `" << name() << "` ThreadLocal to null";
-     }
      SetCurrentThreadLocal(key(), value);
+   }
+
+   explicit operator bool() const {
+     return Get() != nullptr;
    }
 
    T* operator->() {
@@ -122,7 +120,7 @@ namespace poseidon{
 
    ThreadLocal& operator=(const ThreadLocal<T>& rhs) = default;
 
-   ThreadLocal& operator=(T* rhs) {
+   ThreadLocal<T>& operator=(T* rhs) {
      Set(rhs);
      return *this;
    }

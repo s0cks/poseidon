@@ -52,8 +52,8 @@ namespace poseidon{
    //PageTable table_;
 
    Zone() = default;
-   Zone(const uword start, const word size, const word page_size):
-    Section(start, size) {
+   explicit Zone(const MemoryRegion& region):
+    Section(region) {
    }
 
    void Clear() override {

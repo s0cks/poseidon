@@ -61,8 +61,8 @@ namespace poseidon {
  public:                    \
   void* operator new(size_t) noexcept { \
     CHECK_CLASS_IS_INITIALIZED(FATAL);  \
-    LOG_IF(FATAL, !Heap::CurrentThreadHasHeap()) << "current thread `" << GetCurrentThreadName() << "` does not have a Heap."; \
-    auto address = Heap::GetCurrentThreadHeap()->TryAllocateClassBytes(GetClass());                                            \
+    LOG_IF(FATAL, !Heap::ExistsForCurrentThread()) << "current thread `" << GetCurrentThreadName() << "` does not have a Heap."; \
+    auto address = Heap::GetForCurrentThread()->TryAllocateClassBytes(GetClass());                                            \
     LOG_IF(FATAL, address == UNALLOCATED) << "failed to allocate new " << kClassName;                                          \
     return (void*)address;  \
   }                         \

@@ -1,46 +1,21 @@
-#include <gtest/gtest.h>
-
-#include "helpers.h"
 #include "poseidon/pointer.h"
-
-#include "poseidon/object.h"
-#include "assertions/type_assertions.h"
+#include "zone/base_new_zone_test.h"
 
 namespace poseidon{
  using namespace ::testing;
 
- class PointerTest : public Test {
+ class PointerTest : public BaseNewZoneTest {
   protected:
-   MemoryRegion region_;
-   NewZone* zone_;
-
-   PointerTest():
-    Test(),
-    region_(flags::GetNewZoneSize()),
-    zone_(NewZone::New(region_)) {
-   }
-
-   inline MemoryRegion region() const {
-     return region_;
-   }
-
-   inline NewZone* zone() const {
-     return zone_;
-   }
+   PointerTest() = default;
   public:
-   ~PointerTest() override {
-     delete zone_;
-   }
+   ~PointerTest() override = default;
 
    void SetUp() override {
-     ASSERT_TRUE(region_.Protect(MemoryRegion::kReadWrite));
+     BaseNewZoneTest::SetUp();
+   }
+
+   void TearDown() override {
+     BaseNewZoneTest::TearDown();
    }
  };
-
- TEST_F(PointerTest, TestTryAllocateIn_WillPass) {
-   auto i1 = Int32::TryAllocateIn<>(zone());
-   ASSERT_NE(i1, nullptr);
-   ASSERT_TRUE(IsInt32(i1->raw_ptr()));
-   ASSERT_TRUE(Int32Eq((const RawInt32) 0, i1));
- }
 }

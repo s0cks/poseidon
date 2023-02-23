@@ -3,7 +3,20 @@
 
 namespace poseidon {
  void SerialScavenger::SwapSpaces() {
-   return scavenger()->new_zone()->SwapSpaces();
+   DLOG(INFO) << "swapping spaces....";
+#ifdef PSDN_DEBUG
+   DLOG(INFO) << "semispaces (before):";
+   SemispacePrinter::Print(fromspace());
+   SemispacePrinter::Print(tospace());
+#endif //PSDN_DEBUG
+
+   new_zone()->SwapSpaces();
+
+#ifdef PSDN_DEBUG
+   DLOG(INFO) << "semispaces (after):";
+   SemispacePrinter::Print(fromspace());
+   SemispacePrinter::Print(tospace());
+#endif //PSDN_DEBUG
  }
 
  void SerialScavenger::ProcessRoots() {
@@ -16,14 +29,16 @@ namespace poseidon {
  }
 
  void SerialScavenger::ProcessToSpace() {
-   DLOG(INFO) << "processing " << tospace() << "....";
+   DLOG(INFO) << "processing " << tospace_ << "....";
    DTIMED_SECTION("ProcessToSpace", {
-     if(!tospace().VisitPointers(this))
+     if(!tospace()->VisitPointers(this)) {
        LOG(FATAL) << "failed to process " << tospace();
+     }
    });
  }
 
  bool SerialScavenger::Visit(Pointer* ptr) {
+   DLOG(INFO) << "visiting " << (*ptr) << "....";
    if(ptr->IsNew() && ptr->IsMarked() && !ptr->IsForwarding()) {
      DLOG(INFO) << "processing " << (*ptr);
      if(ptr->IsRemembered()) {
@@ -51,6 +66,7 @@ namespace poseidon {
      if(ptr == UNALLOCATED)
        return false;
 
+     DLOG(INFO) << "visiting " << (*ptr);
      if(!ptr->IsNew() || !ptr->IsForwarding()) {
        return false;
      }
@@ -69,7 +85,8 @@ namespace poseidon {
 
  void SerialScavenger::ScavengeMemory() {
    LOG_IF(FATAL, !LocalPageExistsForCurrentThread()) << "no local page exists for current thread.";
-   Semispace::Swap(fromspace(), tospace());
+   SwapSpaces();
+
    do {
      ProcessRoots();
    } while(IsProcessingRoots() && HasWork());

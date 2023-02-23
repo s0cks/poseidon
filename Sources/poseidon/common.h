@@ -77,4 +77,9 @@ namespace poseidon {
  }
 }
 
+#define DEFINE_NON_COPYABLE_TYPE(Type) \
+  public:                              \
+    Type(const Type& rhs) = delete;    \
+    Type& operator=(const Type& rhs) = delete;
+
 #endif //POSEIDON_COMMON_H

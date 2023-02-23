@@ -35,7 +35,10 @@ namespace poseidon {
  };
 
 #define DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(TestName, NumberOfBytes) \
- DEFINE_TRY_ALLOCATE_BYTES_FAILS_TEST(OldZoneTest, TestName, OldZone, flags::GetOldZoneSize(), NumberOfBytes)
+  TEST_F(OldZoneTest, TestTryAllocateBytes_WillFail_##TestName) {              \
+    auto new_ptr = zone().TryAllocateBytes(NumberOfBytes);                     \
+    ASSERT_TRUE(IsUnallocated(new_ptr));                                       \
+  }
 
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeLessThanZero, -1);
  DEFINE_TRY_ALLOCATE_BYTES_FAILS_OLD_ZONE_TEST(SizeEqualsZero, 0);

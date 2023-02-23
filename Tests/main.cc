@@ -24,7 +24,7 @@ int main(int argc, char** argv){
 
   SetCurrentThreadName("poseidon");
 
-  Heap::Initialize();
+  Heap::InitializeForCurrentThread();
   Class::Initialize();
   Runtime::Initialize();
 

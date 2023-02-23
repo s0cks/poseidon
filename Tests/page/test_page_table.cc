@@ -13,10 +13,12 @@ namespace poseidon {
   protected:
    MemoryRegion test_region_;
    PageTable table_;
+   NewZone zone_;
 
    PageTableTest():
     test_region_(flags::GetNewZoneSize()),
-    table_((const Region&) test_region_, flags::GetNewPageSize()) {
+    table_((const Region&) test_region_, flags::GetNewPageSize()),
+    zone_(region()) {
    }
 
    MemoryRegion& region() {
@@ -25,6 +27,10 @@ namespace poseidon {
 
    PageTable& table() {
      return table_;
+   }
+
+   inline NewZone& zone() {
+     return zone_;
    }
   public:
    ~PageTableTest() override = default;
@@ -46,7 +52,6 @@ namespace poseidon {
  };
 
  TEST_F(PageTableTest, TestIsMarked_WillPass) {
-   NewZone zone(region());
    ASSERT_FALSE(table().IsMarked(0));
    ASSERT_NO_FATAL_FAILURE(table().Mark(0));
    ASSERT_TRUE(table().IsMarked(0));
@@ -55,8 +60,7 @@ namespace poseidon {
  }
 
  TEST_F(PageTableTest, TestMarkAllIntersectedBy_WillPass) {
-   NewZone zone(region());
-   auto p1 = Int32::TryAllocateIn(&zone, 10);
+   auto p1 = Int32::TryAllocateIn(&zone(), 10);
    ASSERT_NE(p1, nullptr);
    ASSERT_TRUE(IsInt32(p1->raw_ptr()));
    ASSERT_TRUE(Int32Eq(10, p1));

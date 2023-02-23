@@ -5,18 +5,20 @@
 
 namespace poseidon{
  void NewZone::SwapSpaces() {
-   DLOG(INFO) << "swapping spaces";
-   DLOG(INFO) << "fromspace (before): " << fromspace();
-   DLOG(INFO) << "tospace (before): " << tospace();
-   std::swap(fromspace_, tospace_);
-   DLOG(INFO) << "fromspace (after): " << fromspace();
-   DLOG(INFO) << "tospace (after): " << tospace();
- }
+   DLOG(INFO) << "swapping semi-spaces....";
+#ifdef PSDN_DEBUG
+   DLOG(INFO) << "semi-spaces (before):";
+   SemispacePrinter::Print(&fromspace());
+   SemispacePrinter::Print(&tospace());
+#endif //PSDN_DEBUG
 
- NewZone* NewZone::New(const poseidon::MemoryRegion& region){
-   const auto total_size = region.GetSize();
-   const auto semi_size = total_size / 2;
-   return new NewZone(region.GetStartingAddress(), total_size, semi_size);
+   Semispace::Swap(fromspace(), tospace());
+
+#ifdef PSDN_DEBUG
+   DLOG(INFO) << "semi-spaces (after):";
+   SemispacePrinter::Print(&fromspace());
+   SemispacePrinter::Print(&tospace());
+#endif //PSDN_DEBUG
  }
 
  Pointer* NewZone::TryAllocatePointer(const ObjectSize size) {
@@ -26,7 +28,7 @@ namespace poseidon{
    }
 
    Pointer* new_ptr = UNALLOCATED;
-   if((new_ptr = fromspace().TryAllocatePointer(size)) == UNALLOCATED) {
+   if((new_ptr = fromspace_.TryAllocatePointer(size)) == UNALLOCATED) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
      return UNALLOCATED;
    }

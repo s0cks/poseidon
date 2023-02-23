@@ -50,8 +50,8 @@ namespace poseidon {
   protected:
    NewZone* new_zone_;
    OldZone* old_zone_;
-   Semispace& fromspace_;
-   Semispace& tospace_;
+   Semispace fromspace_;
+   Semispace tospace_;
 
    explicit Scavenger(NewZone* new_zone, OldZone* old_zone):
     new_zone_(new_zone),
@@ -60,12 +60,12 @@ namespace poseidon {
     tospace_(new_zone->tospace()) {
    }
 
-   inline Semispace& fromspace() {
-     return fromspace_;
+   inline Semispace* fromspace() {
+     return &fromspace_;
    }
 
-   inline Semispace& tospace() {
-     return tospace_;
+   inline Semispace* tospace() {
+     return &tospace_;
    }
 
    inline NewZone* new_zone() const {
@@ -80,7 +80,7 @@ namespace poseidon {
    virtual uword Promote(Pointer* ptr);
 
    bool Visit(Pointer* ptr) override {
-     NOT_IMPLEMENTED(FATAL); //TODO: implement?
+     NOT_IMPLEMENTED(FATAL); //TODO: implement
      return false;
    }
   public:

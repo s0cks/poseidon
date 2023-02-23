@@ -74,9 +74,9 @@ namespace poseidon{
   protected:
    Space space_;
 
-   static inline constexpr word
-   GetTotalSizeNeededFor(const word size) {
-     return size + static_cast<word>(sizeof(Pointer));
+   static inline constexpr ObjectSize
+   GetTotalSizeNeededFor(const ObjectSize size) {
+     return size + static_cast<ObjectSize>(sizeof(Pointer));
    }
 
    Pointer* TryAllocatePointer(ObjectSize size);
@@ -85,6 +85,10 @@ namespace poseidon{
     AllocationSection(),
     space_(Space::kUnknownSpace) {
    } //TODO: remove?
+   Semispace(const Space space, const Semispace& semispace):
+    AllocationSection(semispace.GetStartingAddress(), semispace.GetCurrentAddress(), semispace.GetSize()),
+    space_(space) {
+   }
    explicit Semispace(const Space space, const uword start, const uword current, const RegionSize size):
     AllocationSection(start, current, size),
     space_(space) { } //TODO: remove

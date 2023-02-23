@@ -7,6 +7,13 @@
 
 namespace poseidon{
  static inline ::testing::AssertionResult
+ IsAllocated(uword address){
+   if(address == UNALLOCATED)
+     return ::testing::AssertionFailure() << "expected " << address << " (" << ((void*) address) << ") to not be UNALLOCATED";
+   return ::testing::AssertionSuccess();
+ }
+
+ static inline ::testing::AssertionResult
  IsAllocated(Pointer * ptr){
    if(ptr == UNALLOCATED)
      return ::testing::AssertionFailure() << "expected ptr to not be UNALLOCATED";

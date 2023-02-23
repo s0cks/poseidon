@@ -2,6 +2,6 @@
 
 namespace poseidon{
  void Allocator::Initialize(){
-   Heap::Initialize();
+   Heap::InitializeForCurrentThread();
  }
 }

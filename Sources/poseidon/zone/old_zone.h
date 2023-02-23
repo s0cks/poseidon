@@ -16,6 +16,7 @@ namespace poseidon{
 
    friend class SerialSweeper;
    friend class ParallelSweeper;
+   friend class SerialSweeperTest;
   public:
    class OldZoneIterator : public ZonePointerIterator {
     public:
@@ -35,21 +36,17 @@ namespace poseidon{
   protected:
    FreeList free_list_;
 
-   OldZone(const uword start_address, const word size):
-    Zone(start_address, size, flags::GetOldPageSize()),
-    free_list_(start_address, size) {
-     SetWritable();
+   explicit OldZone(const MemoryRegion& region):
+    Zone(region),
+    free_list_(region, false) {
+   }
+
+   OldZone():
+    OldZone(MemoryRegion(flags::GetOldZoneSize())) {
    }
   public:
-   OldZone() = delete;
-   explicit OldZone(const MemoryRegion& region):
-    OldZone(region.GetStartingAddress(), region.GetSize()) {
-   }
-   explicit OldZone(const word size):
-    OldZone(MemoryRegion(size)) {
-   }
-   OldZone(const OldZone& rhs) = delete;
    ~OldZone() override = default;
+   DEFINE_NON_COPYABLE_TYPE(OldZone);
 
    inline FreeList& free_list() { //TODO: visible for testing
      return free_list_;
@@ -93,8 +90,6 @@ namespace poseidon{
      stream << ")";
      return stream;
    }
-
-   OldZone& operator=(const OldZone& rhs) = delete;
   public:
    static constexpr ObjectSize
    GetMinimumObjectSize() {
@@ -104,6 +99,11 @@ namespace poseidon{
    static ObjectSize
    GetMaximumObjectSize() {
      return flags::GetLargeObjectSize();
+   }
+
+   static inline OldZone*
+   New() {
+     return new OldZone();
    }
  };
 

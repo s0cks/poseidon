@@ -17,7 +17,7 @@ namespace poseidon{
 
    static inline uword
    Allocate(int64_t size){
-     auto heap = Heap::GetCurrentThreadHeap();
+     auto heap = Heap::GetForCurrentThread();
      PSDN_ASSERT(heap != nullptr);
      return heap->TryAllocateBytes(size);
    }

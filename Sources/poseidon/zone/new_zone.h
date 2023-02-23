@@ -18,7 +18,13 @@ namespace poseidon{
    friend class NewZoneTest;
    friend class Scavenger;
    friend class SerialScavenger;
+   friend class SerialMarkerTest;
    friend class SerialScavengerTest;
+   friend class PageTableTest;
+   friend class UInt8Test;
+   friend class ParallelMarkerTest;
+
+   friend class BaseNewZoneTest;
   public:
    class NewZoneIterator : public ZonePointerIterator {
     public:
@@ -40,11 +46,15 @@ namespace poseidon{
    Semispace tospace_;
    Array<NewPage*> pages_;
 
-   NewZone(const uword start, const word size, const word semi_size):
-    Zone(start, size, flags::GetNewPageSize()),
+   explicit NewZone(const MemoryRegion& region, const RegionSize semi_size = flags::GetNewZoneSemispaceSize()):
+    Zone(region),
     semisize_(semi_size),
-    fromspace_(Space::kFromSpace, GetFromspaceRegion()),
-    tospace_(Space::kToSpace, GetTospaceRegion()) {
+    fromspace_(Region::Subregion(region, 0, semi_size)),
+    tospace_(Region::Subregion(region, semi_size, semi_size)),
+    pages_() {
+   }
+   NewZone():
+    NewZone(MemoryRegion(flags::GetNewZoneSize())) {
    }
 
    inline Semispace& fromspace() {
@@ -63,15 +73,8 @@ namespace poseidon{
      return Region::Subregion(*this, GetSemispaceSize(), GetSemispaceSize());
    }
   public:
-   NewZone() = delete;
-   explicit NewZone(const MemoryRegion& region, const RegionSize semi_size = flags::GetNewZoneSemispaceSize()):
-    NewZone(region.GetStartingAddress(), region.GetSize(), semi_size) {
-   }
-   explicit NewZone(const RegionSize size, const RegionSize semi_size = flags::GetNewZoneSemispaceSize()):
-    NewZone(MemoryRegion(size), semi_size) {
-   }
-   NewZone(const NewZone& rhs) = delete;
    ~NewZone() override = default;
+   DEFINE_NON_COPYABLE_TYPE(NewZone);
 
    Semispace GetFromspace() const {
      return fromspace_;
@@ -139,7 +142,7 @@ namespace poseidon{
      return stream;
    }
   public:
-   static NewZone* New(const MemoryRegion& region);
+   static NewZone* New(const Region& region);
 
    static inline RegionSize
    GetNewZoneSize() {

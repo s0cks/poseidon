@@ -23,7 +23,7 @@ namespace poseidon {
      ALREADY_SCAVENGING;
 
    //TODO: check heap state of current thread
-   auto heap = Heap::GetCurrentThreadHeap();
+   auto heap = Heap::GetForCurrentThread();
    SerialScavenger serial_scavenger(scavenger, heap->new_zone(), heap->old_zone());
    TIMED_SECTION("SerialScavenge", {
      serial_scavenger.ScavengeMemory();
@@ -50,7 +50,7 @@ namespace poseidon {
  static inline void
  CopyObject(Pointer* src, Pointer* dst) {
    DLOG(INFO) << "copying " << (*src) << " to " << (*dst);
-   memcpy(dst->GetPointer(), src->GetPointer(), src->GetSize());
+   memcpy(dst->GetPointer(), src->GetPointer(), src->GetPointerSize());
  }
 
  static inline uword
@@ -83,13 +83,13 @@ namespace poseidon {
  }
 
  uword Scavenger::Scavenge(Pointer* ptr) {
-   LOG(INFO) << "scavenging " << (*ptr) << " to " << new_zone()->GetFromspace();
+   LOG(INFO) << "scavenging " << (*ptr) << " to " << tospace();
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
    PSDN_ASSERT(!ptr->IsRemembered());
 
    auto size = ptr->GetPointerSize();
-   auto new_ptr = tospace_.TryAllocatePointer(size);
+   auto new_ptr = tospace()->TryAllocatePointer(size);
    if(new_ptr == UNALLOCATED) {
      LOG(FATAL) << "new_address == UNALLOCATED";
      return UNALLOCATED;
