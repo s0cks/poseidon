@@ -24,11 +24,11 @@ namespace poseidon{
    END_FOR_EACH_PAGE
  }
 
- bool PageTable::VisitPointers(RawObjectVisitor* vis) {
+ bool PageTable::VisitPointers(RawObjectVisitor* vis) const {
    return IteratePointers<PageTable, PageTablePointerIterator>(vis);
  }
 
- bool PageTable::VisitMarkedPointers(RawObjectVisitor* vis) {
+ bool PageTable::VisitMarkedPointers(RawObjectVisitor* vis) const {
    return IterateMarkedPointers<PageTable, PageTablePointerIterator>(vis);
  }
 

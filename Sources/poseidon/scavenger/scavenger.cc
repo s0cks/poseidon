@@ -82,14 +82,18 @@ namespace poseidon {
    return Forward(ptr, new_ptr);
  }
 
+ Pointer* Scavenger::TryAllocate(const ObjectSize size) {
+   NOT_IMPLEMENTED(FATAL); //TODO: implement
+   return UNALLOCATED;
+ }
+
  uword Scavenger::Scavenge(Pointer* ptr) {
-   LOG(INFO) << "scavenging " << (*ptr) << " to " << tospace();
    PSDN_ASSERT(ptr->IsNew());
    PSDN_ASSERT(ptr->IsMarked());
    PSDN_ASSERT(!ptr->IsRemembered());
 
    auto size = ptr->GetPointerSize();
-   auto new_ptr = tospace()->TryAllocatePointer(size);
+   auto new_ptr = (Pointer*)new_zone()->TryAllocatePointer(size);
    if(new_ptr == UNALLOCATED) {
      LOG(FATAL) << "new_address == UNALLOCATED";
      return UNALLOCATED;
@@ -98,6 +102,7 @@ namespace poseidon {
    CopyObject(ptr, new_ptr);
    new_ptr->SetRemembered();
    new_ptr->SetTypeId(ptr->GetTypeId());
+   DLOG(INFO) << "scavenged " << (*ptr) << " to " << (*new_ptr);
    return Forward(ptr, new_ptr);
  }
 }

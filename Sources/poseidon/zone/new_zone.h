@@ -42,46 +42,38 @@ namespace poseidon{
    };
   protected:
    word semisize_;
-   Semispace fromspace_;
-   Semispace tospace_;
+   uword from_;
+   uword to_;
    Array<NewPage*> pages_;
 
    explicit NewZone(const MemoryRegion& region, const RegionSize semi_size = flags::GetNewZoneSemispaceSize()):
     Zone(region),
     semisize_(semi_size),
-    fromspace_(Region::Subregion(region, 0, semi_size)),
-    tospace_(Region::Subregion(region, semi_size, semi_size)),
+    from_(region.GetStartingAddress()),
+    to_(region.GetStartingAddress() + semi_size),
     pages_() {
    }
    NewZone():
     NewZone(MemoryRegion(flags::GetNewZoneSize())) {
    }
 
-   inline Semispace& fromspace() {
-     return fromspace_;
+   inline uword fromspace() const {
+     return from_;
    }
 
-   inline Semispace& tospace() {
-     return tospace_;
-   }
-
-   inline Region GetFromspaceRegion() const {
-     return Region::Subregion(*this, 0, GetSemispaceSize());
-   }
-
-   inline Region GetTospaceRegion() const {
-     return Region::Subregion(*this, GetSemispaceSize(), GetSemispaceSize());
+   inline uword tospace() const {
+     return to_;
    }
   public:
    ~NewZone() override = default;
    DEFINE_NON_COPYABLE_TYPE(NewZone);
 
    Semispace GetFromspace() const {
-     return fromspace_;
+     return Semispace(Space::kFromSpace, GetStartingAddress(), fromspace(), GetSemispaceSize());
    }
 
    Semispace GetTospace() const {
-     return tospace_;
+     return Semispace(Space::kToSpace, GetStartingAddress() + GetSemispaceSize(), tospace(), GetSemispaceSize());
    }
 
    RegionSize GetSemispaceSize() const {
@@ -92,16 +84,16 @@ namespace poseidon{
 
    void Clear() override {
      Zone::Clear();
-     fromspace_.Clear();
-     tospace_.Clear();
+     from_ = GetStartingAddress();
+     to_ = GetStartingAddress() + GetSemispaceSize();
    }
 
-   bool IsEmpty() const {
-     return fromspace_.IsEmpty();
+   virtual bool IsEmpty() const {
+     return fromspace() == GetStartingAddress();
    }
 
    virtual Pointer* TryAllocatePointer(word size);
-   uword TryAllocateBytes(word size) override;
+   uword TryAllocateBytes(const ObjectSize size) override;
    uword TryAllocateClassBytes(Class* cls) override;
 
    template<typename T>
@@ -114,19 +106,19 @@ namespace poseidon{
      return (T*) TryAllocateClassBytes(T::GetClass());
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override {
+   bool VisitPointers(RawObjectVisitor* vis) const override {
      return IteratePointers<NewZone, NewZoneIterator>(vis);
    }
 
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override {
      return IterateMarkedPointers<NewZone, NewZoneIterator>(vis);
    }
 
-   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) const override {
      return IterateUnmarkedPointers<NewZone, NewZoneIterator>(vis);
    }
 
-   bool VisitNewPointers(RawObjectVisitor* vis) override {
+   bool VisitNewPointers(RawObjectVisitor* vis) const override {
      return VisitPointers(vis);
    }
 
@@ -135,8 +127,8 @@ namespace poseidon{
      stream << "start=" << val.GetStartingAddressPointer() << ", ";
      stream << "size=" << Bytes(val.GetSize()) << ", ";
      stream << "end=" << val.GetEndingAddressPointer() << ", ";
-     stream << "fromspace=" << val.fromspace_ << ", ";
-     stream << "tospace=" << val.tospace_  << ", ";
+     stream << "fromspace=" << val.fromspace() << ", ";
+     stream << "tospace=" << val.tospace()  << ", ";
      stream << "semi-size=" << Bytes(val.GetSemispaceSize());
      stream << ")";
      return stream;
@@ -166,9 +158,9 @@ namespace poseidon{
      SectionPrinter<NewZone>(severity) {
    }
 
-   bool PrintSection(NewZone* zone) override {
+   bool PrintSection(NewZone* zone) {
      LOG_AT_LEVEL(GetSeverity()) << (*zone) << ":";
-     return SectionPrinter<NewZone>::PrintSection(zone);
+     return zone->VisitPointers(this);
    }
   public:
    ~NewZonePrinter() override = default;

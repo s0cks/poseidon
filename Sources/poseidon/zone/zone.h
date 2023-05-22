@@ -62,11 +62,11 @@ namespace poseidon{
   public:
    ~Zone() override = default;
 
-   bool VisitNewPointers(RawObjectVisitor* vis) override {
+   bool VisitNewPointers(RawObjectVisitor* vis) const override {
      return false;
    }
 
-   bool VisitOldPointers(RawObjectVisitor* vis) override {
+   bool VisitOldPointers(RawObjectVisitor* vis) const override {
      return false;
    }
 

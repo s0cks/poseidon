@@ -141,16 +141,16 @@ namespace poseidon {
      return GetSize() > 0 && GetCurrentAddress() > 0;
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override;
+   bool VisitPointers(RawObjectVisitor* vis) const override;
 
-   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) const override {
      return IterateUnmarkedPointers<LocalPage, LocalPageIterator>(vis);
    }
 
    bool Visit(RawObjectPointerVisitor* vis);
-   bool VisitNewPointers(RawObjectVisitor* vis) override;
-   bool VisitOldPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   bool VisitNewPointers(RawObjectVisitor* vis) const override;
+   bool VisitOldPointers(RawObjectVisitor* vis) const override;
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override;
 
    LocalPage& operator=(const LocalPage& rhs) = delete;
 

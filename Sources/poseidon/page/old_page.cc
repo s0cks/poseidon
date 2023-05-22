@@ -1,13 +1,11 @@
 #include "old_page.h"
 
 namespace poseidon {
-#define UNALLOCATED 0 //TODO: cleanup
-
- bool OldPage::VisitPointers(RawObjectVisitor* vis){
+ bool OldPage::VisitPointers(RawObjectVisitor* vis) const {
    return false;
  }
 
- bool OldPage::VisitMarkedPointers(RawObjectVisitor* vis){
+ bool OldPage::VisitMarkedPointers(RawObjectVisitor* vis) const {
    return false;
  }
 }

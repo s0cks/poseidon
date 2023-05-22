@@ -139,19 +139,19 @@ namespace poseidon{
      return TryAllocateClassBytes(T::GetClass());
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override {
+   bool VisitPointers(RawObjectVisitor* vis) const override {
      return IteratePointers<Semispace, SemispaceIterator>(vis);
    }
 
-   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) const override {
      return IterateUnmarkedPointers<Semispace, SemispaceIterator>(vis);
    }
 
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override {
      return IterateMarkedPointers<Semispace, SemispaceIterator>(vis);
    }
 
-   bool VisitNewPointers(RawObjectVisitor* vis) override {
+   bool VisitNewPointers(RawObjectVisitor* vis) const override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;
    }
@@ -209,7 +209,7 @@ namespace poseidon{
      SectionPrinter<Semispace>(severity) {
    }
 
-   bool PrintSection(Semispace* semispace) override {
+   bool PrintSection(const Semispace* semispace) {
      switch(semispace->space()) {
        case Space::kFromSpace:
          LOG_AT_LEVEL(GetSeverity()) << "Fromspace " << (*semispace) << ":";
@@ -221,16 +221,22 @@ namespace poseidon{
        default:
          LOG_AT_LEVEL(GetSeverity()) << "<unknown space: " << static_cast<word>(semispace->space()) << "> " << (*semispace) << ":";
      }
-     return SectionPrinter<Semispace>::PrintSection(semispace);
+     return semispace->VisitPointers(this);
    }
   public:
    ~SemispacePrinter() override = default;
   public:
    template<const google::LogSeverity Severity = google::INFO>
    static inline bool
-   Print(Semispace* semispace) {
+   Print(const Semispace* semispace) {
      SemispacePrinter printer(Severity);
      return printer.PrintSection(semispace);
+   }
+
+   template<const google::LogSeverity Severity = google::INFO>
+   static inline bool
+   Print(const Semispace& semispace) {
+     return Print(&semispace);
    }
  };
 }

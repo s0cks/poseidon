@@ -8,16 +8,18 @@ namespace poseidon{
    DLOG(INFO) << "swapping semi-spaces....";
 #ifdef PSDN_DEBUG
    DLOG(INFO) << "semi-spaces (before):";
-   SemispacePrinter::Print(&fromspace());
-   SemispacePrinter::Print(&tospace());
+   SemispacePrinter::Print(GetFromspace());
+   SemispacePrinter::Print(GetTospace());
 #endif //PSDN_DEBUG
 
-   Semispace::Swap(fromspace(), tospace());
+   auto tmp = from_;
+   from_ = to_;
+   to_ = tmp;
 
 #ifdef PSDN_DEBUG
    DLOG(INFO) << "semi-spaces (after):";
-   SemispacePrinter::Print(&fromspace());
-   SemispacePrinter::Print(&tospace());
+   SemispacePrinter::Print(GetFromspace());
+   SemispacePrinter::Print(GetTospace());
 #endif //PSDN_DEBUG
  }
 
@@ -27,15 +29,16 @@ namespace poseidon{
      return UNALLOCATED;
    }
 
+   Semispace fromspace = GetFromspace();
    Pointer* new_ptr = UNALLOCATED;
-   if((new_ptr = fromspace_.TryAllocatePointer(size)) == UNALLOCATED) {
+   if((new_ptr = fromspace.TryAllocatePointer(size)) == UNALLOCATED) {
      PSDN_CANT_ALLOCATE(ERROR, size, (*this));
      return UNALLOCATED;
    }
    return new_ptr;
  }
 
- uword NewZone::TryAllocateBytes(const word size) {
+ uword NewZone::TryAllocateBytes(const ObjectSize size) {
    auto new_ptr = TryAllocatePointer(size);
    if(new_ptr == UNALLOCATED)
      return UNALLOCATED;

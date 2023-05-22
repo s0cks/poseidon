@@ -6,16 +6,16 @@ namespace poseidon {
    DLOG(INFO) << "swapping spaces....";
 #ifdef PSDN_DEBUG
    DLOG(INFO) << "semispaces (before):";
-   SemispacePrinter::Print(fromspace());
-   SemispacePrinter::Print(tospace());
+   SemispacePrinter::Print(GetFromspace());
+   SemispacePrinter::Print(GetTospace());
 #endif //PSDN_DEBUG
 
    new_zone()->SwapSpaces();
 
 #ifdef PSDN_DEBUG
    DLOG(INFO) << "semispaces (after):";
-   SemispacePrinter::Print(fromspace());
-   SemispacePrinter::Print(tospace());
+   SemispacePrinter::Print(GetFromspace());
+   SemispacePrinter::Print(GetTospace());
 #endif //PSDN_DEBUG
  }
 
@@ -29,10 +29,10 @@ namespace poseidon {
  }
 
  void SerialScavenger::ProcessToSpace() {
-   DLOG(INFO) << "processing " << tospace_ << "....";
+   DLOG(INFO) << "processing " << GetTospace() << "....";
    DTIMED_SECTION("ProcessToSpace", {
-     if(!tospace()->VisitPointers(this)) {
-       LOG(FATAL) << "failed to process " << tospace();
+     if(!GetTospace().VisitPointers(this)) {
+       LOG(FATAL) << "failed to process " << GetTospace();
      }
    });
  }
@@ -46,6 +46,11 @@ namespace poseidon {
      } else{
        auto new_address = Scavenge(ptr);
      }
+   }
+
+   if(ptr->VisitPointers(this) != ptr->GetPointerSize()) {
+     LOG(ERROR) << "failed to visit pointers in " << (*ptr);
+     return false;
    }
    return true;
  }

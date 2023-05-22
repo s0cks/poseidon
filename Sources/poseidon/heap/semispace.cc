@@ -16,7 +16,7 @@ namespace poseidon{
 
    auto new_ptr = new (GetCurrentAddressPointer())Pointer(PointerTag::New(size));
    memset((void*) new_ptr->GetObjectPointerAddress(), 0, new_ptr->GetSize());
-   current_ += total_size;
+   current_ += new_ptr->GetTotalSize();
    DLOG(INFO) << "allocated " << Bytes(size) << " in " << (*this);
    return new_ptr;
  }

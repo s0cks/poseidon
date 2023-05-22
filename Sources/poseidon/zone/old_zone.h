@@ -56,23 +56,23 @@ namespace poseidon{
    uword TryAllocateBytes(word size) override;
    uword TryAllocateClassBytes(Class* cls) override;
 
-   bool VisitPointers(RawObjectVisitor* vis) override {
+   bool VisitPointers(RawObjectVisitor* vis) const override {
      return IteratePointers<OldZone, OldZoneIterator>(vis);
    }
 
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override {
      return IterateMarkedPointers<OldZone, OldZoneIterator>(vis);
    }
 
-   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) const override {
      return IterateUnmarkedPointers<OldZone, OldZoneIterator>(vis);
    }
 
-   bool VisitNewPointers(RawObjectVisitor* vis) override {
+   bool VisitNewPointers(RawObjectVisitor* vis) const override {
      return false; // does not compute
    }
 
-   bool VisitOldPointers(RawObjectVisitor* vis) override {
+   bool VisitOldPointers(RawObjectVisitor* vis) const override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;
    }
@@ -112,19 +112,23 @@ namespace poseidon{
    explicit OldZonePrinter(const google::LogSeverity severity):
     SectionPrinter<OldZone>(severity) {
    }
-
-   bool PrintSection(OldZone* zone) override {
-     LOG_AT_LEVEL(GetSeverity()) << "OldZone " << (*zone) << ":";
-     return SectionPrinter<OldZone>::PrintSection(zone);
-   }
   public:
    ~OldZonePrinter() override = default;
   public:
    template<const google::LogSeverity Severity = google::INFO>
    static inline bool
-   Print(OldZone* semispace) {
+   Print(OldZone* zone) {
      OldZonePrinter printer(Severity);
-     return printer.PrintSection(semispace);
+     if(!printer.Start()) {
+       LOG_AT_LEVEL(Severity) << "printer.Start() failed.";
+       return false;
+     }
+   }
+
+   template<const google::LogSeverity Severity = google::INFO>
+   static inline bool
+   Print(const OldZone& zone) {
+     return Print<Severity>(&zone);
    }
  };
 }

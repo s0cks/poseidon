@@ -32,8 +32,8 @@ namespace poseidon{
    OldPage(const OldPage& rhs) = default;
    ~OldPage() override = default;
 
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   bool VisitPointers(RawObjectVisitor* vis) const override;
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override;
 
    OldPage& operator=(const OldPage& rhs) = default;
 

@@ -3,19 +3,19 @@
 #include "poseidon/platform/os_thread.h"
 
 namespace poseidon {
- bool LocalPage::VisitPointers(RawObjectVisitor* vis) {
+ bool LocalPage::VisitPointers(RawObjectVisitor* vis) const {
    return IteratePointers<LocalPage, LocalPageIterator>(vis);
  }
 
- bool LocalPage::VisitMarkedPointers(RawObjectVisitor* vis) {
+ bool LocalPage::VisitMarkedPointers(RawObjectVisitor* vis) const {
    return IterateMarkedPointers<LocalPage, LocalPageIterator>(vis);
  }
 
- bool LocalPage::VisitNewPointers(RawObjectVisitor* vis) {
+ bool LocalPage::VisitNewPointers(RawObjectVisitor* vis) const {
    return IterateNewPointers<LocalPage, LocalPageIterator>(vis);
  }
 
- bool LocalPage::VisitOldPointers(RawObjectVisitor* vis) {
+ bool LocalPage::VisitOldPointers(RawObjectVisitor* vis) const {
    return IterateOldPointers<LocalPage, LocalPageIterator>(vis);
  }
 

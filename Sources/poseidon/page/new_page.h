@@ -76,8 +76,8 @@ namespace poseidon {
    NewPage(const NewPage& rhs) = default;
    ~NewPage() override = default;
 
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   bool VisitPointers(RawObjectVisitor* vis) const override;
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override;
 
    NewPage& operator=(const NewPage& rhs) = default;
 

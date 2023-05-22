@@ -70,6 +70,8 @@ namespace poseidon{
 #endif // UNALLOCATED
 
 namespace poseidon {
+ typedef word SizeType;
+
  template<class Zone, const google::LogSeverity Severity=google::FATAL>
  static inline void
  CannotAllocate(Zone* zone, const ObjectSize object_size) {

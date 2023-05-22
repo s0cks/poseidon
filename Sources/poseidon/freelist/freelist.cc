@@ -21,26 +21,26 @@ namespace poseidon{
 #define PSDN_CANNOT_FIND(Level, Size, Reason) \
  DLOG(Level) << "cannot find " << Bytes((Size)) << " in freelist: " << (Reason);
 
- bool FreeList::VisitFreePointers(FreePointerVisitor* vis){
+ bool FreeList::VisitFreePointers(FreePointerVisitor* vis) const {
    ITERATE_FREE_POINTERS_BEGIN
      if(!vis->VisitFreePointer(next))
        return false;
    ITERATE_FREE_POINTERS_END;
  }
 
- bool FreeList::VisitFreePointers(const std::function<bool(FreePointer*)>& vis){
+ bool FreeList::VisitFreePointers(const std::function<bool(FreePointer*)>& vis) const {
    ITERATE_FREE_POINTERS_BEGIN
      if(!vis(next))
        return false;
    ITERATE_FREE_POINTERS_END
  }
 
- bool FreeList::VisitPointers(RawObjectVisitor* vis){
+ bool FreeList::VisitPointers(RawObjectVisitor* vis) const {
    NOT_IMPLEMENTED(FATAL);
    return false;
  }
 
- bool FreeList::VisitMarkedPointers(RawObjectVisitor* vis){
+ bool FreeList::VisitMarkedPointers(RawObjectVisitor* vis) const {
    NOT_IMPLEMENTED(FATAL);
    return false;
  }

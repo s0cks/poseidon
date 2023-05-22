@@ -170,26 +170,26 @@ namespace poseidon{ //TODO: atomic support?
      return Region::Intersects((Region) *free_ptr);
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override;
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override;
+   bool VisitPointers(RawObjectVisitor* vis) const override;
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override;
 
-   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) const override {
      NOT_IMPLEMENTED(FATAL); //TODO: implement
      return false;
    }
 
-   bool VisitNewPointers(RawObjectVisitor* vis) override {
+   bool VisitNewPointers(RawObjectVisitor* vis) const override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;
    }
 
-   bool VisitOldPointers(RawObjectVisitor* vis) override {
+   bool VisitOldPointers(RawObjectVisitor* vis) const override {
      NOT_IMPLEMENTED(ERROR); //TODO: implement
      return false;
    }
 
-   virtual bool VisitFreePointers(FreePointerVisitor* vis);
-   virtual bool VisitFreePointers(const std::function<bool(FreePointer*)>& vis);
+   virtual bool VisitFreePointers(FreePointerVisitor* vis) const;
+   virtual bool VisitFreePointers(const std::function<bool(FreePointer*)>& vis) const;
 
    friend std::ostream& operator<<(std::ostream& stream, const FreeList& value) {
      stream << "FreeList(";

@@ -48,28 +48,31 @@ namespace poseidon {
    static bool SerialScavenge(Scavenger* scavenger);
    static bool ParallelScavenge(Scavenger* scavenger);
   protected:
+   uword from_;
+   uword to_;
+   word semi_size_;
+
    NewZone* new_zone_;
    OldZone* old_zone_;
-   Semispace fromspace_;
-   Semispace tospace_;
 
    explicit Scavenger(NewZone* new_zone, OldZone* old_zone):
+    from_(new_zone->fromspace()),
+    to_(new_zone->tospace()),
     new_zone_(new_zone),
     old_zone_(old_zone),
-    fromspace_(new_zone->fromspace()),
-    tospace_(new_zone->tospace()) {
-   }
-
-   inline Semispace* fromspace() {
-     return &fromspace_;
-   }
-
-   inline Semispace* tospace() {
-     return &tospace_;
+    semi_size_(new_zone->GetSemispaceSize()) {
    }
 
    inline NewZone* new_zone() const {
      return new_zone_;
+   }
+
+   inline Semispace GetFromspace() const {
+     return Semispace(Space::kFromSpace, from_, semi_size_);
+   }
+
+   inline Semispace GetTospace() const {
+     return Semispace(Space::kToSpace, to_, semi_size_);
    }
 
    inline OldZone* old_zone() const {
@@ -78,6 +81,7 @@ namespace poseidon {
 
    virtual uword Scavenge(Pointer* ptr);
    virtual uword Promote(Pointer* ptr);
+   virtual Pointer* TryAllocate(ObjectSize size);
 
    bool Visit(Pointer* ptr) override {
      NOT_IMPLEMENTED(FATAL); //TODO: implement

@@ -19,7 +19,7 @@ namespace poseidon{
 
    template<class Z, class Iterator>
    inline bool
-   IteratePointers(RawObjectVisitor* vis) {
+   IteratePointers(RawObjectVisitor* vis) const {
      Iterator iter((Z*) this);
      while(iter.HasNext()) {
        auto next = iter.Next();
@@ -30,7 +30,7 @@ namespace poseidon{
    }
 
    template<class Z, class Iterator>
-   inline bool IterateNewPointers(RawObjectVisitor* vis) {
+   inline bool IterateNewPointers(RawObjectVisitor* vis) const {
      Iterator iter((Z*) this);
      while(iter.HasNext()) {
        auto next = iter.Next();
@@ -41,7 +41,7 @@ namespace poseidon{
    }
 
    template<class Z, class Iterator>
-   inline bool IterateOldPointers(RawObjectVisitor* vis) {
+   inline bool IterateOldPointers(RawObjectVisitor* vis) const {
      Iterator iter((Z*) this);
      while(iter.HasNext()) {
        auto next = iter.Next();
@@ -53,7 +53,7 @@ namespace poseidon{
 
    template<class Z, class Iterator>
    inline bool
-   IterateMarkedPointers(RawObjectVisitor* vis) {
+   IterateMarkedPointers(RawObjectVisitor* vis) const {
      Iterator iter((Z*) this);
      while(iter.HasNext()) {
        auto next = iter.Next();
@@ -65,7 +65,7 @@ namespace poseidon{
 
    template<class Z, class Iterator>
    inline bool
-   IterateUnmarkedPointers(RawObjectVisitor* vis) {
+   IterateUnmarkedPointers(RawObjectVisitor* vis) const {
      Iterator iter((Z*) this);
      while(iter.HasNext()) {
        auto next = iter.Next();
@@ -93,47 +93,47 @@ namespace poseidon{
   public:
    ~Section() override = default;
 
-   virtual bool VisitPointers(RawObjectVisitor* vis) {
+   virtual bool VisitPointers(RawObjectVisitor* vis) const {
      return false;
    }
 
-   virtual bool VisitPointers(const RawObjectVisitor::VisitorFunction& function) {
+   virtual bool VisitPointers(const RawObjectVisitor::VisitorFunction& function) const {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitPointers(&vis);
    }
 
-   virtual bool VisitMarkedPointers(RawObjectVisitor* vis) {
+   virtual bool VisitMarkedPointers(RawObjectVisitor* vis) const {
      return false;
    }
 
-   virtual bool VisitMarkedPointers(const RawObjectVisitor::VisitorFunction& function) {
+   virtual bool VisitMarkedPointers(const RawObjectVisitor::VisitorFunction& function) const {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitMarkedPointers(&vis);
    }
 
-   virtual bool VisitUnmarkedPointers(RawObjectVisitor* vis) {
+   virtual bool VisitUnmarkedPointers(RawObjectVisitor* vis) const {
      return false;
    }
 
-   virtual bool VisitUnmarkedPointers(const RawObjectVisitor::VisitorFunction& func) {
+   virtual bool VisitUnmarkedPointers(const RawObjectVisitor::VisitorFunction& func) const {
      auto vis = RawObjectVisitorWrapper(func);
      return VisitUnmarkedPointers(&vis);
    }
 
-   virtual bool VisitNewPointers(RawObjectVisitor* vis) {
+   virtual bool VisitNewPointers(RawObjectVisitor* vis) const {
      return false;
    }
 
-   virtual bool VisitNewPointers(const RawObjectVisitor::VisitorFunction& function) {
+   virtual bool VisitNewPointers(const RawObjectVisitor::VisitorFunction& function) const {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitNewPointers(&vis);
    }
 
-   virtual bool VisitOldPointers(RawObjectVisitor* vis) {
+   virtual bool VisitOldPointers(RawObjectVisitor* vis) const {
      return false;
    }
 
-   virtual bool VisitOldPointers(const RawObjectVisitor::VisitorFunction& function) {
+   virtual bool VisitOldPointers(const RawObjectVisitor::VisitorFunction& function) const {
      auto vis = RawObjectVisitorWrapper(function);
      return VisitOldPointers(&vis);
    }
@@ -164,15 +164,19 @@ namespace poseidon{
      RawObjectVisitor(),
      severity_(severity) {
    }
-
-   virtual bool PrintSection(S* section) {
-     return section->VisitPointers(this);
-   }
   public:
    ~SectionPrinter() override = default;
 
    google::LogSeverity GetSeverity() const {
      return severity_;
+   }
+
+   virtual bool Start() {
+     return true;
+   }
+
+   virtual bool End() {
+     return true;
    }
 
    bool Visit(Pointer* raw_ptr) override {

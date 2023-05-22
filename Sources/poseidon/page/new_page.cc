@@ -1,7 +1,7 @@
 #include "new_page.h"
 
 namespace poseidon {
- bool NewPage::VisitPointers(poseidon::RawObjectVisitor* vis){
+ bool NewPage::VisitPointers(poseidon::RawObjectVisitor* vis) const {
    NewPageIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();
@@ -11,7 +11,7 @@ namespace poseidon {
    return true;
  }
 
- bool NewPage::VisitMarkedPointers(poseidon::RawObjectVisitor* vis){
+ bool NewPage::VisitMarkedPointers(poseidon::RawObjectVisitor* vis) const {
    NewPageIterator iter(this);
    while(iter.HasNext()) {
      auto next = iter.Next();

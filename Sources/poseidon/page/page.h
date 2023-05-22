@@ -81,23 +81,23 @@ namespace poseidon {
      return index_;
    }
 
-   bool VisitPointers(RawObjectVisitor* vis) override {
+   bool VisitPointers(RawObjectVisitor* vis) const override {
      return IteratePointers<Page, PageIterator>(vis);
    }
 
-   bool VisitMarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitMarkedPointers(RawObjectVisitor* vis) const override {
      return IterateMarkedPointers<Page, PageIterator>(vis);
    }
 
-   bool VisitUnmarkedPointers(RawObjectVisitor* vis) override {
+   bool VisitUnmarkedPointers(RawObjectVisitor* vis) const override {
      return IterateUnmarkedPointers<Page, PageIterator>(vis);
    }
 
-   bool VisitNewPointers(RawObjectVisitor* vis) override {
+   bool VisitNewPointers(RawObjectVisitor* vis) const override {
      return IterateNewPointers<Page, PageIterator>(vis);
    }
 
-   bool VisitOldPointers(RawObjectVisitor* vis) override {
+   bool VisitOldPointers(RawObjectVisitor* vis) const override {
      return IterateOldPointers<Page, PageIterator>(vis);
    }
 
